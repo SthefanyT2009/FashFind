@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Catálogo Dama — FashF</title>
+  <link rel="stylesheet" href="catalogoCompartido.css"/> <!-- Estilos principales -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/> <!-- Iconos -->
+</head>
+<body>
+
+  <!-- OVERLAY Y PANEL DEL CARRITO (lateral deslizable) -->
+  <div class="cart-panel-overlay" id="cartOverlay"></div> <!-- Fondo oscuro al abrir carrito -->
+  <aside class="cart-panel" id="cartPanel"> <!-- Panel lateral del carrito -->
+    <div class="cp-header">
+      <h3>Tu Carrito</h3>
+      <button class="cp-close" id="btnCloseCart"><i class="fa-solid fa-xmark"></i></button> <!-- Cerrar carrito -->
+    </div>
+    <div class="cp-items" id="cpItems"> <!-- Lista de productos en carrito -->
+      <div class="cp-empty"><i class="fa-solid fa-bag-shopping"></i><p>Tu carrito está vacío</p></div>
+    </div>
+    <div class="cp-footer" id="cpFooter" style="display:none"> <!-- Pie con total y botón -->
+      <div class="cp-total-row"><span>Total</span><span id="cpTotal">$0</span></div>
+      <a href="../Carrito/carrito.html" class="btn-go-cart">Ver carrito completo</a>
+    </div>
+  </aside>
+
+  <!-- TOAST (notificación emergente) -->
+  <div class="toast" id="toast"><i class="fa-solid fa-circle-check"></i><span id="toastMsg"></span></div>
+
+  <!-- HEADER PRINCIPAL -->
+  <header class="main-header">
+    <a href="../../index.php" class="logo">Fash<span>F</span></a> <!-- Logo -->
+    
+    <!-- MENÚ DE NAVEGACIÓN CON MEGA MENÚS -->
+    <nav class="menu-nav">
+      <!-- Categoría Dama -->
+      <div class="nav-item">
+        <a href="catalogoDama.html" class="nav-link">Dama</a>
+        <div class="mega-menu"> <!-- Mega menú desplegable -->
+          <div class="mega-col">
+            <h4>Ropa</h4>
+            <a href="catalogoDama.html">Blusas</a><a href="catalogoDama.html">Faldas / Shorts</a>
+            <a href="catalogoDama.html">Pantalones</a><a href="catalogoDama.html">Chaquetas</a>
+          </div>
+          <div class="mega-col">
+            <h4>Accesorios</h4>
+            <a href="catalogoDama.html">Bolsos</a><a href="catalogoDama.html">Gorras</a>
+          </div>
+        </div>
+      </div>
+      <!-- Categoría Caballero -->
+      <div class="nav-item">
+        <a href="catalogoCaballero.html" class="nav-link">Caballero</a>
+        <div class="mega-menu">...</div> <!-- Contenido similar -->
+      </div>
+      <!-- Categoría Niños -->
+      <div class="nav-item">
+        <a href="catalogoNinos.html" class="nav-link">Niños</a>
+        <div class="mega-menu">...</div> <!-- Contenido similar -->
+      </div>
+    </nav>
+
+    <!-- ICONOS DE ACCIÓN (búsqueda, usuario, carrito) -->
+    <div class="header-icons">
+      <div class="search-wrap">
+        <input type="text" id="searchInput" class="search-input" placeholder="Buscar..."/> <!-- Campo de búsqueda oculto -->
+        <button class="icon-btn" id="btnSearch"><i class="fa-solid fa-magnifying-glass"></i></button> <!-- Botón lupa -->
+      </div>
+      <a href="../Login/login.php" class="icon-btn"><i class="fa-regular fa-user"></i></a> <!-- Icono usuario -->
+      <button class="icon-btn cart-btn" id="btnOpenCart"> <!-- Botón carrito -->
+        <i class="fa-solid fa-bag-shopping"></i>
+        <span class="cart-count" id="cartCount">0</span> <!-- Contador de productos -->
+      </button>
+    </div>
+  </header>
+
+  <!-- HERO (BANNER PRINCIPAL) -->
+  <div class="hero-catalogo" style="background:linear-gradient(135deg,#e91e8c,#ff6b35);">
+    <h1>Colección Dama</h1>
+    <p>Moda femenina para cada momento de tu vida</p>
+  </div>
+
+  <!-- MIGAS DE PAN (breadcrumb) -->
+  <div class="migas-de-pan">
+    <a href="../../index.php">Inicio</a><span>›</span><strong>Dama</strong>
+  </div>
+
+  <!-- CONTENEDOR PRINCIPAL DEL CATÁLOGO -->
+  <div class="fondo-catalogo">
+    <div class="fila-catalogo">
+
+      <!-- FILTROS LATERALES -->
+      <aside class="panel-filtros">
+        <div class="caja-filtro">
+          <h4>Categoría</h4>
+          <label><input type="checkbox" checked> Blusas</label>
+          <label><input type="checkbox" checked> Faldas / Shorts</label>
+          <label><input type="checkbox" checked> Pantalones</label>
+          <!-- Más opciones de categoría -->
+        </div>
+        <div class="caja-filtro">
+          <h4>Talla</h4>
+          <label><input type="checkbox" checked> XS</label>
+          <label><input type="checkbox" checked> S</label>
+          <label><input type="checkbox" checked> M</label>
+          <!-- Más tallas -->
+        </div>
+        <div class="caja-filtro">
+          <h4>Color</h4>
+          <label><input type="checkbox"> Negro</label>
+          <label><input type="checkbox"> Blanco</label>
+          <!-- Más colores -->
+        </div>
+        <div class="caja-filtro">
+          <h4>Precio</h4>
+          <label><input type="checkbox"> Hasta $50.000</label>
+          <label><input type="checkbox"> $50.000 – $100.000</label>
+          <!-- Más rangos -->
+        </div>
+      </aside>
+
+      <!-- SECCIÓN DE PRODUCTOS -->
+      <section class="seccion-productos">
+        <!-- Barra de herramientas: contador y ordenamiento -->
+        <div class="barra-herramientas">
+          <p>Mostrando <strong>8 productos</strong></p>
+          <select>
+            <option>Más vendidos</option>
+            <option>Precio: menor a mayor</option>
+          </select>
+        </div>
+
+        <!-- CUADRÍCULA DE TARJETAS DE PRODUCTO -->
+        <div class="cuadricula-productos">
+
+          <!-- Producto 1 -->
+          <div class="tarjeta-producto">
+            <div class="imagen-producto" style="background:url('https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=400&q=80') center/cover">
+              <span class="etiqueta">Más Vendida</span> <!-- Etiqueta destacada -->
+            </div>
+            <div class="info-producto">
+              <h3>Blusa Floral Primavera</h3>
+              <p>Estampado floral, tela fresca. Tallas S–XL.</p>
+              <div class="estrellas">★★★★★</div> <!-- Calificación -->
+              <span class="precio-producto">$49.900</span>
+              <button class="boton-agregar" data-name="Blusa Floral Primavera" data-price="49900">Agregar al Carrito</button>
+              <!-- Botón con atributos data-* para el carrito -->
+            </div>
+          </div>
+
+          <!-- Producto 2 -->
+          <div class="tarjeta-producto">
+            <div class="imagen-producto" style="background:url('https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=400&q=80') center/cover">
+              <span class="etiqueta etiqueta-nuevo">Nuevo</span>
+            </div>
+            <div class="info-producto">
+              <h3>Vestido Midi Elegante</h3>
+              <p>Corte favorecedor, cinturón incluido. Tela suave.</p>
+              <div class="estrellas">★★★★★</div>
+              <span class="precio-producto">$129.900</span>
+              <button class="boton-agregar" data-name="Vestido Midi Elegante" data-price="129900">Agregar al Carrito</button>
+            </div>
+          </div>
+
+          <!-- Producto 3 (con icono en lugar de imagen externa) -->
+          <div class="tarjeta-producto">
+            <div class="imagen-producto fondo-rosa">
+              <i class="fa-solid fa-shirt icono-producto"></i> <!-- Icono de camisa -->
+              <span class="etiqueta">Popular</span>
+            </div>
+            <div class="info-producto">
+              <h3>Blusa Manga Larga</h3>
+              <p>Diseño casual-elegante. Perfecta para la oficina.</p>
+              <div class="estrellas">★★★★☆</div>
+              <span class="precio-producto">$65.900</span>
+              <button class="boton-agregar" data-name="Blusa Manga Larga" data-price="65900">Agregar al Carrito</button>
+            </div>
+          </div>
+
+          <!-- Producto 4 (ejemplo con icono) -->
+          <div class="tarjeta-producto">
+            <div class="imagen-producto fondo-azul">
+              <i class="fa-solid fa-vest icono-producto"></i>
+              <span class="etiqueta etiqueta-oferta">30% OFF</span>
+            </div>
+            <div class="info-producto">
+              <h3>Chaqueta Denim Mujer</h3>
+              <p>Chaqueta vaquera clásica, versátil y atemporal.</p>
+              <div class="estrellas">★★★★★</div>
+              <span class="precio-producto">$139.900</span>
+              <button class="boton-agregar" data-name="Chaqueta Denim Mujer" data-price="139900">Agregar al Carrito</button>
+            </div>
+          </div>
+          <!-- Más productos similares... -->
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer>
+    <p>&copy; 2025 <strong>FashF</strong>. Todos los derechos reservados.</p>
+  </footer>
+
+  <!-- SCRIPT DEL CARRITO -->
+  <script src="../Carrito/carrito.js"></script>
+</body>
+</html>

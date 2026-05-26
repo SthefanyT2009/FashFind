@@ -1,0 +1,199 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box; /*Hace que el ancho y alto incluyan bordes y padding*/
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
+  background-color: #FFFFFF;
+  display: flex; /*Contenido principal de manera horizontal a la barra lateral*/
+  min-height: 100vh; /*Ocupe toda la altura de la pantalla*/
+}
+
+/* Barra lateral*/
+.barra {
+  width: 250px;
+  background-color: #3A3A3A;
+  color: white;
+  padding: 20px;
+  display: flex; /*Mantiene todo en la parte inferior de la barra*/
+  flex-direction: column; /*Mantiene los elementos en columna*/
+  justify-content: space-between; /*Coloca los elementos debajo y en medio de otros*/
+}
+
+.barra h2 {
+  text-align: center;
+}
+
+.barra ul {
+  list-style-type: none; /*Quita los puntos de la lista*/
+}
+
+.barra ul li {
+  margin: 20px 0; /*Espacio entre li*/
+}
+
+.barra ul li a {
+  text-decoration: none; /*Quita la linea de debajo*/
+  color: white;
+  font-size: 18px;
+  display: block; /*Ocupa el ancho disponible (todo el bloque)*/
+  padding: 10px;
+}
+
+.contenido-principal {
+  flex-grow: 1; /*Ocupa todo el espacio sobrante*/
+  padding: 20px;
+}
+
+.barra-superior {
+  display: flex; /*Organiza horizontal*/
+  justify-content: space-between; /*Se alinee uno a la derecha y otro a la izquierda*/
+  background-color: #3A3A3A;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 5px;
+  margin-bottom: 20px; 
+}
+
+.barra-superior h1 {
+  font-size: 24px;
+}
+
+.barra-superior button {
+  background-color: #FFFFFF;
+  color: #3A3A3A;
+  padding: 8px 16px;
+  border-radius: 5px;
+  cursor: pointer; /*Cambia al ícono de una mano*/
+}
+
+/* Sección de la pagina principal */
+.seccion-cajas {
+  display: grid; /*Cajas una al lado de la otra*/
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); /*El repeat, repite un patrón. El auto-fill, creará tantas columnas como quepan en el ancho disponible. Y minmax(250px, 1fr) → mínimo 250px de ancho, máximo 1 fracción (1fr) del espacio libre.*/
+  gap: 20px; /*Espacio entre filas y columnas*/
+  margin-bottom: 30px;
+}
+
+.cajas {
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px #9A9A9A; /*Sombra de la caja*/
+  text-align: center;
+  background-color: #FFFFFF;
+  border-top: 4px solid #e91e8c;
+}
+
+.cajas h3 {
+  font-size: 22px;
+  margin-bottom: 6px;
+}
+
+.cajas p {
+  font-size: 20px;
+}
+
+.tablas {
+  width: 100%;
+  border-collapse: collapse; /*Fusion de bordes en una sola tabla*/
+  margin-top: 20px;
+}
+
+.tablas th, .tablas td {
+      padding: 12px;
+      text-align: left;
+      border: 1px solid #9A9A9A;
+}
+
+.tablas th {
+  background-color: #3A3A3A;
+  color: white;
+}
+
+.tablas tr:nth-child(even) {
+      background-color: #F3F3F3; /*Fondo de una fila intercalada de ese color*/
+}
+
+.tablas tr:hover {
+      background-color: #EAEAEA;
+}
+
+section {
+  display: none; /* Ocultamos todas las secciones */
+}
+
+/* Mostramos la seccion activa cuando se selecciona en el menu */
+section:target {
+  display: block;
+}
+
+/* Pagina principal visible por defecto */
+#pagina_principal {
+  display: block;
+}
+
+a button {
+  border: none;
+  border-radius: 3px;
+  padding: 1%;
+  margin-top: 2%;
+  font-size: 14px;
+}
+
+/* Buscador */
+.buscador {
+  margin-bottom: 2%;
+}
+
+.buscador input {
+  width: 90%;
+  padding: 1%;
+  font-size: 16px;
+  border-radius: 5px;
+}
+
+.buscador button {
+  width: 9%;
+  padding: 1%;
+  font-size: 16px;
+  border-radius: 5px;
+}
+
+/*CAMBIOS*/
+button {
+  transition: all .3s ease;
+  cursor: pointer;
+}
+
+/* ===== BOTONES NORMALES (oscuros → rosado en hover) ===== */
+.barra-superior button, a button, .buscador button, button {
+  background-color: #3A3A3A;
+  color: white;
+  border: none;
+}
+
+/* Hover rosado */
+.barra-superior button:hover, a button:hover, .buscador button:hover, button:hover {
+  background-color: #e91e8c;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(233, 30, 140, 0.3);
+}
+
+/* Click */
+button:active {
+  transform: scale(0.96);
+}
+
+.btn-rosa {
+  background-color: #e91e8c !important;
+  color: white;
+  padding: 2%;
+}
+
+.btn-rosa:hover {
+  background-color: #d81b7a !important;
+  box-shadow: 0 4px 12px rgba(233, 30, 140, 0.4);
+  transform: translateY(-1px);
+}

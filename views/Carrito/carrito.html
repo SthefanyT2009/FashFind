@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Carrito — FashF</title>
+
+  <link rel="stylesheet" href="carritoEstilos.css"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+</head>
+<body>
+<div class="toast" id="toast">
+  <i class="fa-solid fa-circle-check"></i>
+  <span id="toastMsg"></span>
+</div>
+<header class="main-header">
+  <a href="../../index.php" class="logo">Fash<span>F</span></a>
+
+  <nav class="menu-nav">
+    <div class="nav-item"><a href="../Catalogo/catalogoDama.html"class="nav-link">Dama</a></div>
+    <div class="nav-item"><a href="../Catalogo/catalogoCaballero.html"class="nav-link">Caballero</a></div>
+    <div class="nav-item"><a href="../Catalogo/catalogoNinos.html"class="nav-link">Niños</a></div>
+  </nav>
+
+  <div class="header-icons">
+    <a href="../Login/login.php" class="icon-btn"><i class="fa-regular fa-user"></i></a>
+    <a href="carrito.html" class="icon-btn cart-btn" style="color:var(--accent)">
+      <i class="fa-solid fa-bag-shopping"></i>
+      <span class="cart-count" id="cartCount">0</span>
+    </a>
+  </div>
+</header>
+<div class="hero-carrito">
+  <h1>Carrito de Compras</h1>
+</div>
+<div class="migas-de-pan">
+  <a href="../../index.php">Inicio</a><span>›</span><strong>Carrito</strong>
+</div>
+<main class="fondo-carrito">
+  <div class="fila-carrito">
+    <!-- ── Columna izquierda: lista de productos ── -->
+    <div>
+      <div class="caja-productos">
+        <!-- Encabezado de la lista -->
+        <div class="encabezado-caja">
+          <span>Mis Productos</span>
+          <button class="boton-vaciar" id="botonVaciar">
+            <i class="fa-solid fa-trash-can"></i> Vaciar carrito
+          </button>
+        </div>
+        <!-- Aquí el JavaScript inserta los ítems del carrito -->
+        <div id="listaItems"></div>
+      </div>
+      <!-- Enlace para volver a la tienda -->
+      <a href="../../index.php" class="enlace-seguir">
+        <i class="fa-solid fa-arrow-left"></i> Seguir comprando
+      </a>
+    </div>
+    <!-- ── Columna derecha: resumen del pedido ── -->
+    <div>
+      <div class="resumen-pedido">
+        <h3>Resumen del Pedido</h3>
+        <!-- Campo de cupón de descuento -->
+        <div class="fila-cupon">
+          <input type="text" placeholder="Código de cupón"/>
+          <button>Aplicar</button>
+        </div>
+        <!-- Filas de costos -->
+        <div class="fila-resumen"><span>Subtotal</span><span id="valorSubtotal">$0</span></div>
+        <div class="fila-resumen"><span>Envío</span>   <span id="valorEnvio">$0</span></div>
+        <div class="fila-resumen"><span>IVA (19%)</span><span id="valorIva">$0</span></div>
+        <div class="fila-resumen total"><span>Total</span><span id="valorTotal">$0</span></div>
+        <!-- Botón principal de pago -->
+        <button class="boton-pagar" id="botonPagar">
+          <i class="fa-solid fa-lock"></i> Finalizar Compra
+        </button>
+        <!-- Enlace secundario -->
+        <a href="../../index.php" class="enlace-continuar">
+          <i class="fa-solid fa-chevron-left"></i> Continuar comprando
+        </a>
+
+        <!-- Íconos de métodos de pago aceptados -->
+        <div class="iconos-pago">
+          <i class="fa-brands fa-cc-visa"        style="font-size:1.8rem;color:#1a1f71"></i>
+          <i class="fa-brands fa-cc-mastercard"  style="font-size:1.8rem;color:#eb001b"></i>
+          <i class="fa-brands fa-cc-paypal"      style="font-size:1.8rem;color:#003087"></i>
+          <i class="fa-solid  fa-money-bill-wave" style="font-size:1.8rem;color:#4caf50"></i>
+        </div>
+        <p class="texto-seguro">Pago 100% seguro y encriptado</p>
+      </div>
+    </div>
+  </div>
+</main>
+<footer>
+  <p>&copy; 2025 <strong>FashF</strong>. Todos los derechos reservados.</p>
+</footer>
+<script src="carrito.js"></script> <!-- Conecta el archivo donde está la lógica base del carrito (guardar, cargar, etc.) -->
+<script>
+document.addEventListener('DOMContentLoaded', function () { // Ejecuta todo cuando la página ya cargó para evitar errores con elementos
+
+  /* ── Formatear número como precio colombiano ── */
+  function formatearPrecio(n) { // Convierte números normales a formato de dinero
+    return '$' + Number(n).toLocaleString('es-CO'); // Ej: 20000 → $20.000 (formato Colombia)
+  }
+
+  /* ── Dibujar la lista y calcular totales ── */
+  function actualizarCarrito() { // Función principal que controla todo el carrito (mostrar, actualizar, calcular)
+    var carrito = CartAPI.load(); // Carga los productos guardados en el navegador (para no perderlos)
+    var lista   = document.getElementById('listaItems'); // Obtiene el contenedor donde se van a mostrar los productos
+
+    /* Actualizar el número del ícono de bolsa */
+    CartAPI.updateBadge(); // Actualiza el numerito del carrito (cantidad de productos)
+
+    /* Si está vacío, mostrar mensaje */
+    if (!carrito.length) { // Verifica si el carrito está vacío
+      lista.innerHTML =
+        '<div class="carrito-vacio">' +
+          '<i class="fa-solid fa-bag-shopping"></i>' +
+          '<p>Tu carrito está vacío</p>' +
+          '<a href="../../index.php" class="boton-ir-tienda">Ir a la tienda</a>' +
+        '</div>'; // Muestra mensaje de carrito vacío
+      actualizarResumen(0); // Reinicia los valores del resumen a 0
+      return; // Detiene la ejecución para no seguir con cálculos innecesarios
+    }
+
+    /* Construir el HTML de cada ítem */
+    lista.innerHTML = carrito.map(function (item, indice) { // Recorre todos los productos y los dibuja en pantalla
+      var subtotal = item.price * item.qty; // Calcula el subtotal por producto (precio * cantidad)
+      return (
+        '<div class="fila-item">' +
+
+          /* Imagen / fondo de color */
+          '<div class="imagen-item ' + (item.color || 'fondo-azul') + '">' + // Aplica color o uno por defecto
+            '<i class="fa-solid fa-shirt"></i>' +
+          '</div>' +
+
+          /* Nombre, precio unitario y control de cantidad */
+          '<div class="info-item">' +
+            '<h4>' + item.name + '</h4>' + // Muestra nombre del producto
+            '<p>Precio unitario: ' + formatearPrecio(item.price) + '</p>' + // Muestra precio formateado
+            '<div class="control-cantidad">' +
+              '<button class="boton-cantidad" data-indice="' + indice + '" data-delta="-1">−</button>' + // Botón para disminuir cantidad
+              '<span class="numero-cantidad">' + item.qty + '</span>' + // Muestra cantidad actual
+              '<button class="boton-cantidad" data-indice="' + indice + '" data-delta="1">+</button>' + // Botón para aumentar cantidad
+            '</div>' +
+          '</div>' +
+
+          /* Subtotal del ítem y botón eliminar */
+          '<div class="precio-item">' +
+            '<span class="subtotal-item">' + formatearPrecio(subtotal) + '</span>' + // Muestra subtotal del producto
+            '<button class="boton-eliminar" data-indice="' + indice + '">' + // Botón para eliminar producto
+              '<i class="fa-solid fa-trash-can"></i>' +
+            '</button>' +
+          '</div>' +
+
+        '</div>'
+      );
+    }).join(''); // Une todo el HTML generado en un solo string
+
+    /* Botones de cantidad */
+    lista.querySelectorAll('.boton-cantidad').forEach(function (btn) { // Selecciona todos los botones + y -
+      btn.addEventListener('click', function () { // Evento al hacer clic
+        var c = CartAPI.load(); // Carga carrito actual
+        var i = parseInt(this.dataset.indice); // Obtiene el índice del producto
+        c[i].qty = Math.max(1, c[i].qty + parseInt(this.dataset.delta)); // Modifica cantidad sin permitir menos de 1 (evita errores)
+        CartAPI.save(c); // Guarda cambios en el navegador
+        actualizarCarrito(); // Vuelve a renderizar el carrito actualizado
+      });
+    });
+
+    /* Botones de eliminar ítem */
+    lista.querySelectorAll('.boton-eliminar').forEach(function (btn) { // Selecciona botones eliminar
+      btn.addEventListener('click', function () { // Evento clic
+        var c = CartAPI.load(); // Carga carrito
+        c.splice(parseInt(this.dataset.indice), 1); // Elimina el producto según su posición
+        CartAPI.save(c); // Guarda cambios
+        actualizarCarrito(); // Refresca la vista
+      });
+    });
+
+    /* Calcular subtotal total y actualizar resumen */
+    var subtotalTotal = carrito.reduce(function (suma, item) { // Suma todos los subtotales de productos
+      return suma + item.price * item.qty;
+    }, 0);
+    actualizarResumen(subtotalTotal); // Envía el subtotal para calcular envío, IVA y total
+  }
+
+  /* ── Actualizar los valores del resumen ── */
+  function actualizarResumen(subtotal) { // Calcula los valores finales del pedido
+    /* Envío gratis si el pedido supera $200.000 */
+    var envio = subtotal > 0 ? (subtotal >= 200000 ? 0 : 12000) : 0; // Calcula costo de envío según condición
+    var iva   = Math.round(subtotal * 0.19); // Calcula IVA del 19%
+    var total = subtotal + envio + iva; // Suma todo para el total final
+
+    document.getElementById('valorSubtotal').textContent = formatearPrecio(subtotal); // Muestra subtotal
+    document.getElementById('valorEnvio').textContent    = (envio === 0 && subtotal > 0) ? 'Gratis' : formatearPrecio(envio); // Muestra envío o "Gratis"
+    document.getElementById('valorIva').textContent      = formatearPrecio(iva); // Muestra IVA
+    document.getElementById('valorTotal').textContent    = formatearPrecio(total); // Muestra total final
+  }
+
+  /* ── Botón "Vaciar carrito" ── */
+  document.getElementById('botonVaciar').addEventListener('click', function () { // Evento para vaciar todo el carrito
+    if (confirm('¿Vaciar todo el carrito?')) { // Confirmación para evitar borrar por error
+      CartAPI.save([]); // Guarda un carrito vacío (borra todo)
+      actualizarCarrito(); // Actualiza la vista
+    }
+  });
+
+  /* ── Botón "Finalizar Compra" ── */
+  document.getElementById('botonPagar').addEventListener('click', function () { // Evento del botón pagar
+    var carrito = CartAPI.load(); // Carga los productos actuales
+    if (!carrito.length) { // Verifica que haya productos
+      alert('Agrega productos al carrito primero.'); // Evita continuar vacío
+      return;
+    }
+    var toast = document.getElementById('toast'); // Obtiene el elemento de notificación
+    document.getElementById('toastMsg').textContent = 'Redirigiendo al pago seguro…'; // Mensaje al usuario
+    toast.classList.add('show'); // Muestra el toast
+    setTimeout(function () { toast.classList.remove('show'); }, 3000); // Lo oculta después de 3 segundos
+  });
+
+  /* Cargar el carrito al abrir la página */
+  actualizarCarrito(); // Ejecuta todo al inicio para mostrar productos guardados automáticamente
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,70 @@
+body { 
+    background-image: url(https://www.jimarestanterias.com/wp-content/uploads/2022/06/WhatsApp-Image-2022-02-11-at-12.17.05-PM-1024x768.jpeg);
+    font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif; color: #FFFFFF; font-size: 22px;
+    padding-top: 7%;
+    padding-left: 32%;
+    background-size: cover; /*Imagen ocupe todo el fondo*/
+}
+
+.div1 { 
+    padding-left: 12%;  
+}
+
+input {
+    border: none;
+    border-bottom: 1px solid #000000; 
+    background-color: transparent;
+    outline: none; /*No aparece el borde negro al estar en el recuadro*/
+    color:#000000;
+    font-size: 20px;  
+    width: 86%;
+}
+
+h1 { 
+    text-align: center;
+    color: #e91e8c; 
+    font-size: 35px;
+    padding-top: 3%; 
+}
+
+form { 
+    background: #FFFFFF;
+    border: 1px solid #ffffff;     
+    border-radius: 8px;
+    width: 55%;         
+    max-width: 550px; /* No pasa de 550px en pantallas grandes */
+    padding-bottom: 4%;
+    color: #000000;
+}
+
+button { 
+    width: 80%;
+    height: 25%;
+    font-size: 20px;
+    padding: 2%;
+    margin-left: 4%;
+}
+
+select { 
+    background-color: transparent;
+    color: #000000;
+    padding: 1%;
+    font-size: 20px;  
+}
+
+select option {
+    background-color: #ffffff;
+}
+
+.btn-rosa {
+  background-color: #e91e8c !important;
+  color: white;
+  padding: 2%;
+  border: none;
+}
+
+.btn-rosa:hover {
+  background-color: #d81b7a !important;
+  box-shadow: 0 4px 12px rgba(233, 30, 140, 0.4);
+  transform: translateY(-1px);
+}

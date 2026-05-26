@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="registroUsuarios.css">
+  <title>Registro de Producto</title>
+</head>
+<body>
+  <form action="" method="post" enctype="multipart/form-data">
+    <h1>Nuevo Producto</h1>
+
+    <div class="div1">
+
+      <label>Imagen</label><br>
+      <input type="file" id="imagen" name="imagen" accept="image/*">
+      <br><br>
+
+      <label>Nombre Producto</label><br>
+      <input type="text" id="nombre_producto" name="nombre_producto" required maxlength="100">
+      <br><br>
+
+      <label>Descripción</label><br>
+      <input type="text" id="descripcion" name="descripcion" maxlength="200">
+      <br><br>
+
+      <label>Categoria</label><br>
+      <input type="text" id="categoria" name="categoria" required maxlength="100">
+      <br><br>
+
+      <label>Talla</label><br>
+      <input type="text" id="talla" name="talla" required maxlength="100">
+      <br><br>
+
+      <label>Color</label><br>
+      <input type="text" id="color" name="color" required maxlength="100">
+      <br><br>
+
+      <label>Precio</label><br>
+      <input type="number" id="precio" name="precio" required min="0">
+      <br><br>
+
+      <button class="btn-rosa" type="submit" name="nuevo_producto">Registrar Producto</button><br><br>
+      <button class="btn-rosa" type="button" onclick="window.location.href='../Interfaz/vistaAdministrador.php'">Regresar</button>
+
+    </div>
+  </form>
+
+</body>
+</html>

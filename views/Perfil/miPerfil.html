@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Mi Perfil</title>
+  <link rel="stylesheet" href="miPerfil.css">
+</head>
+<body>
+
+<section class="contenedor-perfil" id="MiPerfil">
+  <div class="encabezado-perfil">
+    <h2>Mi Perfil</h2>
+  </div>
+
+  <form action="" method="POST" class="formulario-perfil">
+
+    <div>
+      <label>Cedula</label>
+      <input type="number" name="cc" value="" readonly>
+    </div>
+
+    <div>
+      <label>Nombre Usuario</label>
+      <input type="text" name="nombre_usuario" value="" required minlength="3" maxlength="100">
+    </div>
+
+    <div>
+      <label>Contraseña</label>
+      <input type="password" name="contrasena" value="" required minlength="6" maxlength="255">
+    </div>
+
+    <div>
+      <label>Nombres</label>
+      <input type="text" name="nombres" value="" required maxlength="100">
+    </div>
+
+    <div>
+      <label>Apellidos</label>
+      <input type="text" name="apellidos" value="" required maxlength="100">
+    </div>
+
+    <div>
+      <label>Telefono</label>
+      <input type="number" name="telefono" value="" required>
+    </div>
+
+    <div>
+      <label>Correo</label>
+      <input type="email" name="correo" value="" required maxlength="100">
+    </div>
+
+    <div>
+      <label>Direccion</label>
+      <input type="text" name="direccion" value="" required maxlength="100">
+    </div>
+
+    <div>
+      <label>Genero</label>
+      <select name="genero" required>
+        <option value="Femenino" selected>Femenino</option>
+        <option value="Masculino">Masculino</option>
+      </select>
+    </div>
+
+    <div>
+      <label>Fecha Nacimiento</label>
+      <input type="date" id="fecha_nacimiento" name="fecha_nacimiento" value="" required>
+    </div>
+
+    <div>
+      <label>Cargo</label>
+      <input type="text" name="cargo" value="" readonly>
+    </div>
+
+    <div>
+      <label>Estado</label>
+      <input type="text" name="estado" value="" readonly>
+    </div>
+
+    <div class="grupo-botones">
+      <button type="submit" class="boton-principal">Actualizar perfil</button>
+      <button type="button" class="boton-secundario" onclick="window.location.href='../Interfaz/vistaAdministrador.php'">Regresar</button>
+    </div>
+
+  </form>
+</section>
+
+<script>
+  const hoy = new Date();
+  hoy.setMinutes(hoy.getMinutes() - hoy.getTimezoneOffset());
+  document.getElementById("fecha_nacimiento").max = hoy.toISOString().split("T")[0];
+</script>
+
+</body>
+</html>

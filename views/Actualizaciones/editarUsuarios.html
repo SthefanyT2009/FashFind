@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="../Registros/registroUsuarios.css">
+  <title>Editar Usuario</title>
+</head>
+<body>
+  <form action="" method="post">
+    <h1>Editar Usuario</h1>
+
+    <div class="div1">
+
+        <label>Cedula</label><br>
+        <input type="number" id="cc" name="cc" readonly>
+        <br><br>
+
+        <label>Nombre Usuario</label><br>
+        <input type="text" id="nombre_usuario" name="nombre_usuario" required minlength="3" maxlength="30">
+        <br><br>
+
+        <label>Contraseña</label><br>
+        <input type="password" id="contrasena" name="contrasena" required minlength="6" maxlength="30">
+        <br><br>
+
+        <label>Nombres</label><br>
+        <input type="text" id="nombres" name="nombres" required minlength="2" maxlength="50">
+        <br><br>
+
+        <label>Apellidos</label><br>
+        <input type="text" id="apellidos" name="apellidos" required minlength="2" maxlength="50">
+        <br><br>
+
+        <label>Telefono</label><br>
+        <input type="number" id="telefono" name="telefono" required min="1000000" max="9999999999">
+        <br><br>
+
+        <label>Correo</label><br>
+        <input type="email" id="correo" name="correo" required maxlength="50">
+        <br><br>
+
+        <label>Dirección</label><br>
+        <input type="text" id="direccion" name="direccion" required minlength="5" maxlength="35">
+        <br><br>
+
+        <label>Genero</label><br>
+        <select id="genero" name="genero" required>
+            <option value="Femenino">Femenino</option>
+            <option value="Masculino">Masculino</option>
+        </select>
+        <br><br>
+
+        <label>Fecha de Nacimiento</label><br>
+        <input type="date" id="fecha_nacimiento" name="fecha_nacimiento" required>
+        <br><br>
+
+        <label>Cargo</label><br>
+        <select id="cargo" name="cargo" required>
+            <option value="Admin">Administrador</option>
+            <option value="Vendedor">Vendedor</option>
+            <option value="Domiciliario">Domiciliario</option>
+        </select>
+        <br><br>
+
+        <button class="btn-rosa" type="submit" name="editar_usuario">Actualizar Usuario</button><br><br>
+        <button class="btn-rosa" type="button" onclick="window.location.href='../Interfaz/vistaAdministrador.php'">Regresar</button>
+
+    </div>
+  </form>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const hoyLocal = new Date();
+      hoyLocal.setMinutes(hoyLocal.getMinutes() - hoyLocal.getTimezoneOffset());
+      const hoy = hoyLocal.toISOString().split("T")[0];
+
+      const fNac = document.getElementById("fecha_nacimiento");
+      if (fNac) fNac.max = hoy;
+    });
+  </script>
+
+</body>
+</html>

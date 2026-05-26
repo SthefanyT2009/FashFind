@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Catálogo Niños — FashF</title>
+  <link rel="stylesheet" href="catalogoCompartido.css"/> <!-- Estilos compartidos del catálogo -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/> <!-- Iconos FontAwesome -->
+</head>
+<body>
+
+<!-- PANEL LATERAL DEL CARRITO (estructura deslizable) -->
+<div class="cart-panel-overlay" id="cartOverlay"></div> <!-- Fondo semitransparente al abrir carrito -->
+<aside class="cart-panel" id="cartPanel"> <!-- Contenedor del carrito que se desliza desde la derecha -->
+  <div class="cp-header">
+    <h3>Tu Carrito</h3>
+    <button class="cp-close" id="btnCloseCart"><i class="fa-solid fa-xmark"></i></button> <!-- Botón para cerrar el carrito -->
+  </div>
+  <div class="cp-items" id="cpItems"><div class="cp-empty"><i class="fa-solid fa-bag-shopping"></i><p>Tu carrito está vacío</p></div></div> <!-- Aquí se listan los productos agregados -->
+  <div class="cp-footer" id="cpFooter" style="display:none"> <!-- Pie del carrito con total y botón de compra -->
+    <div class="cp-total-row"><span>Total</span><span id="cpTotal">$0</span></div>
+    <a href="../Carrito/carrito.html" class="btn-go-cart">Ver carrito completo</a>
+  </div>
+</aside>
+
+<!-- TOAST (NOTIFICACIÓN EMERGENTE) -->
+<div class="toast" id="toast"><i class="fa-solid fa-circle-check"></i><span id="toastMsg"></span></div> <!-- Mensaje temporal que aparece al agregar productos -->
+
+<!-- HEADER PRINCIPAL DE LA PÁGINA -->
+<header class="main-header">
+  <a href="../../index.php" class="logo">Fash<span>F</span></a> <!-- Logo con enlace al inicio -->
+  
+  <!-- MENÚ DE NAVEGACIÓN CON MEGA MENÚS -->
+  <nav class="menu-nav">
+    <!-- Categoría DAMA -->
+    <div class="nav-item">
+      <a href="catalogoDama.html" class="nav-link">Dama</a>
+      <div class="mega-menu"> <!-- Mega menú que se despliega al hacer hover -->
+        <div class="mega-col">
+          <h4>Ropa</h4>
+          <a href="catalogoDama.html">Blusas</a><a href="catalogoDama.html">Faldas / Shorts</a>
+          <a href="catalogoDama.html">Pantalones</a><a href="catalogoDama.html">Chaquetas</a>
+          <a href="catalogoDama.html">Conjuntos</a><a href="catalogoDama.html">Pijamas</a>
+          <a href="catalogoDama.html">Ropa interior</a>
+        </div>
+        <div class="mega-col">
+          <h4>Accesorios</h4>
+          <a href="catalogoDama.html">Bolsos</a><a href="catalogoDama.html">Gorras</a>
+          <a href="catalogoDama.html">Medias</a><a href="catalogoDama.html">Chanclas</a>
+          <a href="catalogoDama.html">Guantes</a>
+        </div>
+      </div>
+    </div>
+    <!-- Categoría CABALLERO -->
+    <div class="nav-item">
+      <a href="catalogoCaballero.html" class="nav-link">Caballero</a>
+      <div class="mega-menu">
+        <div class="mega-col">
+          <h4>Ropa</h4>
+          <a href="catalogoCaballero.html">Camisas</a><a href="catalogoCaballero.html">Pantalones</a>
+          <a href="catalogoCaballero.html">Chaquetas</a><a href="catalogoCaballero.html">Conjuntos</a>
+          <a href="catalogoCaballero.html">Bermudas</a><a href="catalogoCaballero.html">Ropa interior</a>
+        </div>
+        <div class="mega-col">
+          <h4>Accesorios</h4>
+          <a href="catalogoCaballero.html">Gorras</a><a href="catalogoCaballero.html">Cinturones</a>
+          <a href="catalogoCaballero.html">Medias</a><a href="catalogoCaballero.html">Chanclas</a>
+        </div>
+      </div>
+    </div>
+    <!-- Categoría NIÑOS (activa actualmente) -->
+    <div class="nav-item">
+      <a href="catalogoNinos.html" class="nav-link">Niños</a>
+      <div class="mega-menu">
+        <div class="mega-col">
+          <h4>Niñas</h4>
+          <a href="catalogoNinos.html">Blusas</a><a href="catalogoNinos.html">Pantalones</a>
+          <a href="catalogoNinos.html">Shorts</a><a href="catalogoNinos.html">Conjuntos</a><a href="catalogoNinos.html">Pijamas</a>
+        </div>
+        <div class="mega-col">
+          <h4>Niños</h4>
+          <a href="catalogoNinos.html">Camisas</a><a href="catalogoNinos.html">Pantalones</a>
+          <a href="catalogoNinos.html">Bermudas</a><a href="catalogoNinos.html">Conjuntos</a><a href="catalogoNinos.html">Pijamas</a>
+        </div>
+        <div class="mega-col">
+          <h4>Accesorios</h4>
+          <a href="catalogoNinos.html">Medias</a><a href="catalogoNinos.html">Chanclas</a><a href="catalogoNinos.html">Guantes</a>
+        </div>
+      </div>
+    </div>
+  </nav>
+  
+  <!-- ICONOS DE ACCIÓN DEL HEADER -->
+  <div class="header-icons">
+    <div class="search-wrap">
+      <input type="text" id="searchInput" class="search-input" placeholder="Buscar..."/> <!-- Campo de búsqueda expandible -->
+      <button class="icon-btn" id="btnSearch"><i class="fa-solid fa-magnifying-glass"></i></button> <!-- Botón que activa la búsqueda -->
+    </div>
+    <a href="../Login/login.php" class="icon-btn"><i class="fa-regular fa-user"></i></a> <!-- Enlace a perfil de usuario -->
+    <button class="icon-btn cart-btn" id="btnOpenCart"> <!-- Botón que abre el panel del carrito -->
+      <i class="fa-solid fa-bag-shopping"></i>
+      <span class="cart-count" id="cartCount">0</span> <!-- Contador de productos en el carrito -->
+    </button>
+  </div>
+</header>
+
+<!-- HERO (BANNER PRINCIPAL) DE LA CATEGORÍA NIÑOS -->
+<div class="hero-catalogo" style="background:linear-gradient(135deg,#f9a825,#e64a19);"> <!-- Gradiente naranja/ámbar característico de niños -->
+  <h1>Colección Niños</h1>
+  <p>Ropa cómoda, colorida y divertida para los más pequeños</p>
+</div>
+
+<!-- MIGAS DE PAN (breadcrumb) para navegación -->
+<div class="migas-de-pan">
+  <a href="../../index.php">Inicio</a><span>›</span><strong>Niños</strong> <!-- Indica ubicación actual -->
+</div>
+
+<!-- CONTENEDOR PRINCIPAL DEL CATÁLOGO -->
+<div class="fondo-catalogo">
+  <div class="fila-catalogo">
+
+    <!-- PANEL DE FILTROS LATERAL -->
+    <aside class="panel-filtros">
+      <div class="caja-filtro">
+        <h4>Género</h4> <!-- Filtro por género -->
+        <label><input type="checkbox" checked> Niñas</label>
+        <label><input type="checkbox" checked> Niños</label>
+        <label><input type="checkbox" checked> Unisex</label>
+      </div>
+      <div class="caja-filtro">
+        <h4>Categoría</h4> <!-- Filtro por tipo de prenda -->
+        <label><input type="checkbox" checked> Camisas / Blusas</label>
+        <label><input type="checkbox" checked> Pantalones</label>
+        <label><input type="checkbox" checked> Bermudas / Shorts</label>
+        <label><input type="checkbox" checked> Conjuntos</label>
+        <label><input type="checkbox" checked> Pijamas</label>
+        <label><input type="checkbox"> Ropa interior</label>
+      </div>
+      <div class="caja-filtro">
+        <h4>Talla (años)</h4> <!-- Filtro por rango de edad -->
+        <label><input type="checkbox" checked> 2 – 3 años</label>
+        <label><input type="checkbox" checked> 4 – 5 años</label>
+        <label><input type="checkbox" checked> 6 – 7 años</label>
+        <label><input type="checkbox" checked> 8 – 10 años</label>
+        <label><input type="checkbox"> 12 – 14 años</label>
+      </div>
+      <div class="caja-filtro">
+        <h4>Precio</h4> <!-- Filtro por rango de precios -->
+        <label><input type="checkbox"> Hasta $40.000</label>
+        <label><input type="checkbox"> $40.000 – $80.000</label>
+        <label><input type="checkbox"> $80.000 – $120.000</label>
+        <label><input type="checkbox"> Más de $120.000</label>
+      </div>
+    </aside>
+
+    <!-- SECCIÓN DE PRODUCTOS -->
+    <section class="seccion-productos">
+      <!-- Barra de herramientas con contador y ordenamiento -->
+      <div class="barra-herramientas">
+        <p>Mostrando <strong id="totalCount">16 productos</strong></p>
+        <select> <!-- Selector para ordenar productos -->
+          <option>Más vendidos</option>
+          <option>Precio: menor a mayor</option>
+          <option>Precio: mayor a menor</option>
+          <option>Nuevos primero</option>
+        </select>
+      </div>
+
+      <!-- PESTAÑA: TODOS LOS PRODUCTOS -->
+      <div class="contenido-pestana activa" id="tab-todos">
+        <div class="cuadricula-productos">
+
+          <!-- PRODUCTO 1: Conjunto Niña Floral (con imagen externa) -->
+          <div class="tarjeta-producto">
+            <div class="imagen-producto" style="background:url('https://images.unsplash.com/photo-1519238263530-99bdd11df2ea?w=400&q=80') center/cover">
+              <span class="etiqueta etiqueta-nuevo">Nuevo</span> <!-- Etiqueta destacada -->
+            </div>
+            <div class="info-producto">
+              <h3>Conjunto Niña Floral</h3>
+              <p>Blusa y pantalón estampado. Tallas 2–12 años.</p>
+              <div class="estrellas">★★★★★</div> <!-- Calificación con estrellas -->
+              <span class="precio-producto">$69.900</span>
+              <button class="boton-agregar" data-name="Conjunto Niña Floral" data-price="69900" data-color="fondo-rosa">Agregar al Carrito</button> <!-- Botón con datos para JS -->
+            </div>
+          </div>
+
+          <!-- PRODUCTO 2: Conjunto Niño Deportivo (con icono) -->
+          <div class="tarjeta-producto">
+            <div class="imagen-producto fondo-azul"><i class="fa-solid fa-child icono-producto"></i><span class="etiqueta etiqueta-hot">Popular</span></div>
+            <div class="info-producto">
+              <h3>Conjunto Niño Deportivo</h3>
+              <p>Camiseta y pantaloneta transpirable. Tallas 4–14 años.</p>
+              <div class="estrellas">★★★★☆</div>
+              <span class="precio-producto">$59.900</span>
+              <button class="boton-agregar" data-name="Conjunto Niño Deportivo" data-price="59900" data-color="fondo-azul">Agregar al Carrito</button>
+            </div>
+          </div>
+
+          <!-- PRODUCTO 3: Pijama Niña Unicornios -->
+          <div class="tarjeta-producto">
+            <div class="imagen-producto fondo-amarillo"><i class="fa-solid fa-moon icono-producto"></i><span class="etiqueta">Clásico</span></div>
+            <div class="info-producto">
+              <h3>Pijama Niña Unicornios</h3>
+              <p>Set dos piezas estampado unicornios. Tallas 2–12 años.</p>
+              <div class="estrellas">★★★★★</div>
+              <span class="precio-producto">$52.900</span>
+              <button class="boton-agregar" data-name="Pijama Niña Unicornios" data-price="52900" data-color="fondo-amarillo">Agregar al Carrito</button>
+            </div>
+          </div>
+
+          <!-- PRODUCTO 4: Jean Niño Slim -->
+          <div class="tarjeta-producto">
+            <div class="imagen-producto fondo-naranja"><i class="fa-solid fa-child icono-producto"></i><span class="etiqueta etiqueta-nuevo">Nuevo</span></div>
+            <div class="info-producto">
+              <h3>Jean Niño Slim</h3>
+              <p>Denim flexible, cómodo para el movimiento. 6–14 años.</p>
+              <div class="estrellas">★★★★★</div>
+              <span class="precio-producto">$69.900</span>
+              <button class="boton-agregar" data-name="Jean Niño Slim" data-price="69900" data-color="fondo-naranja">Agregar al Carrito</button>
+            </div>
+          </div>
+
+          <!-- PRODUCTO 5: Vestido Niña Verano -->
+          <div class="tarjeta-producto">
+            <div class="imagen-producto fondo-rosa"><i class="fa-solid fa-child-dress icono-producto"></i><span class="etiqueta etiqueta-hot">Tendencia</span></div>
+            <div class="info-producto">
+              <h3>Vestido Niña Verano</h3>
+              <p>Tela fresca con estampados alegres. Tallas 2–10 años.</p>
+              <div class="estrellas">★★★★★</div>
+              <span class="precio-producto">$44.900</span>
+              <button class="boton-agregar" data-name="Vestido Niña Verano" data-price="44900" data-color="fondo-rosa">Agregar al Carrito</button>
+            </div>
+          </div>
+
+          <!-- PRODUCTO 6: Camiseta Pack x3 Niño -->
+          <div class="tarjeta-producto">
+            <div class="imagen-producto fondo-teal"><i class="fa-solid fa-shirt icono-producto"></i><span class="etiqueta etiqueta-oferta">Oferta</span></div>
+            <div class="info-producto">
+              <h3>Camiseta Pack x3 Niño</h3>
+              <p>3 camisetas de algodón en colores vibrantes.</p>
+              <div class="estrellas">★★★★★</div>
+              <span class="precio-producto">$49.900</span>
+              <button class="boton-agregar" data-name="Camiseta Pack x3 Niño" data-price="49900" data-color="fondo-teal">Agregar al Carrito</button>
+            </div>
+          </div>
+
+          <!-- PRODUCTO 7: Blusa Niña Bordada -->
+          <div class="tarjeta-producto">
+            <div class="imagen-producto fondo-verde"><i class="fa-solid fa-shirt icono-producto"></i><span class="etiqueta etiqueta-oferta">Oferta</span></div>
+            <div class="info-producto">
+              <h3>Blusa Niña Bordada</h3>
+              <p>Bordados coloridos. Tallas 4–12 años.</p>
+              <div class="estrellas">★★★★☆</div>
+              <span class="precio-producto">$34.900</span>
+              <button class="boton-agregar" data-name="Blusa Niña Bordada" data-price="34900" data-color="fondo-verde">Agregar al Carrito</button>
+            </div>
+          </div>
+
+          <!-- PRODUCTO 8: Falda Plisada Niña -->
+          <div class="tarjeta-producto">
+            <div class="imagen-producto fondo-azul"><i class="fa-solid fa-child-dress icono-producto"></i><span class="etiqueta">Clásico</span></div>
+            <div class="info-producto">
+              <h3>Falda Plisada Niña</h3>
+              <p>Varios colores pastel. Tallas 4–12 años.</p>
+              <div class="estrellas">★★★★★</div>
+              <span class="precio-producto">$42.900</span>
+              <button class="boton-agregar" data-name="Falda Plisada Niña" data-price="42900" data-color="fondo-azul">Agregar al Carrito</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- PESTAÑA: SOLO NIÑAS -->
+      <div class="contenido-pestana" id="tab-ninas">
+        <div class="cuadricula-productos">
+
+          <div class="tarjeta-producto">
+            <div class="imagen-producto" style="background:url('https://images.unsplash.com/photo-1519238263530-99bdd11df2ea?w=400&q=80') center/cover">
+              <span class="etiqueta etiqueta-nuevo">Nuevo</span>
+            </div>
+            <div class="info-producto">
+              <h3>Conjunto Niña Floral</h3>
+              <p>Blusa y pantalón estampado. Tallas 2–12 años.</p>
+              <div class="estrellas">★★★★★</div>
+              <span class="precio-producto">$69.900</span>
+              <button class="boton-agregar" data-name="Conjunto Niña Floral" data-price="69900" data-color="fondo-rosa">Agregar al Carrito</button>
+            </div>
+          </div>
+
+          <div class="tarjeta-producto">
+            <div class="imagen-producto fondo-amarillo"><i class="fa-solid fa-moon icono-producto"></i><span class="etiqueta">Clásico</span></div>
+            <div class="info-producto">
+              <h3>Pijama Niña Unicornios</h3>
+              <p>Set dos piezas estampado unicornios. Tallas 2–12 años.</p>
+              <div class="estrellas">★★★★★</div>
+              <span class="precio-producto">$52.900</span>
+              <button class="boton-agregar" data-name="Pijama Niña Unicornios" data-price="52900" data-color="fondo-amarillo">Agregar al Carrito</button>
+            </div>
+          </div>
+
+          <div class="tarjeta-producto">
+            <div class="imagen-producto fondo-rosa"><i class="fa-solid fa-child-dress icono-producto"></i><span class="etiqueta etiqueta-hot">Tendencia</span></div>
+            <div class="info-producto">
+              <h3>Vestido Niña Verano</h3>
+              <p>Tela fresca con estampados alegres. Tallas 2–10 años.</p>
+              <div class="estrellas">★★★★★</div>
+              <span class="precio-producto">$44.900</span>
+              <button class="boton-agregar" data-name="Vestido Niña Verano" data-price="44900" data-color="fondo-rosa">Agregar al Carrito</button>
+            </div>
+          </div>
+
+          <div class="tarjeta-producto">
+            <div class="imagen-producto fondo-verde"><i class="fa-solid fa-shirt icono-producto"></i><span class="etiqueta etiqueta-oferta">Oferta</span></div>
+            <div class="info-producto">
+              <h3>Blusa Niña Bordada</h3>
+              <p>Bordados coloridos. Tallas 4–12 años.</p>
+              <div class="estrellas">★★★★☆</div>
+              <span class="precio-producto">$34.900</span>
+              <button class="boton-agregar" data-name="Blusa Niña Bordada" data-price="34900" data-color="fondo-verde">Agregar al Carrito</button>
+            </div>
+          </div>
+
+          <div class="tarjeta-producto">
+            <div class="imagen-producto fondo-azul"><i class="fa-solid fa-child-dress icono-producto"></i><span class="etiqueta">Clásico</span></div>
+            <div class="info-producto">
+              <h3>Falda Plisada Niña</h3>
+              <p>Varios colores pastel. Tallas 4–12 años.</p>
+              <div class="estrellas">★★★★★</div>
+              <span class="precio-producto">$42.900</span>
+              <button class="boton-agregar" data-name="Falda Plisada Niña" data-price="42900" data-color="fondo-azul">Agregar al Carrito</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- PESTAÑA: SOLO NIÑOS -->
+      <div class="contenido-pestana" id="tab-ninos">
+        <div class="cuadricula-productos">
+
+          <div class="tarjeta-producto">
+            <div class="imagen-producto fondo-naranja"><i class="fa-solid fa-child icono-producto"></i><span class="etiqueta etiqueta-hot">Popular</span></div>
+            <div class="info-producto">
+              <h3>Conjunto Niño Deportivo</h3>
+              <p>Camiseta y pantaloneta transpirable. Tallas 4–14 años.</p>
+              <div class="estrellas">★★★★☆</div>
+              <span class="precio-producto">$59.900</span>
+              <button class="boton-agregar" data-name="Conjunto Niño Deportivo" data-price="59900" data-color="fondo-naranja">Agregar al Carrito</button>
+            </div>
+          </div>
+
+          <div class="tarjeta-producto">
+            <div class="imagen-producto fondo-azul"><i class="fa-solid fa-shirt icono-producto"></i><span class="etiqueta etiqueta-oferta">Oferta</span></div>
+            <div class="info-producto">
+              <h3>Camisa Niño Cuadros</h3>
+              <p>Manga larga estampado cuadros. Tallas 2–12 años.</p>
+              <div class="estrellas">★★★★☆</div>
+              <span class="precio-producto">$44.900</span>
+              <button class="boton-agregar" data-name="Camisa Niño Cuadros" data-price="44900" data-color="fondo-azul">Agregar al Carrito</button>
+            </div>
+          </div>
+
+          <div class="tarjeta-producto">
+            <div class="imagen-producto fondo-verde"><i class="fa-solid fa-child icono-producto"></i><span class="etiqueta">Trending</span></div>
+            <div class="info-producto">
+              <h3>Jean Niño Slim</h3>
+              <p>Denim flexible, cómodo para el movimiento. 6–14 años.</p>
+              <div class="estrellas">★★★★★</div>
+              <span class="precio-producto">$69.900</span>
+              <button class="boton-agregar" data-name="Jean Niño Slim" data-price="69900" data-color="fondo-verde">Agregar al Carrito</button>
+            </div>
+          </div>
+
+          <div class="tarjeta-producto">
+            <div class="imagen-producto fondo-teal"><i class="fa-solid fa-moon icono-producto"></i><span class="etiqueta">Clásico</span></div>
+            <div class="info-producto">
+              <h3>Pijama Niño Dinosaurios</h3>
+              <p>Set dos piezas estampado dinos. Tallas 2–10 años.</p>
+              <div class="estrellas">★★★★☆</div>
+              <span class="precio-producto">$54.900</span>
+              <button class="boton-agregar" data-name="Pijama Niño Dinosaurios" data-price="54900" data-color="fondo-teal">Agregar al Carrito</button>
+            </div>
+          </div>
+
+          <div class="tarjeta-producto">
+            <div class="imagen-producto fondo-cafe"><i class="fa-solid fa-shirt icono-producto"></i><span class="etiqueta etiqueta-nuevo">Nuevo</span></div>
+            <div class="info-producto">
+              <h3>Camiseta Pack x3 Niño</h3>
+              <p>3 camisetas de algodón en colores vibrantes.</p>
+              <div class="estrellas">★★★★★</div>
+              <span class="precio-producto">$49.900</span>
+              <button class="boton-agregar" data-name="Camiseta Pack x3 Niño" data-price="49900" data-color="fondo-cafe">Agregar al Carrito</button>
+            </div>
+          </div>
+
+          <div class="tarjeta-producto">
+            <div class="imagen-producto fondo-naranja"><i class="fa-solid fa-child icono-producto"></i><span class="etiqueta etiqueta-hot">Tendencia</span></div>
+            <div class="info-producto">
+              <h3>Bermuda Cargo Niño</h3>
+              <p>Múltiples bolsillos. Tallas 6–14 años.</p>
+              <div class="estrellas">★★★★☆</div>
+              <span class="precio-producto">$47.900</span>
+              <button class="boton-agregar" data-name="Bermuda Cargo Niño" data-price="47900" data-color="fondo-naranja">Agregar al Carrito</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- PESTAÑA: ACCESORIOS -->
+      <div class="contenido-pestana" id="tab-accesorios">
+        <div class="cuadricula-productos">
+
+          <div class="tarjeta-producto">
+            <div class="imagen-producto fondo-naranja"><i class="fa-solid fa-hat-cowboy icono-producto"></i><span class="etiqueta">Popular</span></div>
+            <div class="info-producto">
+              <h3>Gorra Niños Ajustable</h3>
+              <p>Talla única ajustable. Varios colores.</p>
+              <div class="estrellas">★★★★☆</div>
+              <span class="precio-producto">$24.900</span>
+              <button class="boton-agregar" data-name="Gorra Niños Ajustable" data-price="24900" data-color="fondo-naranja">Agregar al Carrito</button>
+            </div>
+          </div>
+
+          <div class="tarjeta-producto">
+            <div class="imagen-producto fondo-rosa"><i class="fa-solid fa-socks icono-producto"></i><span class="etiqueta etiqueta-oferta">Pack x5</span></div>
+            <div class="info-producto">
+              <h3>Medias Niños Pack x5</h3>
+              <p>5 pares con diseños divertidos. Tallas 2–12 años.</p>
+              <div class="estrellas">★★★★★</div>
+              <span class="precio-producto">$29.900</span>
+              <button class="boton-agregar" data-name="Medias Niños Pack x5" data-price="29900" data-color="fondo-rosa">Agregar al Carrito</button>
+            </div>
+          </div>
+
+          <div class="tarjeta-producto">
+            <div class="imagen-producto fondo-verde"><i class="fa-solid fa-hands icono-producto"></i><span class="etiqueta etiqueta-nuevo">Nuevo</span></div>
+            <div class="info-producto">
+              <h3>Guantes Niños Térmicos</h3>
+              <p>Polar suave. Tallas 2–12 años.</p>
+              <div class="estrellas">★★★★★</div>
+              <span class="precio-producto">$19.900</span>
+              <button class="boton-agregar" data-name="Guantes Niños Térmicos" data-price="19900" data-color="fondo-verde">Agregar al Carrito</button>
+            </div>
+          </div>
+
+          <div class="tarjeta-producto">
+            <div class="imagen-producto fondo-morado"><i class="fa-solid fa-shoe-prints icono-producto"></i><span class="etiqueta">Clásico</span></div>
+            <div class="info-producto">
+              <h3>Chanclas Playa Niños</h3>
+              <p>Antideslizantes con estampados divertidos.</p>
+              <div class="estrellas">★★★★☆</div>
+              <span class="precio-producto">$22.900</span>
+              <button class="boton-agregar" data-name="Chanclas Playa Niños" data-price="22900" data-color="fondo-morado">Agregar al Carrito</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </section>
+  </div>
+</div>
+
+<!-- FOOTER DE LA PÁGINA -->
+<footer><p>&copy; 2025 <strong>FashF</strong>. Todos los derechos reservados.</p></footer>
+
+<!-- SCRIPTS -->
+<script src="../Carrito/carrito.js"></script> <!-- Archivo JS con la lógica del carrito (agregar, eliminar, total, persistencia) -->
+<script>
+  /* ── SISTEMA DE PESTAÑAS PARA FILTRAR POR GÉNERO/CATEGORÍA ── */
+  var conteos = { todos: 8, ninas: 5, ninos: 6, accesorios: 4 }; // Objeto con la cantidad de productos por cada pestaña
+
+  document.querySelectorAll('.boton-pestana').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var tab = this.dataset.tab; // Obtiene el identificador de la pestaña (todos, ninas, ninos, accesorios)
+      document.querySelectorAll('.boton-pestana').forEach(function (b) { b.classList.remove('activa'); }); // Remueve clase activa de todos los botones
+      document.querySelectorAll('.contenido-pestana').forEach(function (p) { p.classList.remove('activa'); }); // Oculta todos los contenidos
+      this.classList.add('activa'); // Marca el botón actual como activo
+      document.getElementById('tab-' + tab).classList.add('activa'); // Muestra el contenido correspondiente
+      document.getElementById('totalCount').textContent = conteos[tab] + ' productos'; // Actualiza el contador de productos mostrados
+    });
+  });
+</script>
+</body>
+</html>

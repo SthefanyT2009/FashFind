@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="registroVentas.css">
+  <title>Registro de Pedidos</title>
+</head>
+<body>
+  <form action="" method="post">
+    <h1>Nuevo Pedido</h1>
+
+    <div class="div1">
+
+      <label>Fecha Pedido</label><br>
+      <input type="date" id="fecha_pedido" name="fecha_pedido" readonly required>
+      <br><br>
+
+      <label>Hora Pedido</label><br>
+      <input type="time" id="hora_pedido" name="hora_pedido" readonly required>
+      <br><br>
+
+      <label>Metodo de Pago</label><br>
+      <select id="metodo_pago" name="metodo_pago" required>
+        <option value="Nequi">Nequi</option>
+        <option value="Daviplata">Daviplata</option>
+        <option value="Transferencia">Transferencia</option>
+        <option value="Tarjeta">Tarjeta</option>
+      </select>
+      <br><br>
+
+      <label>Tipo de Entrega</label><br>
+      <input type="text" id="tipo_entrega" name="tipo_entrega" required maxlength="100">
+      <br><br>
+
+      <label>Dirección Entrega</label><br>
+      <input type="text" id="direccion_entrega" name="direccion_entrega" required maxlength="100">
+      <br><br>
+
+      <label>Ciudad Entrega</label><br>
+      <input type="text" id="ciudad_entrega" name="ciudad_entrega" required maxlength="50">
+      <br><br>
+
+      <label>Telefono Contacto</label><br>
+      <input type="number" id="telefono_contacto" name="telefono_contacto" required min="1000000" max="9999999999">
+      <br><br>
+
+      <label>Fecha Entrega</label><br>
+      <input type="date" id="fecha_entrega" name="fecha_entrega" required>
+      <br><br>
+
+      <label>Costo Envio</label><br>
+      <input type="number" id="costo_envio" name="costo_envio" required min="0">
+      <br><br>
+
+      <label>Id Domiciliario</label><br>
+      <input type="number" id="id_domiciliario_entrega" name="id_domiciliario_entrega" readonly required>
+      <br><br>
+
+      <label>Id Cliente</label><br>
+      <input type="number" id="id_cliente" name="id_cliente" required min="1">
+      <br><br>
+
+      <h2>Productos</h2>
+
+      <table id="detalle_productos">
+        <thead>
+          <tr>
+            <th>Id Producto</th>
+            <th>Cantidad</th>
+            <th>Precio Unitario</th>
+            <th>Subtotal</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="cuerpo-tabla">
+        </tbody>
+      </table>
+      <br>
+
+      <button class="btn-rosa" type="button" onclick="agregarFila()">Agregar producto</button>
+      <br><br>
+
+      <label>Total Pedido</label><br>
+      <input type="number" id="total_pedido" name="total_pedido" readonly required min="0">
+      <br><br>
+
+      <label>Estado</label><br>
+      <select id="estado" name="estado" required>
+        <option value="Por entregar" selected>Por entregar</option>
+        <option value="Entregado">Entregado</option>
+      </select>
+      <br><br>
+
+      <button class="btn-rosa" type="submit" name="nuevo_pedido">Registrar Pedido</button><br><br>
+      <button class="btn-rosa" type="button" onclick="window.location.href='../Interfaz/vistaAdministrador.php'">Regresar</button>
+
+    </div>
+  </form>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+
+      const hoyLocal = new Date();
+      hoyLocal.setMinutes(hoyLocal.getMinutes() - hoyLocal.getTimezoneOffset());
+      const hoy = hoyLocal.toISOString().split("T")[0];
+
+      document.getElementById("fecha_pedido").value = hoy;
+      document.getElementById("fecha_pedido").max   = hoy;
+
+      const ahora = new Date();
+      const hh = String(ahora.getHours()).padStart(2, "0");
+      const mm = String(ahora.getMinutes()).padStart(2, "0");
+      document.getElementById("hora_pedido").value = `${hh}:${mm}`;
+
+      // Fecha entrega mínima: mañana
+      const manana = new Date();
+      manana.setDate(manana.getDate() + 1);
+      manana.setMinutes(manana.getMinutes() - manana.getTimezoneOffset());
+      document.getElementById("fecha_entrega").min = manana.toISOString().split("T")[0];
+
+      // Recalcular total cuando cambie el costo de envío
+      document.getElementById("costo_envio").addEventListener("input", actualizarTotal);
+    });
+
+    function agregarFila() {
+      const tbody = document.getElementById("cuerpo-tabla");
+      const fila  = document.createElement("tr");
+
+      fila.innerHTML = `
+        <td><input type="number" name="id_producto[]" min="1" required></td>
+        <td><input type="number" name="cantidad[]"    min="1" required oninput="actualizarSubtotal(this)"></td>
+        <td><input type="number" name="precio[]"      min="0" required oninput="actualizarSubtotal(this)"></td>
+        <td><input type="number" name="sub_total[]"   readonly ></td>
+        <td><button class="btn-rosa" type="button" onclick="eliminarFila(this)">✕</button></td>
+      `;
+
+      tbody.appendChild(fila);
+    }
+
+    function actualizarSubtotal(input) {
+      const fila     = input.closest("tr");
+      const cantidad = parseFloat(fila.querySelector('[name="cantidad[]"]').value) || 0;
+      const precio   = parseFloat(fila.querySelector('[name="precio[]"]').value)   || 0;
+
+      fila.querySelector('[name="sub_total[]"]').value = cantidad * precio;
+      actualizarTotal();
+    }
+
+    function actualizarTotal() {
+      let subtotales = 0;
+      document.querySelectorAll('[name="sub_total[]"]').forEach(s => {
+        subtotales += parseFloat(s.value) || 0;
+      });
+      const envio = parseFloat(document.getElementById("costo_envio").value) || 0;
+      document.getElementById("total_pedido").value = subtotales + envio;
+    }
+
+    function eliminarFila(btn) {
+      btn.closest("tr").remove();
+      actualizarTotal();
+    }
+  </script>
+
+</body>
+</html>

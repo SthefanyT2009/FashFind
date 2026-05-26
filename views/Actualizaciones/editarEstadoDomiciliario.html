@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="../Registros/registroInventario.css">
+  <title>Actualizar Estado Pedido</title>
+</head>
+<body>
+  <form action="" method="post">
+    <h1>Actualizar Estado Pedido</h1>
+
+    <div class="div1">
+
+      <input type="hidden" id="id_pedido" name="id_pedido">
+
+      <label>Estado</label><br>
+      <br>
+      <select id="estado" name="estado" required>
+        <option value="Por entregar">Por entregar</option>
+        <option value="Entregado">Entregado</option>
+      </select>
+      <br><br>
+
+      <button class="btn-rosa" type="submit" name="actualizar_estado">Actualizar Estado</button><br><br>
+      <button class="btn-rosa" type="button" onclick="window.location.href='../Interfaz/vistaDomiciliario.php'">Regresar</button>
+
+    </div>
+  </form>
+
+</body>
+</html>

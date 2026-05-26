@@ -1,0 +1,264 @@
+<!DOCTYPE html> <!-- Define que el documento es HTML5 -->
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/> <!-- Permite usar tildes, ñ y caracteres especiales -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/> <!-- Hace la página responsiva en móviles -->
+  <title>Catálogo Caballero — FashF</title>
+  <link rel="stylesheet" href="catalogoCompartido.css"/> <!-- Hoja de estilos compartida entre todos los catálogos -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/> <!-- Librería de íconos Font Awesome -->
+</head>
+<body>
+
+<!-- Overlay oscuro que aparece detrás del panel del carrito cuando está abierto -->
+<div class="cart-panel-overlay" id="cartOverlay"></div>
+
+<aside class="cart-panel" id="cartPanel"> <!-- Panel lateral deslizante del carrito; JS lo muestra/oculta -->
+  <div class="cp-header">
+    <h3>Tu Carrito</h3>
+    <button class="cp-close" id="btnCloseCart"><i class="fa-solid fa-xmark"></i></button> <!-- Botón para cerrar el panel del carrito -->
+  </div>
+  <div class="cp-items" id="cpItems"> <!-- Contenedor donde JS inyecta dinámicamente los productos agregados -->
+    <div class="cp-empty"><i class="fa-solid fa-bag-shopping"></i><p>Tu carrito está vacío</p></div>
+  </div>
+  <div class="cp-footer" id="cpFooter" style="display:none"> <!-- Pie del carrito con total; JS lo muestra cuando hay productos -->
+    <div class="cp-total-row"><span>Total</span><span id="cpTotal">$0</span></div> <!-- JS actualiza el total dinámicamente -->
+    <a href="../Carrito/carrito.html" class="btn-go-cart">Ver carrito completo</a>
+  </div>
+</aside>
+
+<div class="toast" id="toast"><i class="fa-solid fa-circle-check"></i><span id="toastMsg"></span></div> <!-- Notificación flotante que JS muestra brevemente al agregar un producto al carrito -->
+
+<header class="main-header">
+  <a href="../../index.php" class="logo">Fash<span>F</span></a> <!-- Logo que lleva a la página principal -->
+  <nav class="menu-nav">
+    <div class="nav-item"> <!-- Cada nav-item contiene un enlace principal y su mega-menú desplegable -->
+      <a href="catalogoDama.html" class="nav-link">Dama</a>
+      <div class="mega-menu"> <!-- Menú desplegable con subcategorías de Dama -->
+        <div class="mega-col">
+          <h4>Ropa</h4>
+          <a href="catalogoDama.html">Blusas</a><a href="catalogoDama.html">Faldas / Shorts</a>
+          <a href="catalogoDama.html">Pantalones</a><a href="catalogoDama.html">Chaquetas</a>
+          <a href="catalogoDama.html">Conjuntos</a><a href="catalogoDama.html">Pijamas</a>
+          <a href="catalogoDama.html">Ropa interior</a>
+        </div>
+        <div class="mega-col">
+          <h4>Accesorios</h4>
+          <a href="catalogoDama.html">Bolsos</a><a href="catalogoDama.html">Gorras</a>
+          <a href="catalogoDama.html">Medias</a><a href="catalogoDama.html">Chanclas</a>
+          <a href="catalogoDama.html">Guantes</a>
+        </div>
+      </div>
+    </div>
+    <div class="nav-item">
+      <a href="catalogoCaballero.html" class="nav-link">Caballero</a>
+      <div class="mega-menu"> <!-- Menú desplegable con subcategorías de Caballero -->
+        <div class="mega-col">  Coleccion
+          <h4>Ropa</h4>
+          <a href="catalogoCaballero.html">Camisas</a><a href="catalogoCaballero.html">Pantalones</a>
+          <a href="catalogoCaballero.html">Chaquetas</a><a href="catalogoCaballero.html">Conjuntos</a>
+          <a href="catalogoCaballero.html">Bermudas</a><a href="catalogoCaballero.html">Ropa interior</a>
+        </div>
+        <div class="mega-col">
+          <h4>Accesorios</h4>
+          <a href="catalogoCaballero.html">Gorras</a><a href="catalogoCaballero.html">Cinturones</a>
+          <a href="catalogoCaballero.html">Medias</a><a href="catalogoCaballero.html">Chanclas</a>
+        </div>
+      </div>
+    </div>
+    <div class="nav-item">
+      <a href="catalogoNinos.html" class="nav-link">Niños</a>
+      <div class="mega-menu"> <!-- Menú desplegable con subcategorías de Niños -->
+        <div class="mega-col">
+          <h4>Niñas</h4>
+          <a href="catalogoNinos.html">Blusas</a><a href="catalogoNinos.html">Pantalones</a>
+          <a href="catalogoNinos.html">Shorts</a><a href="catalogoNinos.html">Conjuntos</a><a href="catalogoNinos.html">Pijamas</a>
+        </div>
+        <div class="mega-col">
+          <h4>Niños</h4>
+          <a href="catalogoNinos.html">Camisas</a><a href="catalogoNinos.html">Pantalones</a>
+          <a href="catalogoNinos.html">Bermudas</a><a href="catalogoNinos.html">Conjuntos</a><a href="catalogoNinos.html">Pijamas</a>
+        </div>
+        <div class="mega-col">
+          <h4>Accesorios</h4>
+          <a href="catalogoNinos.html">Medias</a><a href="catalogoNinos.html">Chanclas</a><a href="catalogoNinos.html">Guantes</a>
+        </div>
+      </div>
+    </div>
+  </nav>
+  <div class="header-icons">
+    <div class="search-wrap">
+      <input type="text" id="searchInput" class="search-input" placeholder="Buscar..."/> <!-- Campo de búsqueda; JS puede usarlo para filtrar productos -->
+      <button class="icon-btn" id="btnSearch"><i class="fa-solid fa-magnifying-glass"></i></button>
+    </div>
+    <a href="../Login/login.php" class="icon-btn"><i class="fa-regular fa-user"></i></a> <!-- Ícono de usuario que lleva a la página de login -->
+    <button class="icon-btn cart-btn" id="btnOpenCart"> <!-- Botón para abrir el panel lateral del carrito -->
+      <i class="fa-solid fa-bag-shopping"></i>
+      <span class="cart-count" id="cartCount">0</span> <!-- JS actualiza este número con la cantidad de productos en el carrito -->
+    </button>
+  </div>
+</header>
+
+<!-- Hero: banner visual de bienvenida a la sección, con degradado definido en el atributo style -->
+<div class="hero-catalogo" style="background:linear-gradient(135deg,#1a1a2e,#0f3460);">
+  <h1>Colección Caballero</h1>
+  <p>Estilo, confort y elegancia para el hombre moderno</p>
+</div>
+
+<!-- Migas de pan: navegación de ruta para que el usuario sepa dónde está -->
+<div class="migas-de-pan">
+  <a href="../../index.php">Inicio</a><span>›</span><strong>Caballero</strong>
+</div>
+
+<div class="fondo-catalogo">
+  <div class="fila-catalogo"> <!-- Contenedor flex que pone los filtros y productos lado a lado -->
+
+    <!-- Filtros laterales: checkboxes decorativos (sin lógica JS activa en este archivo) -->
+    <aside class="panel-filtros">
+      <div class="caja-filtro">
+        <h4>Categoría</h4>
+        <label><input type="checkbox" checked> Camisas</label>
+        <label><input type="checkbox" checked> Pantalones</label>
+        <label><input type="checkbox" checked> Chaquetas</label>
+        <label><input type="checkbox" checked> Bermudas</label>
+        <label><input type="checkbox" checked> Conjuntos</label>
+        <label><input type="checkbox"> Pantalonetas</label>
+        <label><input type="checkbox"> Ropa interior</label>
+      </div>
+      <div class="caja-filtro">
+        <h4>Talla</h4>
+        <label><input type="checkbox" checked> S</label>
+        <label><input type="checkbox" checked> M</label>
+        <label><input type="checkbox" checked> L</label>
+        <label><input type="checkbox" checked> XL</label>
+        <label><input type="checkbox"> XXL</label>
+      </div>
+      <div class="caja-filtro">
+        <h4>Color</h4>
+        <label><input type="checkbox"> Negro</label>
+        <label><input type="checkbox"> Blanco</label>
+        <label><input type="checkbox"> Azul marino</label>
+        <label><input type="checkbox"> Gris</label>
+        <label><input type="checkbox"> Beige</label>
+        <label><input type="checkbox"> Verde oliva</label>
+      </div>
+      <div class="caja-filtro">
+        <h4>Precio</h4>
+        <label><input type="checkbox"> Hasta $80.000</label>
+        <label><input type="checkbox"> $80.000 – $150.000</label>
+        <label><input type="checkbox"> $150.000 – $250.000</label>
+        <label><input type="checkbox"> Más de $250.000</label>
+      </div>
+    </aside>
+
+    <!-- Sección de productos -->
+    <section class="seccion-productos">
+      <div class="barra-herramientas">
+        <p>Mostrando <strong>8 productos</strong></p>
+        <select><option>Más vendidos</option><option>Precio: menor a mayor</option><option>Precio: mayor a menor</option><option>Nuevos primero</option></select> <!-- Selector de ordenamiento (decorativo; requeriría JS para funcionar) -->
+      </div>
+      <div class="cuadricula-productos"> <!-- Contenedor de la cuadrícula; CSS define las columnas -->
+
+        <!-- Cada tarjeta-producto tiene: imagen/fondo, etiqueta, nombre, descripción, estrellas, precio -->
+        <!-- Los atributos data-name, data-price y data-color son leídos por carrito.js al hacer clic en "Agregar al Carrito" -->
+
+        <div class="tarjeta-producto">
+          <div class="imagen-producto" style="background:url('https://images.unsplash.com/photo-1490114538077-0a7f8cb49891?w=400&q=80') center/cover"> <!-- Imagen de fondo cargada desde URL externa -->
+            <span class="etiqueta">Más Vendida</span>
+          </div>
+          <div class="info-producto">
+            <h3>Camisa Oxford Clásica</h3>
+            <p>Algodón premium. Blanco, azul y gris.</p>
+            <div class="estrellas">★★★★★</div>
+            <span class="precio-producto">$89.900</span>
+            <button class="boton-agregar" data-name="Camisa Oxford Clásica" data-price="89900" data-color="fondo-azul">Agregar al Carrito</button>
+          </div>
+        </div>
+
+        <div class="tarjeta-producto">
+          <div class="imagen-producto" style="background:url('https://images.unsplash.com/photo-1617137968427-85924c800a22?w=400&q=80') center/cover">
+            <span class="etiqueta etiqueta-nuevo">Nuevo</span>
+          </div>
+          <div class="info-producto">
+            <h3>Pantalón Chino Slim</h3>
+            <p>Corte ajustado moderno. Ideal para cualquier ocasión.</p>
+            <div class="estrellas">★★★★☆</div>
+            <span class="precio-producto">$119.900</span>
+            <button class="boton-agregar" data-name="Pantalón Chino Slim" data-price="119900" data-color="fondo-cafe">Agregar al Carrito</button>
+          </div>
+        </div>
+
+        <div class="tarjeta-producto">
+          <div class="imagen-producto fondo-teal"><i class="fa-solid fa-vest-patches icono-producto"></i><span class="etiqueta">Más Vendida</span></div>
+          <div class="info-producto">
+            <h3>Chaqueta Cuero Sintético</h3>
+            <p>Estilo urbano clásico. Tallas S a XXL.</p>
+            <div class="estrellas">★★★★★</div>
+            <span class="precio-producto">$199.900</span>
+            <button class="boton-agregar" data-name="Chaqueta Cuero Sintético" data-price="199900" data-color="fondo-teal">Agregar al Carrito</button>
+          </div>
+        </div>
+
+        <div class="tarjeta-producto">
+          <div class="imagen-producto fondo-azul"><i class="fa-solid fa-user-tie icono-producto"></i><span class="etiqueta etiqueta-oferta">Oferta</span></div>
+          <div class="info-producto">
+            <h3>Camisa Lino Casual</h3>
+            <p>Fresca y liviana. Perfecta para el calor.</p>
+            <div class="estrellas">★★★★☆</div>
+            <span class="precio-producto">$74.900</span>
+            <button class="boton-agregar" data-name="Camisa Lino Casual" data-price="74900" data-color="fondo-azul">Agregar al Carrito</button>
+          </div>
+        </div>
+
+        <div class="tarjeta-producto">
+          <div class="imagen-producto fondo-cafe"><i class="fa-solid fa-shirt icono-producto"></i><span class="etiqueta etiqueta-hot">Tendencia</span></div>
+          <div class="info-producto">
+            <h3>Bermuda Cargo Premium</h3>
+            <p>Múltiples bolsillos, tela resistente. Tallas S–XXL.</p>
+            <div class="estrellas">★★★★★</div>
+            <span class="precio-producto">$84.900</span>
+            <button class="boton-agregar" data-name="Bermuda Cargo Premium" data-price="84900" data-color="fondo-cafe">Agregar al Carrito</button>
+          </div>
+        </div>
+
+        <div class="tarjeta-producto">
+          <div class="imagen-producto fondo-naranja"><i class="fa-solid fa-shirt icono-producto"></i><span class="etiqueta etiqueta-nuevo">Nuevo</span></div>
+          <div class="info-producto">
+            <h3>Camiseta Oversize Pack x2</h3>
+            <p>100% algodón suave. Corte holgado moderno.</p>
+            <div class="estrellas">★★★★★</div>
+            <span class="precio-producto">$69.900</span>
+            <button class="boton-agregar" data-name="Camiseta Oversize Pack x2" data-price="69900" data-color="fondo-naranja">Agregar al Carrito</button>
+          </div>
+        </div>
+
+        <div class="tarjeta-producto">
+          <div class="imagen-producto fondo-amarillo"><i class="fa-solid fa-vest icono-producto"></i><span class="etiqueta">Clásico</span></div>
+          <div class="info-producto">
+            <h3>Jean Recto Hombre</h3>
+            <p>Denim de alta calidad. Corte recto clásico.</p>
+            <div class="estrellas">★★★★☆</div>
+            <span class="precio-producto">$109.900</span>
+            <button class="boton-agregar" data-name="Jean Recto Hombre" data-price="109900" data-color="fondo-amarillo">Agregar al Carrito</button>
+          </div>
+        </div>
+
+        <div class="tarjeta-producto">
+          <div class="imagen-producto fondo-morado"><i class="fa-solid fa-hat-cowboy icono-producto"></i><span class="etiqueta etiqueta-oferta">20% OFF</span></div>
+          <div class="info-producto">
+            <h3>Gorra Snapback Premium</h3>
+            <p>Ajustable, varios estilos. Look casual.</p>
+            <div class="estrellas">★★★★☆</div>
+            <span class="precio-producto">$39.900</span>
+            <button class="boton-agregar" data-name="Gorra Snapback Premium" data-price="39900" data-color="fondo-morado">Agregar al Carrito</button>
+          </div>
+        </div>
+
+      </div>
+    </section>
+  </div>
+</div>
+
+<footer><p>&copy; 2025 <strong>FashF</strong>. Todos los derechos reservados.</p></footer>
+<script src="../Carrito/carrito.js"></script> <!-- Script externo que maneja toda la lógica del carrito: agregar productos, actualizar contador, mostrar panel y calcular total -->
+</body>
+</html>

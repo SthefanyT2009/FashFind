@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="registroUsuarios.css">
+  <title>Registro de Usuarios</title>
+</head>
+<body>
+  <form action="" method="post">
+    <h1>Nuevo Registro de Usuario</h1>
+
+    <div class="div1">
+        <label>Cedula</label><br>
+        <input type="number" id="cc" name="cc" required min="1000000" max="99999999999">
+        <br><br>
+
+        <label>Nombre Usuario</label><br>
+        <input type="text" id="nombre_usuario" name="nombre_usuario" required minlength="3" maxlength="30">
+        <br><br>
+
+        <label>Contraseña</label><br>
+        <input type="password" id="contrasena" name="contrasena" required minlength="6" maxlength="30">
+        <br><br>
+
+        <label>Nombres</label><br>
+        <input type="text" id="nombres" name="nombres" required minlength="2" maxlength="50">
+        <br><br>
+
+        <label>Apellidos</label><br>
+        <input type="text" id="apellidos" name="apellidos" required minlength="2" maxlength="50">
+        <br><br>
+      
+        <label>Telefono</label><br>
+        <input type="number" id="telefono" name="telefono" required min="1000000" max="9999999999">
+        <br><br>
+
+        <label>Correo</label><br>
+        <input type="email" id="correo" name="correo" required maxlength="50">
+        <br><br>
+
+        <label>Dirección</label><br>
+        <input type="text" id="direccion" name="direccion" required minlength="5" maxlength="35">
+        <br><br>
+
+        <label>Genero</label><br>
+        <select id="genero" name="genero" required>
+            <option value="Femenino">Femenino</option>
+            <option value="Masculino">Masculino</option>
+        </select>
+        <br><br>
+ 
+        <label>Fecha de Nacimiento</label><br>
+        <input type="date" id="fecha_nacimiento" name="fecha_nacimiento" required>
+        <br><br>
+
+        <label>Fecha de Registro</label><br>
+        <input type="date" id="fecha_registro" name="fecha_registro" readonly required>  <!-- readonly permite ver el valor del campo pero no permite modificarlo. -->
+        <br><br>
+
+        <label>Cargo</label><br>
+        <select id="cargo" name="cargo" required>
+            <option value="Administrador">Administrador</option>
+            <option value="Cajero">Vendedor</option>
+            <option value="Operario de bodega">Domiciliario</option>
+        </select>
+        <br><br>
+
+        <button class="btn-rosa" type="submit" name="nuevo_usuario">Crear Nuevo Usuario</button><br><br>
+        <button class="btn-rosa" type="button" onclick="window.location.href='../Interfaz/vistaAdministrador.php'">Regresar</button>
+
+    </div>
+  </form>
+
+  <script>
+  document.addEventListener("DOMContentLoaded", () => { // Ejecuta el código cuando el HTML haya cargado completamente
+    const hoyLocal = new Date(); // Obtiene la fecha y hora actual del sistema
+    hoyLocal.setMinutes(hoyLocal.getMinutes() - hoyLocal.getTimezoneOffset()); // Corrige la zona horaria
+    const hoy = hoyLocal.toISOString().split("T")[0]; // Obtiene la fecha local correcta en formato YYYY-MM-DD
+
+    const fReg = document.getElementById("fecha_registro");
+    const fNac = document.getElementById("fecha_nacimiento");
+
+    if (fReg) { //Fecha registrp
+      fReg.value = hoy;
+      fReg.max = hoy;
+    }
+    if (fNac) {
+      fNac.max = hoy;
+    }
+  });
+</script>
+
+</body>
+</html>

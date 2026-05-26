@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="registroInventario.css">
+  <title>Registro de Inventario</title>
+</head>
+<body>
+  <form action="" method="post">
+    <h1>Nuevo Inventario</h1>
+
+    <div class="div1">
+
+      <label>Id Producto</label><br>
+      <input type="number" id="id_producto" name="id_producto" required min="1">
+      <br><br>
+
+      <label>Stock Disponible</label><br>
+      <input type="number" id="stock_disponible" name="stock_disponible" required min="0">
+      <br><br>
+
+      <label>Stock Mínimo</label><br>
+      <input type="number" id="stock_minimo" name="stock_minimo" required min="0">
+      <br><br>
+
+      <button class="btn-rosa" type="submit" name="nuevo_inventario">Registrar Inventario</button><br><br>
+      <button class="btn-rosa" type="button" onclick="window.location.href='../Interfaz/vistaAdministrador.php'">Regresar</button>
+
+    </div>
+  </form>
+
+</body>
+</html>

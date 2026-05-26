@@ -1,0 +1,454 @@
+/* Importa fuentes de Google Fonts: Playfair Display (serif) y DM Sans (sans-serif) */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+/* Define variables CSS globales (colores, sombras, fuentes) */
+:root {
+  --primary:      #1a1a2e;      /* Color principal oscuro */
+  --accent:       #e91e8c;      /* Color de acento rosa */
+  --accent2:      #ff6b35;      /* Segundo acento naranja */
+  --light-bg:     #f7f5f2;      /* Fondo claro */
+  --white:        #ffffff;      /* Blanco puro */
+  --gray:         #888;         /* Gris intermedio */
+  --border:       #e8e8e8;      /* Color de bordes */
+  --shadow:       0 4px 24px rgba(0,0,0,.08);      /* Sombra suave */
+  --shadow-hover: 0 12px 36px rgba(0,0,0,.14);     /* Sombra más pronunciada para hover */
+  --fd:           'Playfair Display', serif;        /* Fuente principal serif */
+  --fb:           'DM Sans', sans-serif;            /* Fuente secundaria sans-serif */
+}
+
+/* Reset de márgenes, paddings y box-sizing para todos los elementos */
+*,*::before,*::after { margin:0; padding:0; box-sizing:border-box; }
+
+/* Scroll suave para toda la página */
+html { scroll-behavior:smooth; }
+
+/* Estilo base del body: fuente, fondo, color, flex column y altura mínima */
+body { font-family:var(--fb); background:var(--light-bg); color:var(--primary); display:flex; flex-direction:column; min-height:100vh; }
+
+/* Elimina subrayado de enlaces y hereda color */
+a { text-decoration:none; color:inherit; }
+
+/* Imágenes como bloque y ancho máximo 100% para responsividad */
+img { display:block; max-width:100%; }
+
+/* ── HEADER ── */
+/* Estilos del encabezado principal: flex, centrado vertical, padding, fijo en la parte superior */
+.main-header {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:0 48px; height:68px; background:#fff;
+  border-bottom:1px solid var(--border); position:sticky; top:0; z-index:1000;
+  box-shadow:0 2px 12px rgba(0,0,0,.04);
+}
+
+/* Logo: fuente grande, negrita, color primario, espaciado entre letras */
+.logo { font-family:var(--fd); font-size:2.2rem; font-weight:900; color:var(--primary); letter-spacing:4px; min-width:130px; user-select:none; }
+
+/* Span dentro del logo con color de acento */
+.logo span { color:var(--accent); }
+
+/* ── MEGA MENÚ ── */
+/* Contenedor del menú de navegación: flex, altura completa */
+.menu-nav { display:flex; align-items:center; height:100%; }
+
+/* Cada elemento del menú: posición relativa para el mega menú, altura completa */
+.nav-item  { position:relative; height:100%; display:flex; align-items:center; }
+
+/* Enlaces del menú: centrado vertical, padding, mayúsculas, transiciones */
+.nav-link  { display:flex; align-items:center; height:100%; padding:0 24px; font-size:.88rem; font-weight:500; letter-spacing:1.2px; text-transform:uppercase; color:var(--primary); border-bottom:2px solid transparent; transition:color .2s,border-color .2s; white-space:nowrap; }
+
+/* Hover de enlace: cambia color y borde al color de acento */
+.nav-link:hover,.nav-item:hover .nav-link { color:var(--accent); border-bottom-color:var(--accent); }
+
+/* Mega menú: oculto por defecto, aparece en hover, posicionado centrado debajo del elemento */
+.mega-menu { display:none; position:absolute; top:100%; left:50%; transform:translateX(-50%); background:#fff; border-top:2px solid var(--accent); box-shadow:0 16px 48px rgba(0,0,0,.13); padding:32px 40px; gap:48px; min-width:420px; z-index:999; flex-direction:row; animation:fadeD .18s ease; }
+
+/* Animación de fade para el mega menú */
+@keyframes fadeD { from{opacity:0;transform:translateX(-50%) translateY(-8px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
+
+/* Muestra el mega menú al hacer hover sobre el elemento padre */
+.nav-item:hover .mega-menu { display:flex; }
+
+/* Columna dentro del mega menú: flex en columna, gap entre elementos */
+.mega-col { display:flex; flex-direction:column; gap:7px; min-width:120px; }
+
+/* Títulos de las columnas: fuente serif, tamaño pequeño, mayúsculas, borde inferior */
+.mega-col h4 { font-family:var(--fd); font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:1.5px; color:var(--primary); margin-bottom:10px; border-bottom:1px solid var(--border); padding-bottom:8px; }
+
+/* Enlaces dentro de las columnas: color gris, transiciones */
+.mega-col a { font-size:.86rem; color:var(--gray); transition:color .2s,padding-left .2s; padding:2px 0; }
+
+/* Hover enlaces del mega menú: cambia color y agrega padding izquierdo */
+.mega-col a:hover { color:var(--accent); padding-left:6px; }
+
+/* ── ICONOS HEADER ── */
+/* Contenedor de iconos de la derecha: flex, alineación final */
+.header-icons { display:flex; align-items:center; gap:4px; min-width:130px; justify-content:flex-end; }
+
+/* Botones de iconos: sin fondo, cursor pointer, transición de color, redondos */
+.icon-btn { background:none; border:none; cursor:pointer; color:var(--primary); font-size:1.15rem; padding:9px; display:flex; align-items:center; justify-content:center; transition:color .2s; position:relative; border-radius:50%; }
+
+/* Hover botones icono: color de acento */
+.icon-btn:hover { color:var(--accent); }
+
+/* Contenedor de búsqueda: flex */
+.search-wrap { display:flex; align-items:center; }
+
+/* Input de búsqueda: ancho 0 por defecto, transición para expandirse */
+.search-input { width:0; border:none; border-bottom:1.5px solid var(--primary); outline:none; background:transparent; color:var(--primary); padding:0; font-size:.9rem; font-family:var(--fb); transition:width .4s,padding .4s; overflow:hidden; }
+
+/* Clase active para input de búsqueda expandido */
+.search-input.active { width:180px; padding:4px 8px; }
+
+/* Placeholder del input de búsqueda */
+.search-input::placeholder { color:#bbb; }
+
+/* Botón del carrito: posición relativa para el contador */
+.cart-btn { position:relative; }
+
+/* Contador de items en el carrito: posición absoluta, fondo acento, redondo */
+.cart-count { position:absolute; top:3px; right:3px; background:var(--accent); color:#fff; font-size:.55rem; width:16px; height:16px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; }
+
+/* ── FOOTER ── */
+/* Footer: fondo primario, texto gris, centrado, padding, margen automático arriba */
+footer { background:var(--primary); color:#aaa; text-align:center; padding:28px; font-size:.85rem; letter-spacing:.8px; margin-top:auto; }
+
+/* Strong dentro del footer con color de acento */
+footer strong { color:var(--accent); }
+
+/* ── TOAST ── */
+/* Notificación emergente: fija abajo derecha, fondo oscuro, transiciones */
+.toast { position:fixed; bottom:30px; right:30px; background:var(--primary); color:#fff; padding:14px 24px; font-size:.88rem; font-weight:500; border-left:4px solid var(--accent); box-shadow:0 8px 28px rgba(0,0,0,.2); z-index:9999; opacity:0; transform:translateY(20px); transition:opacity .3s,transform .3s; pointer-events:none; border-radius:2px; display:flex; align-items:center; gap:10px; }
+
+/* Clase show para mostrar el toast */
+.toast.show { opacity:1; transform:translateY(0); }
+
+/* ── PANEL CARRITO LATERAL ── */
+/* Panel lateral del carrito: fijo a la derecha, oculto por defecto (transform) */
+.cart-panel { position:fixed; top:0; right:0; width:380px; height:100vh; background:#fff; box-shadow:-8px 0 40px rgba(0,0,0,.15); z-index:2000; transform:translateX(100%); transition:transform .35s cubic-bezier(.77,0,.18,1); display:flex; flex-direction:column; }
+
+/* Clase open para mostrar el panel */
+.cart-panel.open { transform:translateX(0); }
+
+/* Overlay del carrito: fondo semitransparente, oculto por defecto */
+.cart-panel-overlay { position:fixed; inset:0; background:rgba(0,0,0,.4); z-index:1999; opacity:0; pointer-events:none; transition:opacity .35s; }
+
+/* Clase open para overlay visible */
+.cart-panel-overlay.open { opacity:1; pointer-events:all; }
+
+/* Header del panel del carrito: flex entre, padding, borde inferior */
+.cp-header { display:flex; align-items:center; justify-content:space-between; padding:22px 24px; border-bottom:1px solid var(--border); }
+
+/* Título del panel: fuente serif */
+.cp-header h3 { font-family:var(--fd); font-size:1.15rem; font-weight:700; }
+
+/* Botón cerrar panel: sin fondo, cursor pointer */
+.cp-close { background:none; border:none; cursor:pointer; font-size:1.3rem; color:var(--gray); transition:color .2s; }
+
+/* Hover botón cerrar: color primario */
+.cp-close:hover { color:var(--primary); }
+
+/* Contenedor de items del carrito: flex creciente, scroll vertical */
+.cp-items { flex:1; overflow-y:auto; padding:16px 0; }
+
+/* Cada item en el carrito: grid de 3 columnas, gap, padding, borde inferior */
+.cp-item { display:grid; grid-template-columns:72px 1fr auto; gap:14px; padding:14px 24px; align-items:center; border-bottom:1px solid #f5f5f5; }
+
+/* Imagen del item: tamaño fijo, flex centrado */
+.cp-img { width:72px; height:72px; border-radius:2px; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+
+/* Icono dentro de la imagen (fallback) */
+.cp-img i { font-size:2rem; color:rgba(255,255,255,.8); }
+
+/* Info del producto: título, descripción, precio */
+.cp-info h5 { font-size:.88rem; font-weight:600; margin-bottom:4px; }
+.cp-info p { font-size:.8rem; color:var(--gray); }
+.cp-info .cp-price { font-weight:700; color:var(--primary); margin-top:4px; font-size:.9rem; }
+
+/* Botón eliminar item: sin fondo, color gris claro */
+.cp-remove { background:none; border:none; color:#ddd; cursor:pointer; font-size:1rem; transition:color .2s; }
+
+/* Hover botón eliminar: color rojo */
+.cp-remove:hover { color:#e53935; }
+
+/* Footer del panel: padding, borde superior */
+.cp-footer { padding:22px 24px; border-top:1px solid var(--border); }
+
+/* Fila de total: flex entre, negrita, fuente serif */
+.cp-total-row { display:flex; justify-content:space-between; font-weight:700; font-size:1.05rem; margin-bottom:16px; font-family:var(--fd); }
+
+/* Botón para ir al carrito: bloque, fondo primario, texto blanco, transiciones */
+.btn-go-cart { display:block; text-align:center; background:var(--primary); color:#fff; padding:14px; font-weight:700; font-size:.85rem; letter-spacing:1.5px; text-transform:uppercase; border-radius:1px; transition:background .2s; }
+
+/* Hover botón: fondo acento */
+.btn-go-cart:hover { background:var(--accent); }
+
+/* Mensaje de carrito vacío: padding, texto centrado, color gris */
+.cp-empty { padding:40px; text-align:center; color:var(--gray); }
+
+/* Icono dentro de mensaje vacío */
+.cp-empty i { font-size:3rem; color:#ddd; display:block; margin-bottom:12px; }
+
+/* ── SECCIÓN HERO DEL CATÁLOGO ── */
+/* Hero banner del catálogo: altura fija, flex centrado, fondo oscuro relativo */
+.hero-catalogo {
+  height: 260px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 12px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Título dentro del hero: fuente serif, blanco, tamaño grande, z-index */
+.hero-catalogo h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 3rem;
+  color: #fff;
+  position: relative;
+  z-index: 1;
+  letter-spacing: 3px;
+}
+
+/* Párrafo dentro del hero: blanco semitransparente, z-index */
+.hero-catalogo p {
+  font-size: 1rem;
+  color: rgba(255,255,255,.75);
+  position: relative;
+  z-index: 1;
+  font-weight: 300;
+}
+
+/* ── MIGAS DE PAN (BREADCRUMBS) ── */
+/* Contenedor de migas de pan: padding, fondo blanco, borde inferior */
+.migas-de-pan {
+  padding: 14px 48px;
+  background: #fff;
+  border-bottom: 1px solid var(--border);
+  font-size: .84rem;
+  color: var(--gray);
+}
+
+/* Enlaces dentro de migas de pan: color gris, transición */
+.migas-de-pan a { color: var(--gray); transition: color .2s; }
+
+/* Hover enlaces migas de pan: color acento */
+.migas-de-pan a:hover { color: var(--accent); }
+
+/* Separador entre migas: margen horizontal */
+.migas-de-pan span { margin: 0 10px; }
+
+/* Texto fuerte en migas (último elemento): color primario */
+.migas-de-pan strong { color: var(--primary); font-weight: 500; }
+
+/* ── CONTENEDOR PRINCIPAL CATÁLOGO ── */
+/* Fondo del catálogo, flex para ocupar espacio restante */
+.fondo-catalogo { background: var(--light-bg); flex: 1; }
+
+/* Fila principal del catálogo: flex con gap, padding, ancho máximo centrado */
+.fila-catalogo {
+  display: flex;
+  gap: 40px;
+  padding: 48px;
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* Panel lateral de filtros: ancho fijo, no se encoge */
+.panel-filtros { width: 240px; flex-shrink: 0; }
+
+/* Caja de filtros individual: fondo blanco, borde, padding, margen inferior */
+.caja-filtro {
+  background: #fff;
+  border: 1px solid var(--border);
+  padding: 24px;
+  margin-bottom: 20px;
+  border-radius: 2px;
+}
+
+/* Título de cada caja de filtro: fuente serif, mayúsculas, borde inferior */
+.caja-filtro h4 {
+  font-family: 'Playfair Display', serif;
+  font-size: .9rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--primary);
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 10px;
+}
+
+/* Labels de los checkboxes: flex, gap, color gris, cursor pointer */
+.caja-filtro label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: .88rem;
+  color: var(--gray);
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: color .2s;
+}
+
+/* Hover de los labels: color acento */
+.caja-filtro label:hover { color: var(--accent); }
+
+/* Estilo de los checkboxes: color de acento */
+.caja-filtro input[type=checkbox] { accent-color: var(--accent); }
+
+/* Sección de productos: ocupa espacio restante */
+.seccion-productos { flex: 1; }
+
+/* Barra de herramientas: flex entre, margen inferior */
+.barra-herramientas {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 28px;
+}
+
+/* Párrafo dentro de barra de herramientas: color gris */
+.barra-herramientas p { font-size: .9rem; color: var(--gray); }
+
+/* Strong dentro del párrafo: color primario */
+.barra-herramientas p strong { color: var(--primary); }
+
+/* Selector de ordenamiento: borde, padding, cursor pointer */
+.barra-herramientas select {
+  border: 1px solid var(--border);
+  padding: 8px 14px;
+  font-size: .85rem;
+  color: var(--primary);
+  background: #fff;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  border-radius: 2px;
+  outline: none;
+}
+
+/* Cuadrícula de productos: grid responsive con auto-fill */
+.cuadricula-productos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px,1fr));
+  gap: 26px;
+}
+
+/* Tarjeta de cada producto: fondo blanco, borde, transiciones */
+.tarjeta-producto {
+  background: #fff;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  transition: transform .3s, box-shadow .3s;
+  border-radius: 2px;
+}
+
+/* Hover tarjeta: elevación y sombra más pronunciada */
+.tarjeta-producto:hover { transform: translateY(-6px); box-shadow: var(--shadow-hover); }
+
+/* Contenedor de imagen del producto: altura fija, flex centrado, posición relativa */
+.imagen-producto {
+  height: 220px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  background-size: cover;
+  background-position: center;
+}
+
+/* Icono dentro de la imagen (fallback) */
+.icono-producto { font-size: 4.5rem; color: rgba(255,255,255,.85); }
+
+/* Variantes de fondo para diferentes categorías de productos */
+.fondo-rosa     { background: linear-gradient(135deg,#f8bbd0,#f48fb1); }
+.fondo-azul     { background: linear-gradient(135deg,#bbdefb,#90caf9); }
+.fondo-verde    { background: linear-gradient(135deg,#c8e6c9,#a5d6a7); }
+.fondo-naranja  { background: linear-gradient(135deg,#ffe0b2,#ffcc80); }
+.fondo-morado   { background: linear-gradient(135deg,#e1bee7,#ce93d8); }
+.fondo-teal     { background: linear-gradient(135deg,#b2dfdb,#80cbc4); }
+.fondo-amarillo { background: linear-gradient(135deg,#fff9c4,#fff176); }
+.fondo-cafe     { background: linear-gradient(135deg,#d7ccc8,#bcaaa4); }
+
+/* Etiqueta general para productos: posición absoluta, fondo primario */
+.etiqueta {
+  position: absolute;
+  top: 14px; left: 14px;
+  background: var(--primary);
+  color: #fff;
+  padding: 5px 12px;
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  border-radius: 1px;
+}
+
+/* Variantes de etiqueta según tipo */
+.etiqueta-nuevo  { background: #4caf50; }  /* Verde para "nuevo" */
+.etiqueta-oferta { background: #ff5722; }  /* Naranja para "oferta" */
+.etiqueta-hot    { background: var(--accent2); } /* Naranja acento para "hot" */
+
+/* Info del producto: padding */
+.info-producto { padding: 20px; }
+
+/* Título del producto: fuente serif, negrita, color primario */
+.info-producto h3 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1rem;
+  color: var(--primary);
+  margin-bottom: 8px;
+  font-weight: 700;
+}
+
+/* Descripción del producto: gris, tamaño pequeño */
+.info-producto p {
+  font-size: .84rem;
+  color: var(--gray);
+  line-height: 1.6;
+  margin-bottom: 12px;
+}
+
+/* Estrellas de calificación: color amarillo */
+.estrellas { color: #f9a825; font-size: .95rem; margin-bottom: 10px; letter-spacing: 2px; }
+
+/* Precio del producto: tamaño grande, negrita, fuente serif */
+.precio-producto {
+  display: block;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 16px;
+  font-family: 'Playfair Display', serif;
+}
+
+/* Botón para agregar al carrito: ancho completo, borde, transiciones */
+.boton-agregar {
+  width: 100%;
+  background: #fff;
+  color: var(--primary);
+  border: 1.5px solid var(--primary);
+  padding: 11px;
+  font-size: .8rem;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background .22s, color .22s, border-color .22s;
+  font-family: 'DM Sans', sans-serif;
+  border-radius: 1px;
+}
+
+/* Hover botón agregar: fondo acento, texto blanco, borde acento */
+.boton-agregar:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+/* Media query para dispositivos móviles (pantallas ≤ 768px) */
+@media (max-width: 768px) {
+  /* Cambia la dirección de la fila a columna y reduce padding */
+  .fila-catalogo { flex-direction: column; padding: 24px; }
+  /* Panel de filtros ocupa todo el ancho */
+  .panel-filtros { width: 100%; }
+}

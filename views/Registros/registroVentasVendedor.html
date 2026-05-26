@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="registroVentas.css">
+  <title>Registro de Ventas</title>
+</head>
+<body>
+  <form action="" method="post">
+    <h1>Nueva Venta</h1>
+
+    <div class="div1">
+
+      <label>Fecha Venta</label><br>
+      <input type="date" id="fecha_venta" name="fecha_venta" readonly required>
+      <br><br>
+
+      <label>Hora</label><br>
+      <input type="time" id="hora" name="hora" readonly required>
+      <br><br>
+
+      <label>Metodo Pago</label><br>
+      <select id="metodo_pago" name="metodo_pago" required>
+        <option value="Efectivo">Efectivo</option>
+        <option value="Transferencia">Transferencia</option>
+      </select>
+      <br><br>
+
+      <label>Id Vendedor</label><br>
+      <input type="number" id="id_vendedor_registra" name="id_vendedor_registra" readonly required>
+      <br><br>
+      
+      <h2>Productos</h2>
+
+      <table id="detalle_venta">
+        <thead>
+          <tr>
+            <th>Id Producto</th>
+            <th>Cantidad</th>
+            <th>Precio Unitario</th>
+            <th>Subtotal</th>
+          </tr>
+        </thead>
+        <tbody id="cuerpo-tabla">
+        </tbody>
+      </table>
+
+      <br>
+      <button class="btn-rosa" type="button" onclick="agregarFila()">Agregar producto</button>
+      <br><br>
+
+      <label>Costo Total</label><br>
+      <input type="number" id="costo_total" name="costo_total" readonly required min="0">
+      <br><br>
+
+      <label>Pago Recibido</label><br>
+      <input type="number" id="pago_recibido" name="pago_recibido" required min="0">
+      <br><br>
+
+      <label>Cambio</label><br>
+      <input type="number" id="cambio" name="cambio" readonly min="0">
+      <br><br>
+
+      <button class="btn-rosa" type="submit" name="nueva_venta">Registrar Venta</button><br><br>
+      <button class="btn-rosa" type="button" onclick="window.location.href='../Interfaz/vistaVendedor.php'">Regresar</button>
+
+    </div>
+  </form>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+
+      // Fecha y hora automáticas
+      const hoyLocal = new Date();
+      hoyLocal.setMinutes(hoyLocal.getMinutes() - hoyLocal.getTimezoneOffset());
+      const hoy = hoyLocal.toISOString().split("T")[0];
+
+      document.getElementById("fecha_venta").value = hoy;
+      document.getElementById("fecha_venta").max   = hoy;
+
+      const ahora = new Date();
+      const hh = String(ahora.getHours()).padStart(2, "0");
+      const mm = String(ahora.getMinutes()).padStart(2, "0");
+      document.getElementById("hora").value = `${hh}:${mm}`;
+
+      // Calcular cambio
+      document.getElementById("pago_recibido").addEventListener("input", calcularCambio);
+    });
+
+    // Agregar fila de producto
+    function agregarFila() {
+      const tbody = document.getElementById("cuerpo-tabla");
+      const fila  = document.createElement("tr");
+
+      fila.innerHTML = `
+        <td><input type="number" name="id_producto[]" min="1" required style="width:90px"></td>
+        <td><input type="number" name="cantidad[]"    min="1" required style="width:70px" oninput="actualizarSubtotal(this)"></td>
+        <td><input type="number" name="precio[]"      min="0" required style="width:90px" oninput="actualizarSubtotal(this)"></td>
+        <td><input type="number" name="sub_total[]"   readonly  style="width:90px"></td>
+        <td><button class="btn-rosa" type="button" onclick="eliminarFila(this)">X</button></td>
+      `;
+
+      tbody.appendChild(fila);
+    }
+
+    // Calcular subtotal por fila
+    function actualizarSubtotal(input) {
+      const fila      = input.closest("tr");
+      const cantidad  = parseFloat(fila.querySelector('[name="cantidad[]"]').value)  || 0;
+      const precio    = parseFloat(fila.querySelector('[name="precio[]"]').value)    || 0;
+      const subtotal  = cantidad * precio;
+
+      fila.querySelector('[name="sub_total[]"]').value = subtotal;
+      actualizarTotal();
+    }
+
+    // Sumar todos los subtotales
+    function actualizarTotal() {
+      const subtotales = document.querySelectorAll('[name="sub_total[]"]');
+      let total = 0;
+      subtotales.forEach(s => total += parseFloat(s.value) || 0);
+      document.getElementById("costo_total").value = total;
+      calcularCambio();
+    }
+
+    // Calcular cambio
+    function calcularCambio() {
+      const pago  = parseFloat(document.getElementById("pago_recibido").value) || 0;
+      const total = parseFloat(document.getElementById("costo_total").value)   || 0;
+      document.getElementById("cambio").value = pago >= total ? pago - total : 0;
+    }
+
+    // Eliminar fila
+    function eliminarFila(btn) {
+      btn.closest("tr").remove();
+      actualizarTotal();
+    }
+  </script>
+
+</body>
+</html>
