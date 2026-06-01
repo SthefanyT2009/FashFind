@@ -24,7 +24,7 @@ export default function LoginScreen() {
   const [contrasena, setContrasena] = useState('');
   const [mostrarPass, setMostrarPass] = useState(false);
   const [cargando, setCargando] = useState(false);
-  const [errorVisible, setErrorVisible] = useState(''); // ← muestra error en pantalla
+  const [errorVisible, setErrorVisible] = useState(''); 
 
   const ingresar = async () => {
     setErrorVisible('');
@@ -34,8 +34,8 @@ export default function LoginScreen() {
       return;
     }
 
-    if (contrasena.length < 6) {
-      setErrorVisible('La contraseña debe tener mínimo 6 caracteres');
+    if (contrasena.length < 8) {
+      setErrorVisible('La contraseña debe tener mínimo 8 caracteres');
       return;
     }
 
@@ -71,10 +71,10 @@ export default function LoginScreen() {
         }, 1000);
 
       } else {
-        setErrorVisible('❌ ' + (respuesta.mensaje || 'Credenciales incorrectas'));
+        setErrorVisible((respuesta.mensaje || 'Credenciales incorrectas'));
       }
     } catch (error: any) {
-      setErrorVisible('❌ Error: ' + (error?.message || JSON.stringify(error)));
+      setErrorVisible('Error: ' + (error?.message || JSON.stringify(error)));
     } finally {
       setCargando(false);
     }

@@ -11,10 +11,12 @@ import {
   KeyboardAvoidingView,
   Platform,
   ImageBackground,
+  Modal,
 } from 'react-native';
 
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { registro } from './authService';
 
 interface Errores {
@@ -58,11 +60,13 @@ export default function RegistroScreen() {
   const [cargando, setCargando] = useState(false);
   const [mostrarContrasena, setMostrarContrasena] = useState(false);
   const [fortalezaPass, setFortalezaPass] = useState(0);
+  const [mostrarDatePicker, setMostrarDatePicker] = useState(false);
+  const [fechaSeleccionada, setFechaSeleccionada] = useState<Date | undefined>(undefined);
 
   const evaluarFortaleza = (password: string) => {
     let puntaje = 0;
 
-    if (password.length >= 6) puntaje++;
+    if (password.length >= 8) puntaje++;
     if (/[A-Z]/.test(password)) puntaje++;
     if (/[0-9]/.test(password)) puntaje++;
     if (/[^A-Za-z0-9]/.test(password)) puntaje++;
@@ -74,34 +78,54 @@ export default function RegistroScreen() {
     const nuevosErrores: Errores = {};
 
     if (!/^\d{7,11}$/.test(campos.cc))
-      nuevosErrores.cc = 'Cédula inválida';
+      nuevosErrores.cc = 'Cédula inválida (7 a 11 dígitos)';
 
-    if (campos.nombres.trim().length < 2)
-      nuevosErrores.nombres = 'Mínimo 2 caracteres';
+    if (!/^[A-Za-záéíóúÁÉÍÓÚñÑüÜ ]+$/.test(campos.nombres.trim()))
+      nuevosErrores.nombres = 'Solo se permiten letras';
+    else if (campos.nombres.trim().length < 3)
+      nuevosErrores.nombres = 'Mínimo 3 caracteres';
+    else if (campos.nombres.trim().length > 50)
+      nuevosErrores.nombres = 'Máximo 50 caracteres';
 
-    if (campos.apellidos.trim().length < 2)
-      nuevosErrores.apellidos = 'Mínimo 2 caracteres';
+    if (!/^[A-Za-záéíóúÁÉÍÓÚñÑüÜ ]+$/.test(campos.apellidos.trim()))
+      nuevosErrores.apellidos = 'Solo se permiten letras';
+    else if (campos.apellidos.trim().length < 3)
+      nuevosErrores.apellidos = 'Mínimo 3 caracteres';
+    else if (campos.apellidos.trim().length > 50)
+      nuevosErrores.apellidos = 'Máximo 50 caracteres';
 
-    if (campos.nombre_usuario.trim().length < 3)
-      nuevosErrores.nombre_usuario = 'Mínimo 3 caracteres';
+    if (!/^[A-Za-z0-9_]+$/.test(campos.nombre_usuario))
+      nuevosErrores.nombre_usuario = 'Solo letras, números y guion bajo';
+    else if (campos.nombre_usuario.trim().length < 6)
+      nuevosErrores.nombre_usuario = 'Mínimo 6 caracteres';
+    else if (campos.nombre_usuario.trim().length > 20)
+      nuevosErrores.nombre_usuario = 'Máximo 20 caracteres';
 
-    if (campos.contrasena.length < 6)
-      nuevosErrores.contrasena = 'Mínimo 6 caracteres';
+    if (campos.contrasena.length < 8)
+      nuevosErrores.contrasena = 'Mínimo 8 caracteres';
+    else if (campos.contrasena.length > 64)
+      nuevosErrores.contrasena = 'Máximo 64 caracteres';
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(campos.correo))
-      nuevosErrores.correo = 'Correo inválido';
+      nuevosErrores.correo = 'Correo inválido (debe tener @ y dominio)';
+    else if (campos.correo.length < 6)
+      nuevosErrores.correo = 'Correo demasiado corto';
+    else if (campos.correo.length > 100)
+      nuevosErrores.correo = 'Máximo 100 caracteres';
 
-    if (!/^\d{7,10}$/.test(campos.telefono))
-      nuevosErrores.telefono = 'Teléfono inválido';
+    if (!/^\d{7}$/.test(campos.telefono) && !/^3\d{9}$/.test(campos.telefono))
+      nuevosErrores.telefono = 'Ingresa un número válido de Colombia (7 dígitos fijo o 10 celular iniciando en 3)';
 
     if (!campos.genero)
       nuevosErrores.genero = 'Selecciona un género';
 
-    if (campos.direccion.trim().length < 5)
-      nuevosErrores.direccion = 'Mínimo 5 caracteres';
+    if (campos.direccion.trim().length < 10)
+      nuevosErrores.direccion = 'Mínimo 10 caracteres';
+    else if (campos.direccion.trim().length > 100)
+      nuevosErrores.direccion = 'Máximo 100 caracteres';
 
     if (!campos.fecha_nacimiento)
-      nuevosErrores.fecha_nacimiento = 'Selecciona una fecha';
+      nuevosErrores.fecha_nacimiento = 'Selecciona una fecha de nacimiento';
 
     if (!campos.acepta_terminos)
       nuevosErrores.acepta_terminos =
@@ -192,11 +216,12 @@ export default function RegistroScreen() {
                 placeholder="1012345678"
                 placeholderTextColor="#ccc"
                 keyboardType="numeric"
+                maxLength={11}
                 value={campos.cc}
                 onChangeText={(text) =>
                   setCampos({
                     ...campos,
-                    cc: text,
+                    cc: text.replace(/[^0-9]/g, ''),
                   })
                 }
               />
@@ -233,11 +258,12 @@ export default function RegistroScreen() {
                     style={styles.input}
                     placeholder="Carlos"
                     placeholderTextColor="#ccc"
+                    maxLength={50}
                     value={campos.nombres}
                     onChangeText={(text) =>
                       setCampos({
                         ...campos,
-                        nombres: text,
+                        nombres: text.replace(/[^A-Za-záéíóúÁÉÍÓÚñÑüÜ ]/g, ''),
                       })
                     }
                   />
@@ -268,17 +294,34 @@ export default function RegistroScreen() {
                     style={styles.input}
                     placeholder="Sánchez"
                     placeholderTextColor="#ccc"
+                    maxLength={50}
                     value={campos.apellidos}
                     onChangeText={(text) =>
                       setCampos({
                         ...campos,
-                        apellidos: text,
+                        apellidos: text.replace(/[^A-Za-záéíóúÁÉÍÓÚñÑüÜ ]/g, ''),
                       })
                     }
                   />
                 </View>
               </View>
             </View>
+
+            {(errores.nombres || errores.apellidos) && (
+              <View style={styles.row}>
+                <View style={{ flex: 1 }}>
+                  {errores.nombres && (
+                    <Text style={styles.errorText}>{errores.nombres}</Text>
+                  )}
+                </View>
+                <View style={{ width: 10 }} />
+                <View style={{ flex: 1 }}>
+                  {errores.apellidos && (
+                    <Text style={styles.errorText}>{errores.apellidos}</Text>
+                  )}
+                </View>
+              </View>
+            )}
 
             {/* Usuario */}
 
@@ -303,15 +346,21 @@ export default function RegistroScreen() {
                 style={styles.input}
                 placeholder="usuario123"
                 placeholderTextColor="#ccc"
+                maxLength={20}
+                autoCapitalize="none"
                 value={campos.nombre_usuario}
                 onChangeText={(text) =>
                   setCampos({
                     ...campos,
-                    nombre_usuario: text,
+                    nombre_usuario: text.replace(/[^A-Za-z0-9_]/g, ''),
                   })
                 }
               />
             </View>
+
+            {errores.nombre_usuario && (
+              <Text style={styles.errorText}>{errores.nombre_usuario}</Text>
+            )}
 
             {/* Contraseña */}
 
@@ -337,6 +386,7 @@ export default function RegistroScreen() {
                 placeholder="Contraseña"
                 placeholderTextColor="#ccc"
                 secureTextEntry={!mostrarContrasena}
+                maxLength={64}
                 value={campos.contrasena}
                 onChangeText={(text) => {
                   setCampos({
@@ -380,6 +430,10 @@ export default function RegistroScreen() {
               />
             </View>
 
+            {errores.contrasena && (
+              <Text style={styles.errorText}>{errores.contrasena}</Text>
+            )}
+
             {/* Correo */}
 
             <Text style={styles.label}>
@@ -404,15 +458,21 @@ export default function RegistroScreen() {
                 placeholder="correo@gmail.com"
                 placeholderTextColor="#ccc"
                 keyboardType="email-address"
+                autoCapitalize="none"
+                maxLength={100}
                 value={campos.correo}
                 onChangeText={(text) =>
                   setCampos({
                     ...campos,
-                    correo: text,
+                    correo: text.trim(),
                   })
                 }
               />
             </View>
+
+            {errores.correo && (
+              <Text style={styles.errorText}>{errores.correo}</Text>
+            )}
 
             {/* Teléfono */}
 
@@ -438,15 +498,20 @@ export default function RegistroScreen() {
                 placeholder="3001234567"
                 placeholderTextColor="#ccc"
                 keyboardType="numeric"
+                maxLength={10}
                 value={campos.telefono}
                 onChangeText={(text) =>
                   setCampos({
                     ...campos,
-                    telefono: text,
+                    telefono: text.replace(/[^0-9]/g, ''),
                   })
                 }
               />
             </View>
+
+            {errores.telefono && (
+              <Text style={styles.errorText}>{errores.telefono}</Text>
+            )}
 
             {/* Género */}
 
@@ -508,6 +573,7 @@ export default function RegistroScreen() {
                 style={styles.input}
                 placeholder="Tu dirección"
                 placeholderTextColor="#ccc"
+                maxLength={100}
                 value={campos.direccion}
                 onChangeText={(text) =>
                   setCampos({
@@ -518,31 +584,133 @@ export default function RegistroScreen() {
               />
             </View>
 
+            {errores.direccion && (
+              <Text style={styles.errorText}>{errores.direccion}</Text>
+            )}
+
             {/* Fecha */}
 <Text style={styles.label}>
   Fecha nacimiento *
 </Text>
 
-<View style={styles.inputContainer}>
-  <Ionicons
-    name="calendar"
-    size={20}
-    color="#ccc"
-  />
+{/* WEB: input date nativo del navegador */}
+{Platform.OS === 'web' ? (
+  <View
+    style={[
+      styles.inputContainer,
+      errores.fecha_nacimiento && styles.errorInput,
+    ]}
+  >
+    <Ionicons name="calendar" size={20} color="#ccc" />
+    <input
+      type="date"
+      max={new Date().toISOString().split('T')[0]}
+      value={campos.fecha_nacimiento}
+      onChange={(e) =>
+        setCampos({ ...campos, fecha_nacimiento: e.target.value })
+      }
+      style={{
+        flex: 1,
+        border: 'none',
+        outline: 'none',
+        fontSize: 15,
+        color: campos.fecha_nacimiento ? '#1a1a2e' : '#aaa',
+        backgroundColor: 'transparent',
+        cursor: 'pointer',
+        fontFamily: 'inherit',
+      }}
+    />
+  </View>
+) : (
+  /* NATIVO: botón que abre el DateTimePicker */
+  <TouchableOpacity
+    style={[
+      styles.inputContainer,
+      errores.fecha_nacimiento && styles.errorInput,
+    ]}
+    onPress={() => setMostrarDatePicker(true)}
+    activeOpacity={0.7}
+  >
+    <Ionicons name="calendar" size={20} color="#ccc" />
+    <Text
+      style={[
+        styles.input,
+        { lineHeight: 55, color: campos.fecha_nacimiento ? '#1a1a2e' : '#ccc' },
+      ]}
+    >
+      {campos.fecha_nacimiento || 'Seleccionar fecha'}
+    </Text>
+    <Ionicons name="chevron-down" size={18} color="#ccc" />
+  </TouchableOpacity>
+)}
 
-  <TextInput
-    style={styles.input}
-    placeholder="2005-08-15"
-    placeholderTextColor="#ccc"
-    value={campos.fecha_nacimiento}
-    onChangeText={(text) =>
-      setCampos({
-        ...campos,
-        fecha_nacimiento: text,
-      })
-    }
+{errores.fecha_nacimiento && (
+  <Text style={styles.errorText}>
+    {errores.fecha_nacimiento}
+  </Text>
+)}
+
+{/* DatePicker Android (inline) */}
+{mostrarDatePicker && Platform.OS === 'android' && (
+  <DateTimePicker
+    value={fechaSeleccionada ?? new Date(2000, 0, 1)}
+    mode="date"
+    display="default"
+    maximumDate={new Date()}
+    onChange={(event: DateTimePickerEvent, date?: Date) => {
+      setMostrarDatePicker(false);
+      if (event.type === 'set' && date) {
+        setFechaSeleccionada(date);
+        setCampos({
+          ...campos,
+          fecha_nacimiento: date.toISOString().split('T')[0],
+        });
+      }
+    }}
   />
-</View>
+)}
+
+{/* DatePicker iOS (modal) */}
+{Platform.OS === 'ios' && (
+  <Modal
+    visible={mostrarDatePicker}
+    transparent
+    animationType="slide"
+  >
+    <View style={styles.modalOverlay}>
+      <View style={styles.modalContenido}>
+        <View style={styles.modalHeader}>
+          <TouchableOpacity onPress={() => setMostrarDatePicker(false)}>
+            <Text style={styles.modalCancelar}>Cancelar</Text>
+          </TouchableOpacity>
+          <Text style={styles.modalTitulo}>Fecha de nacimiento</Text>
+          <TouchableOpacity
+            onPress={() => {
+              const fecha = fechaSeleccionada ?? new Date(2000, 0, 1);
+              setCampos({
+                ...campos,
+                fecha_nacimiento: fecha.toISOString().split('T')[0],
+              });
+              setMostrarDatePicker(false);
+            }}
+          >
+            <Text style={styles.modalAceptar}>Aceptar</Text>
+          </TouchableOpacity>
+        </View>
+        <DateTimePicker
+          value={fechaSeleccionada ?? new Date(2000, 0, 1)}
+          mode="date"
+          display="spinner"
+          maximumDate={new Date()}
+          locale="es-CO"
+          onChange={(event: DateTimePickerEvent, date?: Date) => {
+            if (date) setFechaSeleccionada(date);
+          }}
+        />
+      </View>
+    </View>
+  </Modal>
+)}
             {/* Términos */}
 
             <TouchableOpacity
@@ -798,5 +966,45 @@ const styles = StyleSheet.create({
     marginTop: 22,
     color: '#e91e8c',
     fontWeight: 'bold',
+  },
+
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+
+  modalContenido: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    paddingBottom: 30,
+  },
+
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+
+  modalTitulo: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1a1a2e',
+  },
+
+  modalCancelar: {
+    fontSize: 15,
+    color: '#888',
+  },
+
+  modalAceptar: {
+    fontSize: 15,
+    color: '#e91e8c',
+    fontWeight: '700',
   },
 });

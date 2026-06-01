@@ -7,10 +7,10 @@ import {
   StyleSheet,
   TextInput,
   Dimensions,
+  Platform,
 } from 'react-native';
 
 import { SafeAreaView } from 'react-native-safe-area-context';
-
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 
@@ -18,10 +18,55 @@ const { width } = Dimensions.get('window');
 
 const ACCENT = '#e91e8c';
 const DARK = '#3A3A3A';
-const LIGHT_BG = '#F3F3F3';
 const BORDER = '#9A9A9A';
+const SIDEBAR_WIDTH = 220;
+
+const ES_WEB_ESCRITORIO = Platform.OS === 'web' && width >= 768;
 
 type Seccion = 'pagina_principal' | 'usuario' | 'venta' | 'pedido' | 'producto' | 'inventario';
+
+// ── Definición de columnas por sección (igual al PHP) ──
+const columnasPorSeccion: Record<Seccion, string[]> = {
+  pagina_principal: [],
+  usuario: ['Id Usuario', 'CC', 'Nombre Usuario', 'Contraseña', 'Nombres', 'Apellidos', 'Teléfono', 'Correo', 'Dirección', 'Género', 'Fecha Nacimiento', 'Fecha Registro', 'Cargo', 'Estado', 'Acciones'],
+  venta: ['Id Venta', 'Fecha Venta', 'Hora', 'Método Pago', 'Costo Total', 'Pago Recibido', 'Cambio', 'Estado', 'Id Vendedor', 'Acciones'],
+  pedido: ['Id Pedido', 'Fecha Pedido', 'Hora Pedido', 'Método Pago', 'Total Pedido', 'Costo Envío', 'Tipo Entrega', 'Dirección Entrega', 'Ciudad Entrega', 'Teléfono Contacto', 'Fecha Entrega', 'Estado', 'Id Domiciliario', 'Id Cliente', 'Acciones'],
+  producto: ['Id Producto', 'Imagen', 'Nombre Producto', 'Descripción', 'Categoría', 'Talla', 'Color', 'Precio', 'Estado', 'Acciones'],
+  inventario: ['Id Inventario', 'Stock Disponible', 'Stock Mínimo', 'Id Producto', 'Acciones'],
+};
+
+// Botones de acción por sección
+const accionesPorSeccion: Record<Seccion, { label: string; ruta: string }[]> = {
+  pagina_principal: [],
+  usuario: [
+    { label: 'Crear Nuevo Usuario', ruta: '/registroUsuarios' },
+  ],
+  venta: [
+    { label: 'Crear Nueva Venta', ruta: '/registroVentas' },
+    { label: 'Reporte de Ventas', ruta: '/reporteVentas' },
+  ],
+  pedido: [
+    { label: 'Crear Nuevo Pedido', ruta: '/registroPedidos' },
+    { label: 'Reporte de Pedidos', ruta: '/reportePedidos' },
+  ],
+  producto: [
+    { label: 'Crear Nuevo Producto', ruta: '/registroProductos' },
+  ],
+  inventario: [
+    { label: 'Crear Nuevo Inventario', ruta: '/registroInventario' },
+    { label: 'Reporte de Inventario', ruta: '/reporteInventario' },
+  ],
+};
+
+// Botones de fila por sección
+const botonesFilaPorSeccion: Record<Seccion, string[]> = {
+  pagina_principal: [],
+  usuario: ['Actualizar', 'Eliminar', 'Reactivar'],
+  venta: ['Actualizar', 'Eliminar', 'Reactivar'],
+  pedido: ['Actualizar', 'Cancelar', 'Reactivar'],
+  producto: ['Actualizar', 'Eliminar', 'Reactivar'],
+  inventario: ['Actualizar'],
+};
 
 export default function VistaAdministrador() {
   const router = useRouter();
@@ -49,112 +94,125 @@ export default function VistaAdministrador() {
     { titulo: 'Productos Activos', valor: '20' },
   ];
 
-  const columnasPorSeccion: Record<Seccion, string[]> = {
-    pagina_principal: [],
-    usuario: ['Id', 'CC', 'Nombre Usuario', 'Nombres', 'Apellidos', 'Teléfono', 'Correo', 'Dirección', 'Cargo', 'Estado'],
-    venta: ['Id Venta', 'Fecha', 'Hora', 'Método Pago', 'Total', 'Pago Recibido', 'Cambio', 'Estado', 'Id Vendedor'],
-    pedido: ['Id Pedido', 'Fecha', 'Hora', 'Método', 'Total', 'Envío', 'Tipo Entrega', 'Dirección', 'Ciudad', 'Teléfono', 'Fecha Entrega', 'Estado', 'Domiciliario', 'Cliente'],
-    producto: ['Id Producto', 'Nombre', 'Descripción', 'Categoría', 'Talla', 'Color', 'Precio', 'Estado'],
-    inventario: ['Id Inventario', 'Stock Disponible', 'Stock Mínimo', 'Id Producto'],
-  };
+  const BarraLateral = ({ onClose }: { onClose?: () => void }) => (
+    <View style={styles.barra}>
+      <Text style={styles.barraTitle}>Administrador</Text>
+      <ScrollView showsVerticalScrollIndicator={false}>
+        {menuItems.map((item) => (
+          <TouchableOpacity
+            key={item.id}
+            style={[styles.barraItem, seccionActiva === item.id && styles.barraItemActivo]}
+            onPress={() => { setSeccionActiva(item.id); onClose?.(); }}
+          >
+            <Ionicons name={item.icon} size={20} color="#fff" />
+            <Text style={styles.barraItemText}>{item.label}</Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+      <TouchableOpacity style={styles.barraCerrar} onPress={() => router.replace('/login')}>
+        <Ionicons name="log-out-outline" size={20} color="#fff" />
+        <Text style={styles.barraItemText}>Cerrar Sesión</Text>
+      </TouchableOpacity>
+    </View>
+  );
 
-  return (
-    <SafeAreaView style={styles.container}>
-      {/* Barra lateral como drawer */}
-      {menuAbierto && (
-        <View style={styles.overlay}>
-          <TouchableOpacity style={styles.overlayBg} onPress={() => setMenuAbierto(false)} />
-          <View style={styles.barra}>
-            <Text style={styles.barraTitle}>Administrador</Text>
-            <ScrollView>
-              {menuItems.map((item) => (
-                <TouchableOpacity
-                  key={item.id}
-                  style={[styles.barraItem, seccionActiva === item.id && styles.barraItemActivo]}
-                  onPress={() => { setSeccionActiva(item.id); setMenuAbierto(false); }}
-                >
-                  <Ionicons name={item.icon} size={20} color="#fff" />
-                  <Text style={styles.barraItemText}>{item.label}</Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-            <TouchableOpacity style={styles.barraCerrar} onPress={() => router.replace('/login')}>
-              <Ionicons name="log-out-outline" size={20} color="#fff" />
-              <Text style={styles.barraItemText}>Cerrar Sesión</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      )}
-
-      {/* Contenido principal */}
-      <View style={styles.contenidoPrincipal}>
-        {/* Barra superior */}
-        <View style={styles.barraSuperior}>
+  const Contenido = () => (
+    <View style={styles.contenidoPrincipal}>
+      {/* Barra superior */}
+      <View style={styles.barraSuperior}>
+        {!ES_WEB_ESCRITORIO && (
           <TouchableOpacity onPress={() => setMenuAbierto(true)}>
             <Ionicons name="menu" size={26} color="#fff" />
           </TouchableOpacity>
-          <Text style={styles.barraSuperiorTitulo}>Bienvenido, Administrador</Text>
-          <TouchableOpacity style={styles.btnRosa} onPress={() => router.replace('/login')}>
-            <Text style={styles.btnRosaTexto}>Salir</Text>
+        )}
+        <Text style={[styles.barraSuperiorTitulo, ES_WEB_ESCRITORIO && { marginLeft: 0 }]}>
+          Bienvenido, Administrador
+        </Text>
+        <TouchableOpacity style={styles.btnRosa} onPress={() => router.replace('/login')}>
+          <Text style={styles.btnRosaTexto}>Salir</Text>
+        </TouchableOpacity>
+      </View>
+
+      <ScrollView style={styles.scroll} contentContainerStyle={{ paddingBottom: 30 }}>
+        {/* Buscador */}
+        <View style={styles.buscador}>
+          <TextInput
+            style={styles.buscadorInput}
+            placeholder="Escribe tu búsqueda"
+            placeholderTextColor="#999"
+            value={busqueda}
+            onChangeText={setBusqueda}
+          />
+          <TouchableOpacity style={styles.btnRosa}>
+            <Ionicons name="search" size={18} color="#fff" />
           </TouchableOpacity>
         </View>
 
-        <ScrollView style={styles.scroll} contentContainerStyle={{ paddingBottom: 30 }}>
-          {/* Buscador */}
-          <View style={styles.buscador}>
-            <TextInput
-              style={styles.buscadorInput}
-              placeholder="Escribe tu búsqueda"
-              placeholderTextColor="#999"
-              value={busqueda}
-              onChangeText={setBusqueda}
-            />
-            <TouchableOpacity style={styles.btnRosa}>
-              <Ionicons name="search" size={18} color="#fff" />
-            </TouchableOpacity>
-          </View>
-
-          {/* Sección principal */}
-          {seccionActiva === 'pagina_principal' && (
-            <View>
-              <View style={styles.seccionCajas}>
-                {cajas.map((caja, i) => (
-                  <View key={i} style={styles.caja}>
-                    <Text style={styles.cajaTitulo}>{caja.titulo}</Text>
-                    <Text style={styles.cajaValor}>{caja.valor}</Text>
-                  </View>
-                ))}
+        {/* Página principal: cajas */}
+        {seccionActiva === 'pagina_principal' && (
+          <View style={styles.seccionCajas}>
+            {cajas.map((caja, i) => (
+              <View key={i} style={[styles.caja, ES_WEB_ESCRITORIO && styles.cajaWeb]}>
+                <Text style={styles.cajaTitulo}>{caja.titulo}</Text>
+                <Text style={styles.cajaValor}>{caja.valor}</Text>
               </View>
-            </View>
-          )}
+            ))}
+          </View>
+        )}
 
-          {/* Secciones con tablas */}
-          {seccionActiva !== 'pagina_principal' && (
-            <View>
-              <Text style={styles.seccionTitulo}>
-                {menuItems.find(m => m.id === seccionActiva)?.label}
-              </Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator>
-                <View>
-                  {/* Header tabla */}
-                  <View style={styles.tablaHeader}>
-                    {columnasPorSeccion[seccionActiva].map((col, i) => (
-                      <Text key={i} style={styles.tablaTh}>{col}</Text>
+        {/* Secciones con tablas */}
+        {seccionActiva !== 'pagina_principal' && (
+          <View>
+            <Text style={styles.seccionTitulo}>
+              {menuItems.find(m => m.id === seccionActiva)?.label}
+            </Text>
+
+            {/* Tabla: scroll horizontal en móvil, ancho completo en escritorio */}
+            <ScrollView horizontal={!ES_WEB_ESCRITORIO} showsHorizontalScrollIndicator={!ES_WEB_ESCRITORIO}>
+              <View style={ES_WEB_ESCRITORIO ? { width: '100%' } : {}}>
+                {/* Header */}
+                <View style={styles.tablaHeader}>
+                  {columnasPorSeccion[seccionActiva].map((col, i) => (
+                    <Text key={i} style={[styles.tablaTh, ES_WEB_ESCRITORIO && { flex: 1, minWidth: 0 }]}>{col}</Text>
+                  ))}
+                </View>
+                {/* Fila vacía: texto "No hay registros" que ocupa todo el ancho (como colspan en PHP) + columna acciones */}
+                <View style={styles.tablaFila}>
+                  <Text style={[styles.tablaTdVacio, ES_WEB_ESCRITORIO && { flex: 1 }]}>
+                    No hay usuarios registrados.
+                  </Text>
+                  {/* Columna Acciones */}
+                  <View style={styles.tablaTdAcciones}>
+                    {botonesFilaPorSeccion[seccionActiva].map((btn, i) => (
+                      <TouchableOpacity key={i} style={styles.btnAccion}>
+                        <Text style={styles.btnAccionTexto}>{btn}</Text>
+                      </TouchableOpacity>
                     ))}
                   </View>
-                  {/* Fila vacía */}
-                  <View style={styles.tablaFila}>
-                    <Text style={styles.tablaTd}>No hay registros.</Text>
-                  </View>
                 </View>
-              </ScrollView>
-            </View>
-          )}
-        </ScrollView>
+              </View>
+            </ScrollView>
 
-        {/* Tab inferior de navegación */}
+            {/* Botones de sección (Crear, Reporte) */}
+            <View style={styles.botonesSeccion}>
+              {accionesPorSeccion[seccionActiva].map((accion, i) => (
+                <TouchableOpacity
+                  key={i}
+                  style={styles.btnSeccion}
+                  onPress={() => router.push(accion.ruta as any)}
+                >
+                  <Text style={styles.btnSeccionTexto}>{accion.label}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        )}
+      </ScrollView>
+
+      {/* Tab bar inferior: visible siempre en móvil, oculto en escritorio */}
+      {!ES_WEB_ESCRITORIO && (
         <View style={styles.tabBar}>
-          {menuItems.slice(0, 5).map((item) => (
+          {menuItems.map((item) => (
             <TouchableOpacity
               key={item.id}
               style={styles.tabItem}
@@ -171,69 +229,92 @@ export default function VistaAdministrador() {
             </TouchableOpacity>
           ))}
         </View>
-      </View>
+      )}
+    </View>
+  );
+
+  if (ES_WEB_ESCRITORIO) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.layoutWeb}>
+          <BarraLateral />
+          <Contenido />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <SafeAreaView style={styles.container}>
+      {menuAbierto && (
+        <View style={styles.overlay}>
+          <TouchableOpacity style={styles.overlayBg} onPress={() => setMenuAbierto(false)} />
+          <BarraLateral onClose={() => setMenuAbierto(false)} />
+        </View>
+      )}
+      <Contenido />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
+  layoutWeb: { flex: 1, flexDirection: 'row' },
   overlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 100, flexDirection: 'row' },
   overlayBg: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' },
-  barra: {
-    width: 260,
-    backgroundColor: DARK,
-    padding: 20,
-    paddingTop: 50,
-  },
-  barraTitle: { color: '#fff', fontSize: 20, fontWeight: 'bold', textAlign: 'center', marginBottom: 24 },
+
+  barra: { width: SIDEBAR_WIDTH, backgroundColor: DARK, padding: 20, paddingTop: 450 },
+  barraTitle: { color: '#fff', fontSize: 18, fontWeight: 'bold', textAlign: 'center', marginBottom: 24 },
   barraItem: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14, paddingHorizontal: 10, borderRadius: 6 },
   barraItemActivo: { backgroundColor: ACCENT },
-  barraItemText: { color: '#fff', fontSize: 15 },
+  barraItemText: { color: '#fff', fontSize: 16 },
   barraCerrar: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14, paddingHorizontal: 10, borderTopWidth: 1, borderTopColor: '#555', marginTop: 10 },
+
   contenidoPrincipal: { flex: 1 },
-  barraSuperior: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    backgroundColor: DARK, paddingHorizontal: 16, paddingVertical: 14,
-  },
+  barraSuperior: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: DARK, paddingHorizontal: 16, paddingVertical: 14 },
   barraSuperiorTitulo: { color: '#fff', fontSize: 16, fontWeight: '600', flex: 1, marginLeft: 12 },
+
   btnRosa: { backgroundColor: ACCENT, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 5 },
   btnRosaTexto: { color: '#fff', fontWeight: 'bold', fontSize: 13 },
+
   scroll: { flex: 1, paddingHorizontal: 16, paddingTop: 14 },
+
   buscador: { flexDirection: 'row', gap: 8, marginBottom: 16 },
-  buscadorInput: {
-    flex: 1, borderWidth: 1, borderColor: '#ddd', borderRadius: 5,
-    paddingHorizontal: 12, paddingVertical: 10, fontSize: 15, color: '#333',
-  },
+  buscadorInput: { flex: 1, borderWidth: 1, borderColor: '#ddd', borderRadius: 5, paddingHorizontal: 12, paddingVertical: 10, fontSize: 15, color: '#333' },
+
   seccionCajas: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
   caja: {
     width: (width - 44) / 2,
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    padding: 16,
-    borderTopWidth: 4,
-    borderTopColor: ACCENT,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-    alignItems: 'center',
+    backgroundColor: '#fff', borderRadius: 8, padding: 16,
+    borderTopWidth: 4, borderTopColor: ACCENT,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1, shadowRadius: 8, elevation: 4, alignItems: 'center',
   },
+  cajaWeb: { width: 200 },
   cajaTitulo: { fontSize: 13, fontWeight: '600', color: DARK, textAlign: 'center', marginBottom: 6 },
   cajaValor: { fontSize: 22, fontWeight: 'bold', color: ACCENT },
+
   seccionTitulo: { fontSize: 20, fontWeight: 'bold', color: DARK, marginBottom: 14 },
+
   tablaHeader: { flexDirection: 'row', backgroundColor: DARK },
-  tablaTh: { color: '#fff', fontWeight: '600', fontSize: 13, paddingHorizontal: 14, paddingVertical: 12, minWidth: 120, borderRightWidth: 1, borderRightColor: '#555' },
-  tablaFila: { flexDirection: 'row', borderWidth: 1, borderColor: BORDER, padding: 12 },
-  tablaTd: { fontSize: 14, color: '#555' },
-  tabBar: {
-    flexDirection: 'row',
-    borderTopWidth: 1,
-    borderTopColor: '#eee',
-    backgroundColor: '#fff',
-    paddingBottom: 8,
-  },
+  tablaTh: { color: '#fff', fontWeight: '600', fontSize: 12, paddingHorizontal: 10, paddingVertical: 10, minWidth: 110, borderRightWidth: 1, borderRightColor: '#555' },
+
+  tablaFila: { flexDirection: 'row', borderWidth: 1, borderColor: BORDER, alignItems: 'center' },
+  tablaTd: { fontSize: 13, color: '#555', paddingHorizontal: 14, paddingVertical: 12, minWidth: 110, borderRightWidth: 1, borderRightColor: BORDER },
+  // Celda "No hay registros" que se expande como colspan en HTML
+  tablaTdVacio: { fontSize: 13, color: '#555', paddingHorizontal: 14, paddingVertical: 14, flex: 1, minWidth: 200, borderRightWidth: 1, borderRightColor: BORDER },
+
+  // Columna de acciones dentro de la fila — botones más pequeños
+  tablaTdAcciones: { minWidth: 90, paddingHorizontal: 6, paddingVertical: 6, gap: 4, justifyContent: 'center', alignItems: 'center' },
+  btnAccion: { backgroundColor: ACCENT, borderRadius: 3, paddingHorizontal: 7, paddingVertical: 4, marginBottom: 3, alignItems: 'center', width: 76 },
+  btnAccionTexto: { color: '#fff', fontSize: 10, fontWeight: '600' },
+
+  // Botones de crear/reporte debajo de la tabla
+  botonesSeccion: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 16 },
+  btnSeccion: { backgroundColor: DARK, borderRadius: 4, paddingHorizontal: 14, paddingVertical: 10 },
+  btnSeccionTexto: { color: '#fff', fontSize: 13, fontWeight: '600' },
+
+  tabBar: { flexDirection: 'row', borderTopWidth: 1, borderTopColor: '#eee', backgroundColor: '#fff', paddingBottom: 8 },
   tabItem: { flex: 1, alignItems: 'center', paddingTop: 8, gap: 2 },
-  tabLabel: { fontSize: 10, color: '#999', textAlign: 'center' },
+  tabLabel: { fontSize: 9, color: '#999', textAlign: 'center' },
 });
