@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,8 @@ import {
   TextInput,
   Dimensions,
   Platform,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
 
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -22,6 +24,8 @@ const BORDER = '#9A9A9A';
 const SIDEBAR_WIDTH = 220;
 
 const ES_WEB_ESCRITORIO = Platform.OS === 'web' && width >= 768;
+
+const API_BASE = 'http://localhost/FashFind/api';
 
 type Seccion = 'pagina_principal' | 'usuario' | 'venta' | 'pedido' | 'producto' | 'inventario';
 
@@ -42,8 +46,8 @@ const accionesPorSeccion: Record<Seccion, { label: string; ruta: string }[]> = {
     { label: 'Crear Nuevo Usuario', ruta: '/registroUsuarios' },
   ],
   venta: [
-    { label: 'Crear Nueva Venta', ruta: '/registroVentas' },
-    { label: 'Reporte de Ventas', ruta: '/reporteVentas' },
+    { label: 'Crear Nueva Venta', ruta: '/form_registros/registroVentas' },
+    { label: 'Reporte de Ventas', ruta: '/form_actualizaciones/reporteVentas' },
   ],
   pedido: [
     { label: 'Crear Nuevo Pedido', ruta: '/registroPedidos' },
@@ -73,6 +77,81 @@ export default function VistaAdministrador() {
   const [seccionActiva, setSeccionActiva] = useState<Seccion>('pagina_principal');
   const [menuAbierto, setMenuAbierto] = useState(false);
   const [busqueda, setBusqueda] = useState('');
+
+  // ── Estado ventas ──────────────────────────────────────────────────────────
+  const [ventas, setVentas] = useState<any[]>([]);
+  const [cargandoVentas, setCargandoVentas] = useState(false);
+
+  // ── Cargar ventas al entrar a la sección ──────────────────────────────────
+  const cargarVentas = useCallback(async () => {
+    try {
+      setCargandoVentas(true);
+      const res  = await fetch(`${API_BASE}/ventas.php`);
+      const json = await res.json();
+      if (json.success) setVentas(json.data ?? []);
+      else Alert.alert('Error', json.mensaje ?? 'No se pudieron cargar las ventas.');
+    } catch {
+      Alert.alert('Error de conexión', 'No se pudo conectar con el servidor.');
+    } finally {
+      setCargandoVentas(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (seccionActiva === 'venta') cargarVentas();
+  }, [seccionActiva]);
+
+  // ── Filtrar ventas según búsqueda ─────────────────────────────────────────
+  const ventasFiltradas = ventas.filter(v => {
+    if (!busqueda.trim()) return true;
+    const q = busqueda.toLowerCase();
+    return (
+      String(v.id_venta).includes(q) ||
+      (v.fecha_venta ?? '').toLowerCase().includes(q) ||
+      (v.metodo_pago ?? '').toLowerCase().includes(q) ||
+      (v.estado ?? '').toLowerCase().includes(q) ||
+      (v.nombres ?? '').toLowerCase().includes(q) ||
+      (v.apellidos ?? '').toLowerCase().includes(q)
+    );
+  });
+
+  // ── Acciones de fila ──────────────────────────────────────────────────────
+  const accionFila = async (btn: string, venta: any) => {
+    if (btn === 'Actualizar') {
+      router.push({ pathname: '/form_actualizaciones/editarVentas', params: { id: String(venta.id_venta) } } as any);
+      return;
+    }
+
+    const esEliminar  = btn === 'Eliminar';
+    const esReactivar = btn === 'Reactivar';
+    if (!esEliminar && !esReactivar) return;
+
+    const accion  = esEliminar ? 'eliminar' : 'reactivar';
+    const mensaje = esEliminar
+      ? `¿Desactivar la venta #${venta.id_venta}?`
+      : `¿Reactivar la venta #${venta.id_venta}?`;
+
+    Alert.alert('Confirmar', mensaje, [
+      { text: 'Cancelar', style: 'cancel' },
+      {
+        text: 'Confirmar',
+        onPress: async () => {
+          try {
+            const res  = await fetch(`${API_BASE}/ventas.php?id=${venta.id_venta}&action=${accion}`, { method: 'PUT' });
+            const json = await res.json();
+            if (json.success) {
+              Alert.alert('Éxito', json.mensaje);
+              cargarVentas();
+            } else {
+              Alert.alert('Error', json.mensaje ?? 'No se pudo completar la acción.');
+            }
+          } catch {
+            Alert.alert('Error de conexión', 'No se pudo conectar con el servidor.');
+          }
+        },
+      },
+    ]);
+  };
 
   const menuItems: { id: Seccion; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
     { id: 'pagina_principal', label: 'Página Principal', icon: 'home-outline' },
@@ -167,31 +246,91 @@ export default function VistaAdministrador() {
               {menuItems.find(m => m.id === seccionActiva)?.label}
             </Text>
 
-            {/* Tabla: scroll horizontal en móvil, ancho completo en escritorio */}
-            <ScrollView horizontal={!ES_WEB_ESCRITORIO} showsHorizontalScrollIndicator={!ES_WEB_ESCRITORIO}>
-              <View style={ES_WEB_ESCRITORIO ? { width: '100%' } : {}}>
-                {/* Header */}
-                <View style={styles.tablaHeader}>
-                  {columnasPorSeccion[seccionActiva].map((col, i) => (
-                    <Text key={i} style={[styles.tablaTh, ES_WEB_ESCRITORIO && { flex: 1, minWidth: 0 }]}>{col}</Text>
-                  ))}
-                </View>
-                {/* Fila vacía: texto "No hay registros" que ocupa todo el ancho (como colspan en PHP) + columna acciones */}
-                <View style={styles.tablaFila}>
-                  <Text style={[styles.tablaTdVacio, ES_WEB_ESCRITORIO && { flex: 1 }]}>
-                    No hay usuarios registrados.
-                  </Text>
-                  {/* Columna Acciones */}
-                  <View style={styles.tablaTdAcciones}>
-                    {botonesFilaPorSeccion[seccionActiva].map((btn, i) => (
-                      <TouchableOpacity key={i} style={styles.btnAccion}>
-                        <Text style={styles.btnAccionTexto}>{btn}</Text>
-                      </TouchableOpacity>
+            {/* ── Tabla de Ventas con datos reales ── */}
+            {seccionActiva === 'venta' && (
+              <View>
+                {cargandoVentas ? (
+                  <View style={{ paddingVertical: 30, alignItems: 'center' }}>
+                    <ActivityIndicator size="large" color={ACCENT} />
+                    <Text style={{ color: '#888', marginTop: 8 }}>Cargando ventas...</Text>
+                  </View>
+                ) : (
+                  <ScrollView horizontal={!ES_WEB_ESCRITORIO} showsHorizontalScrollIndicator={!ES_WEB_ESCRITORIO}>
+                    <View style={ES_WEB_ESCRITORIO ? { width: '100%' } : {}}>
+                      {/* Header */}
+                      <View style={styles.tablaHeader}>
+                        {columnasPorSeccion.venta.map((col, i) => (
+                          <Text key={i} style={[styles.tablaTh, ES_WEB_ESCRITORIO && { flex: 1, minWidth: 0 }]}>{col}</Text>
+                        ))}
+                      </View>
+                      {/* Filas */}
+                      {ventasFiltradas.length === 0 ? (
+                        <View style={styles.tablaFila}>
+                          <Text style={[styles.tablaTdVacio, ES_WEB_ESCRITORIO && { flex: 1 }]}>
+                            No hay ventas registradas.
+                          </Text>
+                          <View style={styles.tablaTdAcciones}>
+                            {botonesFilaPorSeccion.venta.map((btn, i) => (
+                              <TouchableOpacity key={i} style={styles.btnAccion}>
+                                <Text style={styles.btnAccionTexto}>{btn}</Text>
+                              </TouchableOpacity>
+                            ))}
+                          </View>
+                        </View>
+                      ) : (
+                        ventasFiltradas.map((v) => (
+                          <View key={v.id_venta} style={styles.tablaFila}>
+                            <Text style={styles.tablaTd}>{v.id_venta}</Text>
+                            <Text style={styles.tablaTd}>{v.fecha_venta}</Text>
+                            <Text style={styles.tablaTd}>{v.hora}</Text>
+                            <Text style={styles.tablaTd}>{v.metodo_pago}</Text>
+                            <Text style={styles.tablaTd}>${Number(v.costo_total).toLocaleString('es-CO')}</Text>
+                            <Text style={styles.tablaTd}>${Number(v.pago_recibido).toLocaleString('es-CO')}</Text>
+                            <Text style={styles.tablaTd}>${Number(v.cambio).toLocaleString('es-CO')}</Text>
+                            <Text style={[styles.tablaTd, { color: v.estado === 'Activo' ? '#27ae60' : '#e74c3c', fontWeight: '600' }]}>{v.estado}</Text>
+                            <Text style={styles.tablaTd}>{v.id_usuario} - {v.nombres} {v.apellidos}</Text>
+                            {/* Columna Acciones */}
+                            <View style={styles.tablaTdAcciones}>
+                              {botonesFilaPorSeccion.venta.map((btn, i) => (
+                                <TouchableOpacity key={i} style={styles.btnAccion} onPress={() => accionFila(btn, v)}>
+                                  <Text style={styles.btnAccionTexto}>{btn}</Text>
+                                </TouchableOpacity>
+                              ))}
+                            </View>
+                          </View>
+                        ))
+                      )}
+                    </View>
+                  </ScrollView>
+                )}
+              </View>
+            )}
+
+            {/* ── Otras secciones: tabla estática sin datos reales aún ── */}
+            {seccionActiva !== 'venta' && (
+              <ScrollView horizontal={!ES_WEB_ESCRITORIO} showsHorizontalScrollIndicator={!ES_WEB_ESCRITORIO}>
+                <View style={ES_WEB_ESCRITORIO ? { width: '100%' } : {}}>
+                  {/* Header */}
+                  <View style={styles.tablaHeader}>
+                    {columnasPorSeccion[seccionActiva].map((col, i) => (
+                      <Text key={i} style={[styles.tablaTh, ES_WEB_ESCRITORIO && { flex: 1, minWidth: 0 }]}>{col}</Text>
                     ))}
                   </View>
+                  <View style={styles.tablaFila}>
+                    <Text style={[styles.tablaTdVacio, ES_WEB_ESCRITORIO && { flex: 1 }]}>
+                      No hay registros.
+                    </Text>
+                    <View style={styles.tablaTdAcciones}>
+                      {botonesFilaPorSeccion[seccionActiva].map((btn, i) => (
+                        <TouchableOpacity key={i} style={styles.btnAccion}>
+                          <Text style={styles.btnAccionTexto}>{btn}</Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  </View>
                 </View>
-              </View>
-            </ScrollView>
+              </ScrollView>
+            )}
 
             {/* Botones de sección (Crear, Reporte) */}
             <View style={styles.botonesSeccion}>
