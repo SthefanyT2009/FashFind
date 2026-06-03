@@ -1,4 +1,4 @@
-const API_URL = 'http://172.30.4.210/FashFind/api';
+const API_URL = 'http://192.168.0.7/FashFind/api';
 
 export type Cargo = 'Administrador' | 'Vendedor' | 'Domiciliario' | 'Cliente';
 

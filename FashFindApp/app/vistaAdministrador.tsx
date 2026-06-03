@@ -263,7 +263,7 @@ const styles = StyleSheet.create({
   overlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 100, flexDirection: 'row' },
   overlayBg: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' },
 
-  barra: { width: SIDEBAR_WIDTH, backgroundColor: DARK, padding: 20, paddingTop: 450 },
+  barra: { width: SIDEBAR_WIDTH, backgroundColor: DARK, padding: 20, paddingTop: 200 },
   barraTitle: { color: '#fff', fontSize: 18, fontWeight: 'bold', textAlign: 'center', marginBottom: 24 },
   barraItem: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14, paddingHorizontal: 10, borderRadius: 6 },
   barraItemActivo: { backgroundColor: ACCENT },
