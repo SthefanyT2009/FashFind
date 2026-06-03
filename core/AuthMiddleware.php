@@ -13,7 +13,7 @@ public static function verificarSesion() {
 
 public static function soloAdmin() {
     self::verificarSesion();
-    if ($_SESSION['usuario']['cargo'] !== 'admin') {
+    if ($_SESSION['usuario']['cargo'] !== 'Administrador') {
         echo "<h3>Acceso denegado</h3>";
         exit;
     }
