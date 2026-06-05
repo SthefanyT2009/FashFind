@@ -238,59 +238,47 @@ const accionFilaPedido = async (btn: string, pedido: any) => {
 
   const esCancelar = btn === 'Cancelar';
   const esReactivar = btn === 'Reactivar';
-
   if (!esCancelar && !esReactivar) return;
 
   const accion = esCancelar ? 'cancelar' : 'reactivar';
-
   const mensaje = esCancelar
     ? `¿Cancelar el pedido #${pedido.id_pedido}?`
     : `¿Reactivar el pedido #${pedido.id_pedido}?`;
 
-  Alert.alert(
-    'Confirmar',
-    mensaje,
-    [
-      {
-        text: 'No',
-        style: 'cancel',
-      },
-      {
-        text: 'Sí',
-        onPress: async () => {
-          try {
+  // ✅ Funciona tanto en web como en móvil
+  const confirmar = Platform.OS === 'web'
+    ? window.confirm(mensaje)
+    : await new Promise<boolean>((resolve) =>
+        Alert.alert('Confirmar', mensaje, [
+          { text: 'No', style: 'cancel', onPress: () => resolve(false) },
+          { text: 'Sí', onPress: () => resolve(true) },
+        ])
+      );
 
-            const url =
-              `${API_BASE}/pedidos.php?id=${pedido.id_pedido}&action=${accion}`;
+  if (!confirmar) return;
 
-            console.log('URL:', url);
+  try {
+    const res = await fetch(`${API_BASE}/pedidos.php?id=${pedido.id_pedido}&action=${accion}`, {
+      method: 'PUT',
+    });
+    const json = await res.json();
 
-            const res = await fetch(url, {
-              method: 'GET',
-            });
-
-            const texto = await res.text();
-
-            console.log('RESPUESTA:', texto);
-
-            const json = JSON.parse(texto);
-
-            if (json.success) {
-              Alert.alert('Éxito', json.mensaje);
-
-              await cargarPedidos();
-            } else {
-              Alert.alert('Error', json.mensaje);
-            }
-
-          } catch (error) {
-            console.error(error);
-            Alert.alert('Error', 'No se pudo conectar con el servidor');
-          }
-        },
-      },
-    ]
-  );
+    if (json.success) {
+      Platform.OS === 'web'
+        ? window.alert(json.mensaje)
+        : Alert.alert('Éxito', json.mensaje);
+      await cargarPedidos();
+    } else {
+      Platform.OS === 'web'
+        ? window.alert(json.mensaje)
+        : Alert.alert('Error', json.mensaje);
+    }
+  } catch (error) {
+    console.error(error);
+    Platform.OS === 'web'
+      ? window.alert('No se pudo conectar con el servidor')
+      : Alert.alert('Error', 'No se pudo conectar con el servidor');
+  }
 };
 
   const limpiarBusqueda = () => {
