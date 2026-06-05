@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
-  TextInput, Alert, ActivityIndicator, Platform,
+  TextInput, Alert, ActivityIndicator, Platform, ImageBackground,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -9,11 +9,10 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 
 const ACCENT = '#e91e8c';
 const DARK   = '#3A3A3A';
-const BORDER = '#9A9A9A';
+const BORDER = '#000';
 
-const API_BASE = 'http://192.168.1.7/FashFind/api';
+const API_BASE = 'http://172.30.3.163/FashFind/api';
 
-// Helper compatible con web y móvil
 const mostrarAlerta = (titulo: string, mensaje: string, onOk?: () => void) => {
   if (Platform.OS === 'web') {
     window.alert(`${titulo}\n\n${mensaje}`);
@@ -27,7 +26,6 @@ export default function EditarVentas() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
 
-  // ── Campos cabecera ────────────────────────────────────────────────────────
   const [fechaVenta, setFechaVenta]     = useState('');
   const [hora, setHora]                 = useState('');
   const [metodoPago, setMetodoPago]     = useState<'Efectivo' | 'Transferencia'>('Efectivo');
@@ -35,14 +33,10 @@ export default function EditarVentas() {
   const [costoTotal, setCostoTotal]     = useState('');
   const [pagoRecibido, setPagoRecibido] = useState('');
   const [cambio, setCambio]             = useState('');
-
-  // ── Detalles (solo lectura al editar) ────────────────────────────────────
   const [detalles, setDetalles]         = useState<any[]>([]);
-
   const [cargando, setCargando]         = useState(false);
   const [cargandoDatos, setCargandoDatos] = useState(true);
 
-  // ── Cargar venta al montar ────────────────────────────────────────────────
   useEffect(() => {
     if (!id) return;
     cargarVenta();
@@ -67,13 +61,11 @@ export default function EditarVentas() {
       }
     } catch {
       mostrarAlerta('Error de conexión', 'No se pudo cargar la venta.', () => router.back());
-      router.back();
     } finally {
       setCargandoDatos(false);
     }
   };
 
-  // ── Recalcular cambio cuando cambia pago recibido ─────────────────────────
   const onChangePago = (val: string) => {
     setPagoRecibido(val);
     const pago  = parseFloat(val)        || 0;
@@ -81,13 +73,11 @@ export default function EditarVentas() {
     setCambio(String(pago >= total ? pago - total : 0));
   };
 
-  // ── Guardar cambios ───────────────────────────────────────────────────────
   const guardarCambios = async () => {
     if (!idVendedor || !pagoRecibido) {
       mostrarAlerta('Campos incompletos', 'Completa todos los campos obligatorios.');
       return;
     }
-
     const body = {
       fecha_venta:   fechaVenta,
       hora,
@@ -97,7 +87,6 @@ export default function EditarVentas() {
       cambio:        parseFloat(cambio),
       id_usuario:    parseInt(idVendedor),
     };
-
     try {
       setCargando(true);
       const res  = await fetch(`${API_BASE}/ventas.php?id=${id}`, {
@@ -118,190 +107,189 @@ export default function EditarVentas() {
     }
   };
 
-  // ─────────────────────────────────────────────────────────────────────────
+  // ── Pantalla de carga ─────────────────────────────────────────────────────
   if (cargandoDatos) {
     return (
-      <SafeAreaView style={s.safe}>
-        <View style={s.header}>
-          <TouchableOpacity onPress={() => router.back()} style={s.backBtn}>
-            <Ionicons name="arrow-back" size={22} color="#fff" />
-          </TouchableOpacity>
-          <Text style={s.headerTitle}>Editar Venta #{id}</Text>
-        </View>
-        <View style={s.centrado}>
-          <ActivityIndicator size="large" color={ACCENT} />
-          <Text style={s.cargandoText}>Cargando venta...</Text>
-        </View>
-      </SafeAreaView>
+      <View style={s.container}>
+        <ImageBackground
+          source={require('../../assets/images/fondoLogin.jpeg')}
+          style={s.bg}
+          resizeMode="cover"
+        >
+          <SafeAreaView style={s.safe}>
+            <View style={s.centrado}>
+              <ActivityIndicator size="large" color={ACCENT} />
+              <Text style={s.cargandoText}>Cargando venta...</Text>
+            </View>
+          </SafeAreaView>
+        </ImageBackground>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={s.safe}>
-      {/* Header */}
-      <View style={s.header}>
-        <TouchableOpacity onPress={() => router.back()} style={s.backBtn}>
-          <Ionicons name="arrow-back" size={22} color="#fff" />
-        </TouchableOpacity>
-        <Text style={s.headerTitle}>Editar Venta #{id}</Text>
-      </View>
+    <View style={s.container}>
+      <ImageBackground
+        source={require('../../assets/images/fondoLogin.jpeg')}
+        style={s.bg}
+        resizeMode="cover"
+      >
+        <SafeAreaView style={s.safe}>
+          <ScrollView contentContainerStyle={s.scrollContent}>
 
-      <ScrollView style={s.scroll} contentContainerStyle={{ paddingBottom: 40 }}>
-
-        {/* ── Datos cabecera ── */}
-        <View style={s.card}>
-          <Text style={s.cardTitle}>Datos de la Venta</Text>
-
-          <Text style={s.label}>Fecha Venta</Text>
-          <View style={s.inputBox}>
-            <TextInput
-              style={s.input} value={fechaVenta}
-              onChangeText={setFechaVenta} placeholder="YYYY-MM-DD"
-              placeholderTextColor="#bbb"
-            />
-          </View>
-
-          <Text style={s.label}>Hora</Text>
-          <View style={s.inputBox}>
-            <TextInput
-              style={s.input} value={hora}
-              onChangeText={setHora} placeholder="HH:MM"
-              placeholderTextColor="#bbb"
-            />
-          </View>
-
-          <Text style={s.label}>Método de Pago</Text>
-          <View style={s.pickerRow}>
-            {(['Efectivo', 'Transferencia'] as const).map(op => (
-              <TouchableOpacity
-                key={op}
-                style={[s.chip, metodoPago === op && s.chipActivo]}
-                onPress={() => setMetodoPago(op)}
-              >
-                <Text style={[s.chipText, metodoPago === op && s.chipTextActivo]}>{op}</Text>
+            <View style={s.card}>
+              <TouchableOpacity onPress={() => router.back()} style={s.backIcon}>
+                <Ionicons name="arrow-back" size={20} color={DARK} />
               </TouchableOpacity>
-            ))}
-          </View>
 
-          <Text style={s.label}>Id Vendedor</Text>
-          <View style={s.inputBox}>
-            <TextInput
-              style={s.input} keyboardType="numeric"
-              value={idVendedor} onChangeText={setIdVendedor}
-              placeholder="Ej: 1" placeholderTextColor="#bbb"
-            />
-          </View>
-        </View>
+              <Text style={s.mainTitle}>Editar Venta #{id}</Text>
 
-        {/* ── Detalles (solo lectura) ── */}
-        {detalles.length > 0 && (
-          <View style={s.card}>
-            <Text style={s.cardTitle}>Productos de la Venta</Text>
-            <Text style={s.nota}>Los productos no se pueden modificar al editar.</Text>
+              {/* ── Datos de la venta ── */}
+              <Text style={s.subTitle}>Datos de la Venta</Text>
 
-            <View style={s.tablaHeader}>
-              <Text style={[s.th, { flex: 2 }]}>Producto</Text>
-              <Text style={[s.th, { flex: 1 }]}>Cant.</Text>
-              <Text style={[s.th, { flex: 2 }]}>Precio</Text>
-              <Text style={[s.th, { flex: 2 }]}>Subtotal</Text>
-            </View>
-
-            {detalles.map((d, i) => (
-              <View key={i} style={s.tablaFila}>
-                <Text style={[s.td, { flex: 2 }]}>{d.nombre_producto ?? `#${d.id_producto}`}</Text>
-                <Text style={[s.td, { flex: 1 }]}>{d.cantidad}</Text>
-                <Text style={[s.td, { flex: 2 }]}>${Number(d.precio).toLocaleString('es-CO')}</Text>
-                <Text style={[s.td, { flex: 2, fontWeight: '600', color: ACCENT }]}>
-                  ${Number(d.sub_total).toLocaleString('es-CO')}
-                </Text>
+              <View style={s.inputGroup}>
+                <Text style={s.label}>Fecha Venta</Text>
+                <TextInput style={s.inputLine} value={fechaVenta} onChangeText={setFechaVenta} placeholder="YYYY-MM-DD" placeholderTextColor="#bbb" />
               </View>
-            ))}
-          </View>
-        )}
 
-        {/* ── Totales ── */}
-        <View style={s.card}>
-          <Text style={s.cardTitle}>Totales</Text>
+              <View style={s.inputGroup}>
+                <Text style={s.label}>Hora</Text>
+                <TextInput style={s.inputLine} value={hora} onChangeText={setHora} placeholder="HH:MM" placeholderTextColor="#bbb" />
+              </View>
 
-          <Text style={s.label}>Costo Total</Text>
-          <View style={[s.inputBox, s.inputReadonly]}>
-            <Text style={s.inputReadonlyText}>
-              ${Number(costoTotal).toLocaleString('es-CO')}
-            </Text>
-          </View>
+              <View style={s.inputGroup}>
+                <Text style={s.label}>Método de Pago</Text>
+                <View style={s.chipsWrap}>
+                  {(['Efectivo', 'Transferencia'] as const).map(op => (
+                    <TouchableOpacity
+                      key={op}
+                      style={[s.chip, metodoPago === op && s.chipActivo]}
+                      onPress={() => setMetodoPago(op)}
+                    >
+                      <Text style={[s.chipText, metodoPago === op && s.chipTextActivo]}>{op}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
 
-          <Text style={s.label}>Pago Recibido</Text>
-          <View style={s.inputBox}>
-            <TextInput
-              style={s.input} keyboardType="numeric"
-              value={pagoRecibido} onChangeText={onChangePago}
-              placeholder="0" placeholderTextColor="#bbb"
-            />
-          </View>
+              <View style={s.inputGroup}>
+                <Text style={s.label}>Id Vendedor</Text>
+                <TextInput style={s.inputLine} keyboardType="numeric" value={idVendedor} onChangeText={setIdVendedor} placeholder="Ej: 1" placeholderTextColor="#bbb" />
+              </View>
 
-          <Text style={s.label}>Cambio</Text>
-          <View style={[s.inputBox, s.inputReadonly]}>
-            <Text style={[s.inputReadonlyText, { color: Number(cambio) >= 0 ? '#27ae60' : '#e74c3c' }]}>
-              ${Number(cambio).toLocaleString('es-CO')}
-            </Text>
-          </View>
-        </View>
+              {/* ── Productos (solo lectura) ── */}
+              {detalles.length > 0 && (
+                <>
+                  <Text style={s.subTitle}>Productos de la Venta</Text>
+                  <Text style={s.nota}>Los productos no se pueden modificar al editar.</Text>
 
-        {/* ── Botones ── */}
-        <View style={s.botonesRow}>
-          <TouchableOpacity style={s.btnSecundario} onPress={() => router.back()}>
-            <Text style={s.btnSecundarioText}>Cancelar</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={s.btnPrincipal} onPress={guardarCambios} disabled={cargando}>
-            {cargando
-              ? <ActivityIndicator color="#fff" />
-              : <Text style={s.btnPrincipalText}>Guardar Cambios</Text>
-            }
-          </TouchableOpacity>
-        </View>
+                  <View style={s.tabla}>
+                    <View style={s.thRow}>
+                      <Text style={[s.th, { width: 80 }]}>Producto</Text>
+                      <Text style={[s.th, { width: 55 }]}>Cant.</Text>
+                      <Text style={[s.th, { width: 90 }]}>Precio</Text>
+                      <Text style={[s.th, { width: 90, borderRightWidth: 0 }]}>Subtotal</Text>
+                    </View>
+                    {detalles.map((d, i) => (
+                      <View key={i} style={[s.tr, i % 2 === 0 ? s.trPar : s.trImpar]}>
+                        <Text style={[s.tdText, { width: 80 }]}>{d.nombre_producto ?? `#${d.id_producto}`}</Text>
+                        <Text style={[s.tdText, { width: 55 }]}>{d.cantidad}</Text>
+                        <Text style={[s.tdText, { width: 90 }]}>${Number(d.precio).toLocaleString('es-CO')}</Text>
+                        <Text style={[s.tdText, { width: 90, borderRightWidth: 0, color: ACCENT }]}>${Number(d.sub_total).toLocaleString('es-CO')}</Text>
+                      </View>
+                    ))}
+                  </View>
+                </>
+              )}
 
-      </ScrollView>
-    </SafeAreaView>
+              {/* ── Totales ── */}
+              <Text style={s.subTitle}>Totales</Text>
+
+              <View style={s.inputGroup}>
+                <Text style={s.label}>Costo Total</Text>
+                <TextInput style={s.inputLine} value={`$ ${Number(costoTotal).toLocaleString('es-CO')}`} editable={false} />
+              </View>
+
+              <View style={s.inputGroup}>
+                <Text style={s.label}>Pago Recibido</Text>
+                <TextInput style={s.inputLine} keyboardType="numeric" value={pagoRecibido} onChangeText={onChangePago} placeholder="0" placeholderTextColor="#bbb" />
+              </View>
+
+              <View style={s.inputGroup}>
+                <Text style={s.label}>Cambio</Text>
+                <TextInput
+                  style={[s.inputLine, { color: Number(cambio) >= 0 ? '#27ae60' : '#e74c3c' }]}
+                  value={`$ ${Number(cambio).toLocaleString('es-CO')}`}
+                  editable={false}
+                />
+              </View>
+
+              {/* ── Botones ── */}
+              <TouchableOpacity style={[s.btnRosa, { marginTop: 20 }]} onPress={guardarCambios} disabled={cargando}>
+                {cargando
+                  ? <ActivityIndicator color="#fff" />
+                  : <Text style={s.btnRosaText}>Guardar Cambios</Text>
+                }
+              </TouchableOpacity>
+
+              <TouchableOpacity style={s.btnRegresar} onPress={() => router.back()}>
+                <Text style={s.btnRegresarText}>Cancelar</Text>
+              </TouchableOpacity>
+
+            </View>
+          </ScrollView>
+        </SafeAreaView>
+      </ImageBackground>
+    </View>
   );
 }
 
 const s = StyleSheet.create({
-  safe:   { flex: 1, backgroundColor: '#f5f5f5' },
-  header: { flexDirection: 'row', alignItems: 'center', backgroundColor: DARK, paddingHorizontal: 16, paddingVertical: 14, gap: 12 },
-  backBtn: { padding: 4 },
-  headerTitle: { color: '#fff', fontSize: 18, fontWeight: 'bold', flex: 1 },
+  container: { flex: 1 },
+  bg: { flex: 1, width: '100%', height: '100%' },
+  safe: { flex: 1 },
+  scrollContent: { flexGrow: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 50 },
 
   centrado:     { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
-  cargandoText: { color: '#888', fontSize: 15 },
+  cargandoText: { color: '#fff', fontSize: 15, fontWeight: '600' },
 
-  scroll: { flex: 1, padding: 16 },
+  card: {
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    width: Platform.OS === 'web' ? 450 : '90%',
+    borderRadius: 15,
+    padding: 30,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    elevation: 10,
+  },
 
-  card:      { backgroundColor: '#fff', borderRadius: 10, padding: 16, marginBottom: 16, elevation: 2, shadowColor: '#000', shadowOpacity: 0.07, shadowRadius: 6 },
-  cardTitle: { fontSize: 16, fontWeight: '700', color: DARK, marginBottom: 14, borderLeftWidth: 3, borderLeftColor: ACCENT, paddingLeft: 8 },
+  backIcon:  { position: 'absolute', top: 20, left: 20 },
+  mainTitle: { fontSize: 24, fontWeight: 'bold', color: ACCENT, textAlign: 'center', marginBottom: 25 },
+  subTitle:  { fontSize: 22, fontWeight: 'bold', color: ACCENT, textAlign: 'center', marginTop: 30, marginBottom: 20 },
 
-  label:    { fontSize: 14, color: '#555', marginBottom: 4, marginTop: 10 },
-  inputBox: { borderBottomWidth: 1, borderBottomColor: BORDER, paddingBottom: 6, marginBottom: 4 },
-  input:    { fontSize: 16, color: DARK, paddingVertical: 4 },
-  inputReadonly:     { backgroundColor: '#f9f9f9', borderRadius: 4, borderBottomWidth: 0, paddingHorizontal: 8, paddingVertical: 8 },
-  inputReadonlyText: { fontSize: 16, color: DARK, fontWeight: '600' },
+  inputGroup: { marginBottom: 20 },
+  label:      { fontSize: 16, color: DARK, marginBottom: 5 },
+  inputLine:  { borderBottomWidth: 1, borderBottomColor: BORDER, paddingVertical: 5, fontSize: 16, color: DARK },
 
-  pickerRow: { flexDirection: 'row', gap: 10, marginTop: 4, marginBottom: 4 },
-  chip:      { borderWidth: 1, borderColor: BORDER, borderRadius: 20, paddingHorizontal: 16, paddingVertical: 8 },
+  chipsWrap:      { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 4 },
+  chip:           { borderWidth: 1, borderColor: '#9A9A9A', borderRadius: 20, paddingHorizontal: 16, paddingVertical: 8 },
   chipActivo:     { backgroundColor: ACCENT, borderColor: ACCENT },
   chipText:       { color: '#555', fontSize: 14 },
   chipTextActivo: { color: '#fff', fontWeight: '600' },
 
-  nota: { fontSize: 12, color: '#888', fontStyle: 'italic', marginBottom: 10 },
+  nota: { fontSize: 12, color: '#888', fontStyle: 'italic', marginBottom: 10, textAlign: 'center' },
 
-  tablaHeader: { flexDirection: 'row', backgroundColor: DARK, borderRadius: 4, paddingVertical: 8, paddingHorizontal: 4, marginBottom: 4 },
-  th: { color: '#fff', fontSize: 11, fontWeight: '600', textAlign: 'center' },
+  tabla:   { borderWidth: 1, borderColor: '#e0c0d8', marginBottom: 15, borderRadius: 8, overflow: 'hidden' },
+  thRow:   { flexDirection: 'row', backgroundColor: '#f3d6ec', borderBottomWidth: 2, borderBottomColor: '#e91e8c' },
+  th:      { fontSize: 11, fontWeight: 'bold', paddingVertical: 10, paddingHorizontal: 3, textAlign: 'center', borderRightWidth: 1, borderRightColor: '#d9a8cc', color: DARK },
+  tr:      { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: '#f0e0eb', alignItems: 'center', minHeight: 44 },
+  trPar:   { backgroundColor: '#fff' },
+  trImpar: { backgroundColor: '#fdf5fb' },
+  tdText:  { fontSize: 13, paddingVertical: 6, textAlign: 'center', borderRightWidth: 1, borderRightColor: '#f0e0eb', color: DARK, fontWeight: '500' },
 
-  tablaFila: { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: '#eee', paddingVertical: 8, paddingHorizontal: 4 },
-  td: { fontSize: 13, color: DARK, textAlign: 'center' },
-
-  botonesRow:        { flexDirection: 'row', gap: 12, marginTop: 4 },
-  btnPrincipal:      { flex: 2, backgroundColor: ACCENT, borderRadius: 8, paddingVertical: 14, alignItems: 'center' },
-  btnPrincipalText:  { color: '#fff', fontWeight: 'bold', fontSize: 15 },
-  btnSecundario:     { flex: 1, backgroundColor: DARK, borderRadius: 8, paddingVertical: 14, alignItems: 'center' },
-  btnSecundarioText: { color: '#fff', fontWeight: '600', fontSize: 15 },
+  btnRosa:         { backgroundColor: ACCENT, paddingVertical: 12, borderRadius: 5, alignItems: 'center' },
+  btnRosaText:     { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+  btnRegresar:     { marginTop: 15, alignItems: 'center' },
+  btnRegresarText: { color: DARK, fontSize: 14, textDecorationLine: 'underline' },
 });

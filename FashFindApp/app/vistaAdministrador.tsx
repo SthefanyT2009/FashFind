@@ -28,21 +28,19 @@ const SIDEBAR_WIDTH = 220;
 const ES_WEB_ESCRITORIO = Platform.OS === 'web' && width >= 768;
 
 // Si estás en el mismo PC, usa localhost. Si estás en móvil, usa tu IP.
-const API_BASE = Platform.OS === 'web' ? 'http://localhost/FashFind/api' : 'http://192.168.1.7/FashFind/api';
+const API_BASE = Platform.OS === 'web' ? 'http://localhost/FashFind/api' : 'http://172.30.3.163/FashFind/api';
 
 type Seccion = 'pagina_principal' | 'usuario' | 'venta' | 'pedido' | 'producto' | 'inventario';
 
-// ── Definición de columnas por sección ──
 const columnasPorSeccion: Record<Seccion, string[]> = {
   pagina_principal: [],
   usuario: ['Id Usuario', 'CC', 'Nombre Usuario', 'Contraseña', 'Nombres', 'Apellidos', 'Teléfono', 'Correo', 'Dirección', 'Género', 'Fecha Nacimiento', 'Fecha Registro', 'Cargo', 'Estado', 'Acciones'],
-  venta: ['Id Venta', 'Fecha Venta', 'Hora', 'Método Pago', 'Costo Total', 'Pago Recibido', 'Cambio', 'Estado', 'Id Vendedor', 'Acciones'],
-  pedido: ['Id Pedido', 'Fecha Pedido', 'Hora Pedido', 'Método Pago', 'Total Pedido', 'Costo Envío', 'Tipo Entrega', 'Dirección Entrega', 'Ciudad Entrega', 'Teléfono Contacto', 'Fecha Entrega', 'Estado', 'Id Domiciliario', 'Id Cliente', 'Acciones'],
+  venta: [],
+  pedido: [],
   producto: ['Id Producto', 'Imagen', 'Nombre Producto', 'Descripción', 'Categoría', 'Talla', 'Color', 'Precio', 'Estado', 'Acciones'],
   inventario: ['Id Inventario', 'Stock Disponible', 'Stock Mínimo', 'Id Producto', 'Acciones'],
 };
 
-// Botones de acción por sección
 const accionesPorSeccion: Record<Seccion, { label: string; ruta: string }[]> = {
   pagina_principal: [],
   usuario: [{ label: 'Crear Nuevo Usuario', ruta: '/registroUsuarios' }],
@@ -61,7 +59,6 @@ const accionesPorSeccion: Record<Seccion, { label: string; ruta: string }[]> = {
   ],
 };
 
-// Botones de fila por sección
 const botonesFilaPorSeccion: Record<Seccion, string[]> = {
   pagina_principal: [],
   usuario: ['Actualizar', 'Eliminar', 'Reactivar'],
@@ -78,15 +75,12 @@ export default function VistaAdministrador() {
   const [busqueda, setBusqueda] = useState('');
   const [refreshing, setRefreshing] = useState(false);
 
-  // ── Estado ventas ──
   const [ventas, setVentas] = useState<any[]>([]);
   const [cargandoVentas, setCargandoVentas] = useState(false);
 
-  // ── Estado pedidos ──
   const [pedidos, setPedidos] = useState<any[]>([]);
   const [cargandoPedidos, setCargandoPedidos] = useState(false);
 
-  // ── Cargar ventas ──
   const cargarVentas = useCallback(async (mostrarCarga = true) => {
     try {
       if (mostrarCarga) setCargandoVentas(true);
@@ -106,31 +100,26 @@ export default function VistaAdministrador() {
     }
   }, []);
 
-  // ── Cargar pedidos ──
   const cargarPedidos = useCallback(async (mostrarCarga = true) => {
-  try {
-    if (mostrarCarga) setCargandoPedidos(true);
-
-    const res = await fetch(`${API_BASE}/pedidos.php`);
-    const json = await res.json();
-
-    console.log("RESPUESTA PEDIDOS:", json);
-
-    if (json.success) {
-      console.log("DATOS PEDIDOS:", json.data);
-      setPedidos(json.data ?? []);
-    } else {
-      Alert.alert('Error', json.mensaje ?? 'No se pudieron cargar los pedidos.');
+    try {
+      if (mostrarCarga) setCargandoPedidos(true);
+      const res = await fetch(`${API_BASE}/pedidos.php`);
+      const json = await res.json();
+      console.log("RESPUESTA PEDIDOS:", json);
+      if (json.success) {
+        console.log("DATOS PEDIDOS:", json.data);
+        setPedidos(json.data ?? []);
+      } else {
+        Alert.alert('Error', json.mensaje ?? 'No se pudieron cargar los pedidos.');
+      }
+    } catch (error) {
+      console.error('Error cargando pedidos:', error);
+    } finally {
+      if (mostrarCarga) setCargandoPedidos(false);
+      setRefreshing(false);
     }
-  } catch (error) {
-    console.error('Error cargando pedidos:', error);
-  } finally {
-    if (mostrarCarga) setCargandoPedidos(false);
-    setRefreshing(false);
-  }
-}, []);
+  }, []);
 
-  // Recargar cuando la pantalla recibe foco (CORREGIDO)
   useFocusEffect(
     useCallback(() => {
       if (seccionActiva === 'venta') {
@@ -141,7 +130,6 @@ export default function VistaAdministrador() {
     }, [seccionActiva, cargarVentas, cargarPedidos])
   );
 
-  // Cargar datos al cambiar de sección
   useEffect(() => {
     if (seccionActiva === 'venta') {
       cargarVentas();
@@ -150,7 +138,6 @@ export default function VistaAdministrador() {
     }
   }, [seccionActiva, cargarVentas, cargarPedidos]);
 
-  // ── Filtrar ventas ──
   const ventasFiltradas = ventas.filter(v => {
     if (!busqueda.trim()) return true;
     const q = busqueda.toLowerCase();
@@ -166,7 +153,6 @@ export default function VistaAdministrador() {
     );
   });
 
-  // ── Filtrar pedidos ──
   const pedidosFiltrados = pedidos.filter(p => {
     if (!busqueda.trim()) return true;
     const q = busqueda.toLowerCase();
@@ -186,22 +172,18 @@ export default function VistaAdministrador() {
     );
   });
 
-  // ── Acciones de fila (ventas) ──
   const accionFila = async (btn: string, venta: any) => {
     if (btn === 'Actualizar') {
       router.push({ pathname: '/form_actualizaciones/editarVentas', params: { id: String(venta.id_venta) } } as any);
       return;
     }
-
     const esEliminar = btn === 'Eliminar';
     const esReactivar = btn === 'Reactivar';
     if (!esEliminar && !esReactivar) return;
-
     const accion = esEliminar ? 'eliminar' : 'reactivar';
     const mensaje = esEliminar
       ? `¿Desactivar la venta #${venta.id_venta}?`
       : `¿Reactivar la venta #${venta.id_venta}?`;
-
     Alert.alert('Confirmar', mensaje, [
       { text: 'Cancelar', style: 'cancel' },
       {
@@ -225,65 +207,48 @@ export default function VistaAdministrador() {
     ]);
   };
 
-  // ── Acciones de fila (pedidos) ──
-const accionFilaPedido = async (btn: string, pedido: any) => {
-
-  if (btn === 'Actualizar') {
-    router.push({
-      pathname: '/form_actualizaciones/editarPedidos',
-      params: { id: String(pedido.id_pedido) }
-    } as any);
-    return;
-  }
-
-  const esCancelar = btn === 'Cancelar';
-  const esReactivar = btn === 'Reactivar';
-  if (!esCancelar && !esReactivar) return;
-
-  const accion = esCancelar ? 'cancelar' : 'reactivar';
-  const mensaje = esCancelar
-    ? `¿Cancelar el pedido #${pedido.id_pedido}?`
-    : `¿Reactivar el pedido #${pedido.id_pedido}?`;
-
-  // ✅ Funciona tanto en web como en móvil
-  const confirmar = Platform.OS === 'web'
-    ? window.confirm(mensaje)
-    : await new Promise<boolean>((resolve) =>
-        Alert.alert('Confirmar', mensaje, [
-          { text: 'No', style: 'cancel', onPress: () => resolve(false) },
-          { text: 'Sí', onPress: () => resolve(true) },
-        ])
-      );
-
-  if (!confirmar) return;
-
-  try {
-    const res = await fetch(`${API_BASE}/pedidos.php?id=${pedido.id_pedido}&action=${accion}`, {
-      method: 'PUT',
-    });
-    const json = await res.json();
-
-    if (json.success) {
-      Platform.OS === 'web'
-        ? window.alert(json.mensaje)
-        : Alert.alert('Éxito', json.mensaje);
-      await cargarPedidos();
-    } else {
-      Platform.OS === 'web'
-        ? window.alert(json.mensaje)
-        : Alert.alert('Error', json.mensaje);
+  const accionFilaPedido = async (btn: string, pedido: any) => {
+    if (btn === 'Actualizar') {
+      router.push({
+        pathname: '/form_actualizaciones/editarPedidos',
+        params: { id: String(pedido.id_pedido) }
+      } as any);
+      return;
     }
-  } catch (error) {
-    console.error(error);
-    Platform.OS === 'web'
-      ? window.alert('No se pudo conectar con el servidor')
-      : Alert.alert('Error', 'No se pudo conectar con el servidor');
-  }
-};
-
-  const limpiarBusqueda = () => {
-    setBusqueda('');
+    const esCancelar = btn === 'Cancelar';
+    const esReactivar = btn === 'Reactivar';
+    if (!esCancelar && !esReactivar) return;
+    const accion = esCancelar ? 'cancelar' : 'reactivar';
+    const mensaje = esCancelar
+      ? `¿Cancelar el pedido #${pedido.id_pedido}?`
+      : `¿Reactivar el pedido #${pedido.id_pedido}?`;
+    const confirmar = Platform.OS === 'web'
+      ? window.confirm(mensaje)
+      : await new Promise<boolean>((resolve) =>
+          Alert.alert('Confirmar', mensaje, [
+            { text: 'No', style: 'cancel', onPress: () => resolve(false) },
+            { text: 'Sí', onPress: () => resolve(true) },
+          ])
+        );
+    if (!confirmar) return;
+    try {
+      const res = await fetch(`${API_BASE}/pedidos.php?id=${pedido.id_pedido}&action=${accion}`, { method: 'PUT' });
+      const json = await res.json();
+      if (json.success) {
+        Platform.OS === 'web' ? window.alert(json.mensaje) : Alert.alert('Éxito', json.mensaje);
+        await cargarPedidos();
+      } else {
+        Platform.OS === 'web' ? window.alert(json.mensaje) : Alert.alert('Error', json.mensaje);
+      }
+    } catch (error) {
+      console.error(error);
+      Platform.OS === 'web'
+        ? window.alert('No se pudo conectar con el servidor')
+        : Alert.alert('Error', 'No se pudo conectar con el servidor');
+    }
   };
+
+  const limpiarBusqueda = () => { setBusqueda(''); };
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
@@ -385,7 +350,7 @@ const accionFilaPedido = async (btn: string, pedido: any) => {
         {/* Resultados encontrados */}
         {busqueda !== '' && (
           <Text style={styles.resultadoBusqueda}>
-            {seccionActiva === 'venta' 
+            {seccionActiva === 'venta'
               ? `🔍 ${ventasFiltradas.length} resultado(s) encontrado(s) para "${busqueda}"`
               : seccionActiva === 'pedido'
               ? `🔍 ${pedidosFiltrados.length} resultado(s) encontrado(s) para "${busqueda}"`
@@ -406,14 +371,27 @@ const accionFilaPedido = async (btn: string, pedido: any) => {
           </View>
         )}
 
-        {/* Secciones con tablas */}
+        {/* Secciones */}
         {seccionActiva !== 'pagina_principal' && (
           <View>
-            <Text style={styles.seccionTitulo}>
-              {menuItems.find(m => m.id === seccionActiva)?.label}
-            </Text>
+            <View style={styles.headerSeccionConAcciones}>
+              <Text style={styles.seccionTitulo}>
+                {menuItems.find(m => m.id === seccionActiva)?.label}
+              </Text>
+              <View style={styles.botonesSeccionSuperior}>
+                {accionesPorSeccion[seccionActiva].map((accion, i) => (
+                  <TouchableOpacity
+                    key={i}
+                    style={styles.btnSeccionSuperior}
+                    onPress={() => router.push(accion.ruta as any)}
+                  >
+                    <Text style={styles.btnSeccionTexto}>{accion.label}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
 
-            {/* Tabla de Ventas */}
+            {/* ── Tarjetas de Ventas ── */}
             {seccionActiva === 'venta' && (
               <View>
                 {cargandoVentas ? (
@@ -421,56 +399,49 @@ const accionFilaPedido = async (btn: string, pedido: any) => {
                     <ActivityIndicator size="large" color={ACCENT} />
                     <Text style={{ color: '#888', marginTop: 8 }}>Cargando ventas...</Text>
                   </View>
+                ) : ventasFiltradas.length === 0 ? (
+                  <Text style={{ color: '#888', padding: 16 }}>
+                    {busqueda ? 'No hay ventas que coincidan con tu búsqueda.' : 'No hay ventas registradas.'}
+                  </Text>
                 ) : (
-                  <ScrollView horizontal={!ES_WEB_ESCRITORIO} showsHorizontalScrollIndicator={!ES_WEB_ESCRITORIO}>
-                    <View style={ES_WEB_ESCRITORIO ? { width: '100%' } : {}}>
-                      <View style={styles.tablaHeader}>
-                        {columnasPorSeccion.venta.map((col, i) => (
-                          <Text key={i} style={[styles.tablaTh, ES_WEB_ESCRITORIO && { flex: 1, minWidth: 0 }]}>{col}</Text>
+                  ventasFiltradas.map((v) => (
+                    <View key={v.id_venta} style={styles.ventaCard}>
+                      <View style={styles.ventaCardHeader}>
+                        <Text style={styles.ventaCardId}>Venta #{v.id_venta}</Text>
+                        <Text style={[styles.ventaCardEstado, {
+                          backgroundColor: v.estado === 'Activo' ? '#27ae60' : '#e74c3c',
+                        }]}>{v.estado}</Text>
+                      </View>
+                      <View style={styles.ventaCardInfo}>
+                        <Text style={styles.ventaCardTxt}> {v.fecha_venta}    {v.hora}</Text>
+                        <Text style={styles.ventaCardTxt}> {v.metodo_pago}</Text>
+                        <Text style={styles.ventaCardTxt}> {v.id_usuario} - {v.nombres} {v.apellidos}</Text>
+                        <Text style={styles.ventaCardTxt}>
+                           Total: ${Number(v.costo_total).toLocaleString('es-CO')}  |  Recibido: ${Number(v.pago_recibido).toLocaleString('es-CO')}  |  Cambio: ${Number(v.cambio).toLocaleString('es-CO')}
+                        </Text>
+                      </View>
+                      <View style={styles.ventaCardBtns}>
+                        {botonesFilaPorSeccion.venta.map((btn, i) => (
+                          <TouchableOpacity
+                            key={i}
+                            style={[
+                              styles.ventaBtn,
+                              btn === 'Eliminar'   && { backgroundColor: '#e74c3c' },
+                              btn === 'Reactivar' && { backgroundColor: '#27ae60' },
+                            ]}
+                            onPress={() => accionFila(btn, v)}
+                          >
+                            <Text style={styles.ventaBtnTxt}>{btn}</Text>
+                          </TouchableOpacity>
                         ))}
                       </View>
-                      {ventasFiltradas.length === 0 ? (
-                        <View style={styles.tablaFila}>
-                          <Text style={[styles.tablaTdVacio, ES_WEB_ESCRITORIO && { flex: 1 }]}>
-                            {busqueda ? 'No hay ventas que coincidan con tu búsqueda.' : 'No hay ventas registradas.'}
-                          </Text>
-                          <View style={styles.tablaTdAcciones}>
-                            {botonesFilaPorSeccion.venta.map((btn, i) => (
-                              <TouchableOpacity key={i} style={styles.btnAccion}>
-                                <Text style={styles.btnAccionTexto}>{btn}</Text>
-                              </TouchableOpacity>
-                            ))}
-                          </View>
-                        </View>
-                      ) : (
-                        ventasFiltradas.map((v) => (
-                          <View key={v.id_venta} style={styles.tablaFila}>
-                            <Text style={styles.tablaTd}>{v.id_venta}</Text>
-                            <Text style={styles.tablaTd}>{v.fecha_venta}</Text>
-                            <Text style={styles.tablaTd}>{v.hora}</Text>
-                            <Text style={styles.tablaTd}>{v.metodo_pago}</Text>
-                            <Text style={styles.tablaTd}>${Number(v.costo_total).toLocaleString('es-CO')}</Text>
-                            <Text style={styles.tablaTd}>${Number(v.pago_recibido).toLocaleString('es-CO')}</Text>
-                            <Text style={styles.tablaTd}>${Number(v.cambio).toLocaleString('es-CO')}</Text>
-                            <Text style={[styles.tablaTd, { color: v.estado === 'Activo' ? '#27ae60' : '#e74c3c', fontWeight: '600' }]}>{v.estado}</Text>
-                            <Text style={styles.tablaTd}>{v.id_usuario} - {v.nombres} {v.apellidos}</Text>
-                            <View style={styles.tablaTdAcciones}>
-                              {botonesFilaPorSeccion.venta.map((btn, i) => (
-                                <TouchableOpacity key={i} style={styles.btnAccion} onPress={() => accionFila(btn, v)}>
-                                  <Text style={styles.btnAccionTexto}>{btn}</Text>
-                                </TouchableOpacity>
-                              ))}
-                            </View>
-                          </View>
-                        ))
-                      )}
                     </View>
-                  </ScrollView>
+                  ))
                 )}
               </View>
             )}
 
-            {/* Tarjetas de Pedidos */}
+            {/* ── Tarjetas de Pedidos ── */}
             {seccionActiva === 'pedido' && (
               <View>
                 {cargandoPedidos ? (
@@ -494,13 +465,13 @@ const accionFilaPedido = async (btn: string, pedido: any) => {
                         }]}>{p.estado}</Text>
                       </View>
                       <View style={styles.pedidoCardInfo}>
-                        <Text style={styles.pedidoCardTxt}>📅 {p.fecha_pedido}  🕐 {p.hora_pedido}</Text>
-                        <Text style={styles.pedidoCardTxt}>💳 {p.metodo_pago}  |  🚚 {p.tipo_entrega}</Text>
-                        <Text style={styles.pedidoCardTxt}>📍 {p.direccion_entrega}, {p.ciudad_entrega}</Text>
-                        <Text style={styles.pedidoCardTxt}>📞 {p.telefono_contacto}</Text>
-                        <Text style={styles.pedidoCardTxt}>📦 Entrega: {p.fecha_entrega || 'Pendiente'}</Text>
-                        <Text style={styles.pedidoCardTxt}>👤 {p.nombres} {p.apellidos}</Text>
-                        <Text style={styles.pedidoCardTxt}>💰 Total: ${Number(p.total_pedido).toLocaleString('es-CO')}  |  Envío: ${Number(p.costo_envio).toLocaleString('es-CO')}</Text>
+                        <Text style={styles.pedidoCardTxt}> {p.fecha_pedido}   {p.hora_pedido}</Text>
+                        <Text style={styles.pedidoCardTxt}> {p.metodo_pago}  |   {p.tipo_entrega}</Text>
+                        <Text style={styles.pedidoCardTxt}> {p.direccion_entrega}, {p.ciudad_entrega}</Text>
+                        <Text style={styles.pedidoCardTxt}> {p.telefono_contacto}</Text>
+                        <Text style={styles.pedidoCardTxt}> Entrega: {p.fecha_entrega || 'Pendiente'}</Text>
+                        <Text style={styles.pedidoCardTxt}> {p.nombres} {p.apellidos}</Text>
+                        <Text style={styles.pedidoCardTxt}> Total: ${Number(p.total_pedido).toLocaleString('es-CO')}  |  Envío: ${Number(p.costo_envio).toLocaleString('es-CO')}</Text>
                       </View>
                       <View style={styles.pedidoCardBtns}>
                         <TouchableOpacity style={styles.pedidoBtn} onPress={() => accionFilaPedido('Actualizar', p)}>
@@ -523,7 +494,7 @@ const accionFilaPedido = async (btn: string, pedido: any) => {
               </View>
             )}
 
-            {/* Otras secciones */}
+            {/* Otras secciones (tabla genérica) */}
             {seccionActiva !== 'venta' && seccionActiva !== 'pedido' && seccionActiva !== 'pagina_principal' && (
               <ScrollView horizontal={!ES_WEB_ESCRITORIO} showsHorizontalScrollIndicator={!ES_WEB_ESCRITORIO}>
                 <View style={ES_WEB_ESCRITORIO ? { width: '100%' } : {}}>
@@ -547,18 +518,6 @@ const accionFilaPedido = async (btn: string, pedido: any) => {
                 </View>
               </ScrollView>
             )}
-
-            <View style={styles.botonesSeccion}>
-              {accionesPorSeccion[seccionActiva].map((accion, i) => (
-                <TouchableOpacity
-                  key={i}
-                  style={styles.btnSeccion}
-                  onPress={() => router.push(accion.ruta as any)}
-                >
-                  <Text style={styles.btnSeccionTexto}>{accion.label}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
           </View>
         )}
       </ScrollView>
@@ -632,48 +591,28 @@ const styles = StyleSheet.create({
 
   scroll: { flex: 1, paddingHorizontal: 16, paddingTop: 14 },
 
-  buscador: { 
-    flexDirection: 'row', 
-    alignItems: 'center',
-    borderWidth: 1, 
-    borderColor: '#ddd', 
-    borderRadius: 8,
-    backgroundColor: '#fff',
-    marginBottom: 8,
-    paddingHorizontal: 12,
-  },
+  buscador: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#ddd', borderRadius: 8, backgroundColor: '#fff', marginBottom: 8, paddingHorizontal: 12 },
   buscadorIcon: { marginRight: 8 },
-  buscadorInput: { 
-    flex: 1, 
-    paddingVertical: 12, 
-    fontSize: 15, 
-    color: '#333',
-    outline: 'none',
-  },
+  buscadorInput: { flex: 1, paddingVertical: 12, fontSize: 15, color: '#333', outline: 'none' },
   buscadorLimpiar: { padding: 4 },
   resultadoBusqueda: { fontSize: 12, color: '#666', marginBottom: 12, marginTop: 0, fontStyle: 'italic' },
 
   seccionCajas: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
-  caja: {
-    width: (width - 44) / 2,
-    backgroundColor: '#fff', borderRadius: 8, padding: 16,
-    borderTopWidth: 4, borderTopColor: ACCENT,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1, shadowRadius: 8, elevation: 4, alignItems: 'center',
-  },
+  caja: { width: (width - 44) / 2, backgroundColor: '#fff', borderRadius: 8, padding: 16, borderTopWidth: 4, borderTopColor: ACCENT, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 8, elevation: 4, alignItems: 'center' },
   cajaWeb: { width: 200 },
   cajaTitulo: { fontSize: 13, fontWeight: '600', color: DARK, textAlign: 'center', marginBottom: 6 },
   cajaValor: { fontSize: 22, fontWeight: 'bold', color: ACCENT },
 
-  seccionTitulo: { fontSize: 20, fontWeight: 'bold', color: DARK, marginBottom: 14 },
+  seccionTitulo: { fontSize: 20, fontWeight: 'bold', color: DARK },
+  headerSeccionConAcciones: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, flexWrap: 'wrap', gap: 10 },
+  botonesSeccionSuperior: { flexDirection: 'row', gap: 8 },
+  btnSeccionSuperior: { backgroundColor: DARK, borderRadius: 4, paddingHorizontal: 12, paddingVertical: 8 },
 
   tablaHeader: { flexDirection: 'row', backgroundColor: DARK, borderRadius: 4 },
   tablaTh: { color: '#fff', fontWeight: '600', fontSize: 12, paddingHorizontal: 10, paddingVertical: 10, minWidth: 110, borderRightWidth: 1, borderRightColor: '#555' },
-
   tablaFila: { flexDirection: 'row', borderWidth: 1, borderColor: BORDER, alignItems: 'center', backgroundColor: '#fff' },
   tablaTd: { fontSize: 13, color: '#555', paddingHorizontal: 14, paddingVertical: 12, minWidth: 110, borderRightWidth: 1, borderRightColor: BORDER },
   tablaTdVacio: { fontSize: 13, color: '#555', paddingHorizontal: 14, paddingVertical: 14, flex: 1, minWidth: 200, borderRightWidth: 1, borderRightColor: BORDER },
-
   tablaTdAcciones: { minWidth: 90, paddingHorizontal: 6, paddingVertical: 6, gap: 4, justifyContent: 'center', alignItems: 'center' },
   btnAccion: { backgroundColor: ACCENT, borderRadius: 3, paddingHorizontal: 7, paddingVertical: 4, marginBottom: 3, alignItems: 'center', width: 76 },
   btnAccionTexto: { color: '#fff', fontSize: 10, fontWeight: '600' },
@@ -686,6 +625,18 @@ const styles = StyleSheet.create({
   tabItem: { flex: 1, alignItems: 'center', paddingTop: 8, gap: 2 },
   tabLabel: { fontSize: 9, color: '#999', textAlign: 'center' },
 
+  // Tarjetas de ventas
+  ventaCard: { backgroundColor: '#fff', borderRadius: 10, padding: 14, marginBottom: 12, elevation: 2, shadowColor: '#000', shadowOpacity: 0.07, shadowRadius: 6, borderLeftWidth: 4, borderLeftColor: ACCENT },
+  ventaCardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+  ventaCardId: { fontSize: 15, fontWeight: 'bold', color: DARK },
+  ventaCardEstado: { fontSize: 11, fontWeight: '700', color: '#fff', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
+  ventaCardInfo: { gap: 3, marginBottom: 10 },
+  ventaCardTxt: { fontSize: 13, color: '#555' },
+  ventaCardBtns: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
+  ventaBtn: { backgroundColor: ACCENT, borderRadius: 6, paddingHorizontal: 14, paddingVertical: 8 },
+  ventaBtnTxt: { color: '#fff', fontSize: 12, fontWeight: '600' },
+
+  // Tarjetas de pedidos
   pedidoCard: { backgroundColor: '#fff', borderRadius: 10, padding: 14, marginBottom: 12, elevation: 2, shadowColor: '#000', shadowOpacity: 0.07, shadowRadius: 6, borderLeftWidth: 4, borderLeftColor: ACCENT },
   pedidoCardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
   pedidoCardId: { fontSize: 15, fontWeight: 'bold', color: DARK },
