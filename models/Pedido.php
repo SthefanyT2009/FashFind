@@ -5,9 +5,8 @@ require_once BASE_PATH . '/core/Database.php';
 class Pedido {
 
     public static function listar() {
-
         $db = Database::conectar();
-
+        // Usamos los nombres exactos de la DB: Pedido, id_pedido, etc.
         $stmt = $db->prepare("
             SELECT
                 p.id_pedido,
@@ -30,20 +29,14 @@ class Pedido {
                 ON p.id_usuario = u.id_usuario
             ORDER BY p.id_pedido DESC
         ");
-
         $stmt->execute();
-
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     public static function crear($datos) {
-
         $db = Database::conectar();
-
         try {
-
             $db->beginTransaction();
-
             $stmt = $db->prepare("
                 INSERT INTO Pedido(
                     fecha_pedido,
@@ -59,22 +52,8 @@ class Pedido {
                     estado,
                     id_usuario
                 )
-                VALUES(
-                    CURDATE(),
-                    CURTIME(),
-                    ?,
-                    0,
-                    ?,
-                    ?,
-                    ?,
-                    ?,
-                    ?,
-                    ?,
-                    ?,
-                    ?
-                )
+                VALUES(CURDATE(), CURTIME(), ?, 0, ?, ?, ?, ?, ?, ?, ?, ?)
             ");
-
             $stmt->execute([
                 $datos['metodo_pago'],
                 $datos['costo_envio'],
@@ -86,21 +65,12 @@ class Pedido {
                 $datos['estado'],
                 $datos['id_usuario']
             ]);
-
             $idPedido = $db->lastInsertId();
-
             foreach ($datos['productos'] as $producto) {
-
                 $stmtDetalle = $db->prepare("
-                    INSERT INTO Detalle_Pedido(
-                        cantidad,
-                        precio,
-                        id_pedido,
-                        id_producto
-                    )
+                    INSERT INTO Detalle_Pedido(cantidad, precio, id_pedido, id_producto)
                     VALUES(?,?,?,?)
                 ");
-
                 $stmtDetalle->execute([
                     $producto['cantidad'],
                     $producto['precio'],
@@ -108,68 +78,51 @@ class Pedido {
                     $producto['id_producto']
                 ]);
             }
-
             $db->commit();
-
-            return [
-                "success" => true,
-                "mensaje" => "Pedido registrado correctamente"
-            ];
-
+            return ["success" => true, "mensaje" => "Pedido registrado correctamente"];
         } catch (Exception $e) {
-
             $db->rollBack();
-
-            return [
-                "success" => false,
-                "mensaje" => $e->getMessage()
-            ];
+            return ["success" => false, "mensaje" => $e->getMessage()];
         }
     }
 
     public static function cancelar($id_pedido) {
-
         $db = Database::conectar();
-
+        // Verificamos que el estado sea uno de los permitidos en el ENUM: "Por Entregar", "Entregado", "Cancelado"
         $stmt = $db->prepare("
             UPDATE Pedido
             SET estado = 'Cancelado'
             WHERE id_pedido = ?
         ");
-
-        return $stmt->execute([$id_pedido]);
+        $ok = $stmt->execute([$id_pedido]);
+        return ["success" => $ok];
     }
 
     public static function entregar($id_pedido) {
-
         $db = Database::conectar();
-
         $stmt = $db->prepare("
             UPDATE Pedido
             SET estado = 'Entregado'
             WHERE id_pedido = ?
         ");
-
-        return $stmt->execute([$id_pedido]);
+        $ok = $stmt->execute([$id_pedido]);
+        return ["success" => $ok];
     }
 
     public static function reactivar($id_pedido) {
-
         $db = Database::conectar();
-
+        // Reactivar vuelve al estado inicial del ENUM
         $stmt = $db->prepare("
             UPDATE Pedido
             SET estado = 'Por Entregar'
             WHERE id_pedido = ?
         ");
-
-        return $stmt->execute([$id_pedido]);
+        $ok = $stmt->execute([$id_pedido]);
+        return ["success" => $ok];
     }
 
     public static function actualizar($datos) {
-
         $db = Database::conectar();
-
         $stmt = $db->prepare("
             UPDATE Pedido
             SET
@@ -184,8 +137,7 @@ class Pedido {
                 id_usuario = ?
             WHERE id_pedido = ?
         ");
-
-        return $stmt->execute([
+        $ok = $stmt->execute([
             $datos['metodo_pago'],
             $datos['costo_envio'],
             $datos['tipo_entrega'],
@@ -197,7 +149,7 @@ class Pedido {
             $datos['id_usuario'],
             $datos['id_pedido']
         ]);
+        return ["success" => $ok];
     }
-
 }
 ?>
