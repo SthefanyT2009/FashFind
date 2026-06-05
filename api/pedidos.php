@@ -5,6 +5,7 @@ header("Access-Control-Allow-Methods: GET, POST, PUT, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type");
 header("Content-Type: application/json");
 
+// Responder preflight ANTES de cualquier require
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
     exit;
@@ -14,12 +15,17 @@ require 'config.php';
 require BASE_PATH . '/controllers/PedidoController.php';
 
 $method = $_SERVER['REQUEST_METHOD'];
-$action = $_GET['action'] ?? null;
-$id     = isset($_GET['id']) ? (int)$_GET['id'] : null;
+
+// Leer body JSON una sola vez
+$bodyRaw = file_get_contents("php://input");
+$body    = json_decode($bodyRaw, true) ?? [];
+
+// id y action: primero URL, si no están, buscar en el body
+$action = $_GET['action'] ?? $body['action'] ?? null;
+$id     = isset($_GET['id']) ? (int)$_GET['id'] : (isset($body['id']) ? (int)$body['id'] : null);
 
 switch ($method) {
 
-    // GET: listar todos o uno por ID
     case 'GET':
         if ($id) {
             $db = Database::conectar();
@@ -54,9 +60,8 @@ switch ($method) {
         }
         break;
 
-    // POST: crear pedido
     case 'POST':
-        $data = json_decode(file_get_contents("php://input"), true);
+        $data = $body;
 
         $requeridos = ['metodo_pago', 'costo_envio', 'tipo_entrega',
                        'direccion_entrega', 'ciudad_entrega',
@@ -82,7 +87,6 @@ switch ($method) {
         echo json_encode($resultado);
         break;
 
-    // PUT: actualizar / cancelar / reactivar / entregar
     case 'PUT':
         if (!$id) {
             http_response_code(400);
@@ -90,30 +94,26 @@ switch ($method) {
             exit;
         }
 
-        // ── ACCIÓN RÁPIDA: CANCELAR ──
         if ($action === 'cancelar') {
             $ok = PedidoController::cancelar($id);
             echo json_encode(["success" => $ok['success'], "mensaje" => "Pedido cancelado correctamente"]);
             exit;
         }
 
-        // ── ACCIÓN RÁPIDA: REACTIVAR ──
         if ($action === 'reactivar') {
             $ok = PedidoController::reactivar($id);
             echo json_encode(["success" => $ok['success'], "mensaje" => "Pedido reactivado correctamente"]);
             exit;
         }
 
-        // ── ACCIÓN RÁPIDA: ENTREGAR ──
         if ($action === 'entregar') {
             $ok = PedidoController::entregar($id);
             echo json_encode(["success" => $ok['success'], "mensaje" => "Pedido entregado correctamente"]);
             exit;
         }
 
-        // ── ACTUALIZACIÓN COMPLETA (sin action) ──
-        $data = json_decode(file_get_contents("php://input"), true);
-        
+        // Actualización completa
+        $data = $body;
         if (!$data) {
             http_response_code(400);
             echo json_encode(["success" => false, "mensaje" => "Datos inválidos"]);
@@ -122,7 +122,7 @@ switch ($method) {
 
         $data['id_pedido'] = $id;
         $resultado = PedidoController::actualizar($data);
-        
+
         if ($resultado['success']) {
             echo json_encode(["success" => true, "mensaje" => "Pedido actualizado correctamente"]);
         } else {

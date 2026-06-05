@@ -10,7 +10,5 @@ header("Content-Type: application/json");
 
 //Ruta base del proyecto
 define('BASE_PATH', dirname(__DIR__));
-
-//Cargar conexion
 require BASE_PATH . '/core/Database.php';
 ?>
