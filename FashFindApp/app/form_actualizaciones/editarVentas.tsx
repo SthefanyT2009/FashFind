@@ -11,7 +11,7 @@ const ACCENT = '#e91e8c';
 const DARK   = '#3A3A3A';
 const BORDER = '#9A9A9A';
 
-const API_BASE = 'http://localhost/FashFind/api';
+const API_BASE = 'http://192.168.1.7/FashFind/api';
 
 // Helper compatible con web y móvil
 const mostrarAlerta = (titulo: string, mensaje: string, onOk?: () => void) => {

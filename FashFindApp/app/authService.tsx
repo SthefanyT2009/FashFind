@@ -1,6 +1,5 @@
 
-const API_URL = 'http://172.30.4.210/FashFind/api';
-git add app/authService.tsx
+const API_URL = 'http://192.168.1.7/FashFind/api';
 export type Cargo = 'Administrador' | 'Vendedor' | 'Domiciliario' | 'Cliente';
 
 export interface Usuario {
@@ -76,13 +75,7 @@ export const registro = async (datos: any): Promise<RegistroResponse> => {
 export const listarPedidos = async () => {
   try {
     const response = await fetch(`${API_URL}/pedidos.php`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        accion: 'listar',
-      }),
+      method: 'GET',
     });
 
     return await response.json();
@@ -97,16 +90,15 @@ export const listarPedidos = async () => {
 
 export const cancelarPedido = async (id_pedido: number) => {
   try {
-    const response = await fetch(`${API_URL}/pedidos.php`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        accion: 'cancelar',
-        id_pedido,
-      }),
-    });
+    const response = await fetch(
+      `${API_URL}/pedidos.php?id=${id_pedido}&action=cancelar`,
+      {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }
+    );
 
     return await response.json();
   } catch (error) {
@@ -118,18 +110,39 @@ export const cancelarPedido = async (id_pedido: number) => {
   }
 };
 
+export const reactivarPedido = async (id_pedido: number) => {
+  try {
+    const response = await fetch(
+      `${API_URL}/pedidos.php?id=${id_pedido}&action=reactivar`,
+      {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error al reactivar pedido:', error);
+    return {
+      success: false,
+      mensaje: 'Error de conexión',
+    };
+  }
+};
+
 export const entregarPedido = async (id_pedido: number) => {
   try {
-    const response = await fetch(`${API_URL}/pedidos.php`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        accion: 'entregar',
-        id_pedido,
-      }),
-    });
+    const response = await fetch(
+      `${API_URL}/pedidos.php?id=${id_pedido}&action=entregar`,
+      {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }
+    );
 
     return await response.json();
   } catch (error) {

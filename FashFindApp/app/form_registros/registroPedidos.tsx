@@ -1,13 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
-  TextInput, Alert, ActivityIndicator, Platform, Modal,
+  TextInput, Alert, ActivityIndicator, Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 
-// Helper compatible con web y móvil
+const ACCENT = '#e91e8c';
+const DARK   = '#3A3A3A';
+const BORDER = '#9A9A9A';
+
+const API_BASE = 'http://192.168.1.7/FashFind/api';
+
 const mostrarAlerta = (titulo: string, mensaje: string, onOk?: () => void) => {
   if (Platform.OS === 'web') {
     window.alert(`${titulo}\n\n${mensaje}`);
@@ -17,11 +22,9 @@ const mostrarAlerta = (titulo: string, mensaje: string, onOk?: () => void) => {
   }
 };
 
-const ACCENT = '#e91e8c';
-const DARK   = '#3A3A3A';
-const BORDER = '#9A9A9A';
-
-const API_BASE = 'http://192.168.1.7/FashFind/api';
+const METODOS_PAGO = ['Nequi', 'Daviplata', 'Transferencia', 'Tarjeta'] as const;
+const TIPOS_ENTREGA = ['Domicilio', 'Recoge en tienda'] as const;
+const ESTADOS = ['Por Entregar', 'Entregado'] as const;
 
 interface DetalleItem {
   id: number;
@@ -31,34 +34,28 @@ interface DetalleItem {
   sub_total: number;
 }
 
-interface Producto {
-  id_producto: number;
-  nombre_producto: string;
-  talla: string;
-  color: string;
-  precio: number;
-  stock_disponible: number;
-}
-
-export default function RegistroVentas() {
+export default function RegistroPedidos() {
   const router = useRouter();
 
-  // ── Campos cabecera ────────────────────────────────────────────────────────
-  const [fechaVenta, setFechaVenta]       = useState('');
-  const [hora, setHora]                   = useState('');
-  const [metodoPago, setMetodoPago]       = useState<'Efectivo' | 'Transferencia'>('Efectivo');
-  const [idVendedor, setIdVendedor]       = useState('');
-  const [pagoRecibido, setPagoRecibido]   = useState('');
-  const [costoTotal, setCostoTotal]       = useState(0);
-  const [cambio, setCambio]               = useState(0);
+  // ── Campos cabecera ───────────────────────────────────────────────────────
+  const [fechaPedido, setFechaPedido]       = useState('');
+  const [horaPedido, setHoraPedido]         = useState('');
+  const [metodoPago, setMetodoPago]         = useState<typeof METODOS_PAGO[number]>('Nequi');
+  const [tipoEntrega, setTipoEntrega]       = useState<typeof TIPOS_ENTREGA[number]>('Domicilio');
+  const [direccionEntrega, setDireccionEntrega] = useState('');
+  const [ciudadEntrega, setCiudadEntrega]   = useState('');
+  const [telefonoContacto, setTelefonoContacto] = useState('');
+  const [fechaEntrega, setFechaEntrega]     = useState('');
+  const [costoEnvio, setCostoEnvio]         = useState('');
+  const [idUsuario, setIdUsuario]           = useState('');
+  const [estado, setEstado]                 = useState<typeof ESTADOS[number]>('Por Entregar');
 
-  // ── Detalle / productos ────────────────────────────────────────────────────
-  const [detalles, setDetalles]           = useState<DetalleItem[]>([]);
-  const [nextId, setNextId]               = useState(1);
+  // ── Detalle productos ─────────────────────────────────────────────────────
+  const [detalles, setDetalles] = useState<DetalleItem[]>([]);
+  const [nextId, setNextId]     = useState(1);
+  const [totalPedido, setTotalPedido] = useState(0);
 
-  // ── Catálogo para autocompletar precio ────────────────────────────────────
-  const [catalogo, setCatalogo]           = useState<Producto[]>([]);
-  const [cargando, setCargando]           = useState(false);
+  const [cargando, setCargando] = useState(false);
 
   // ── Fecha y hora automáticas ──────────────────────────────────────────────
   useEffect(() => {
@@ -66,29 +63,19 @@ export default function RegistroVentas() {
     const yyyy  = ahora.getFullYear();
     const mm    = String(ahora.getMonth() + 1).padStart(2, '0');
     const dd    = String(ahora.getDate()).padStart(2, '0');
-    setFechaVenta(`${yyyy}-${mm}-${dd}`);
+    setFechaPedido(`${yyyy}-${mm}-${dd}`);
 
     const hh  = String(ahora.getHours()).padStart(2, '0');
     const min = String(ahora.getMinutes()).padStart(2, '0');
-    setHora(`${hh}:${min}`);
-
-    cargarCatalogo();
+    setHoraPedido(`${hh}:${min}`);
   }, []);
 
-  const cargarCatalogo = async () => {
-    try {
-      const res  = await fetch(`${API_BASE}/ventas.php`);  // reutiliza helper de productos activos
-      // Si tienes endpoint aparte: fetch(`${API_BASE}/productos.php?activos=1`)
-    } catch (_) {}
-  };
-
-  // ── Recalcular total y cambio ─────────────────────────────────────────────
+  // ── Recalcular total ──────────────────────────────────────────────────────
   useEffect(() => {
-    const total = detalles.reduce((acc, d) => acc + d.sub_total, 0);
-    setCostoTotal(total);
-    const pago = parseFloat(pagoRecibido) || 0;
-    setCambio(pago >= total ? pago - total : 0);
-  }, [detalles, pagoRecibido]);
+    const subtotales = detalles.reduce((acc, d) => acc + d.sub_total, 0);
+    const envio      = parseFloat(costoEnvio) || 0;
+    setTotalPedido(subtotales + envio);
+  }, [detalles, costoEnvio]);
 
   // ── Manejo de filas ───────────────────────────────────────────────────────
   const agregarFila = () => {
@@ -111,43 +98,49 @@ export default function RegistroVentas() {
     }));
   };
 
-  // ── Enviar ────────────────────────────────────────────────────────────────
-  const registrarVenta = async () => {
-    // Validaciones con mensajes claros
-    if (!idVendedor) {
-      mostrarAlerta('Campo requerido', 'Por favor ingresa el Id del Vendedor.');
+  // ── Registrar pedido ──────────────────────────────────────────────────────
+  const registrarPedido = async () => {
+    if (!idUsuario.trim()) {
+      mostrarAlerta('Campo requerido', 'Ingresa el Id del Cliente.');
+      return;
+    }
+    if (!direccionEntrega.trim()) {
+      mostrarAlerta('Campo requerido', 'Ingresa la Dirección de Entrega.');
+      return;
+    }
+    if (!ciudadEntrega.trim()) {
+      mostrarAlerta('Campo requerido', 'Ingresa la Ciudad de Entrega.');
+      return;
+    }
+    if (!telefonoContacto.trim()) {
+      mostrarAlerta('Campo requerido', 'Ingresa el Teléfono de Contacto.');
+      return;
+    }
+    if (!fechaEntrega.trim()) {
+      mostrarAlerta('Campo requerido', 'Ingresa la Fecha de Entrega.');
       return;
     }
     if (detalles.length === 0) {
-      mostrarAlerta('Sin productos', 'Agrega al menos un producto a la venta.');
+      mostrarAlerta('Sin productos', 'Agrega al menos un producto al pedido.');
       return;
     }
-    // Validar que todos los detalles tengan datos completos
-    const filaIncompleta = detalles.find(
-      d => !d.id_producto || !d.cantidad || !d.precio
-    );
+    const filaIncompleta = detalles.find(d => !d.id_producto || !d.cantidad || !d.precio);
     if (filaIncompleta) {
       mostrarAlerta('Datos incompletos', 'Completa el Id Producto, Cantidad y Precio de cada fila.');
       return;
     }
-    if (!pagoRecibido) {
-      mostrarAlerta('Campo requerido', 'Por favor ingresa el Pago Recibido.');
-      return;
-    }
-    if (parseFloat(pagoRecibido) < costoTotal) {
-      mostrarAlerta('Pago insuficiente', `El pago recibido ($${parseFloat(pagoRecibido).toLocaleString('es-CO')}) es menor al costo total ($${costoTotal.toLocaleString('es-CO')}).`);
-      return;
-    }
 
     const body = {
-      fecha_venta:   fechaVenta,
-      hora,
-      metodo_pago:   metodoPago,
-      costo_total:   costoTotal,
-      pago_recibido: parseFloat(pagoRecibido),
-      cambio,
-      id_usuario:    parseInt(idVendedor),
-      detalles: detalles.map(d => ({
+      metodo_pago:       metodoPago,
+      costo_envio:       parseFloat(costoEnvio) || 0,
+      tipo_entrega:      tipoEntrega,
+      direccion_entrega: direccionEntrega,
+      ciudad_entrega:    ciudadEntrega,
+      telefono_contacto: telefonoContacto,
+      fecha_entrega:     fechaEntrega,
+      estado,
+      id_usuario:        parseInt(idUsuario),
+      productos: detalles.map(d => ({
         id_producto: parseInt(d.id_producto),
         cantidad:    parseInt(d.cantidad),
         precio:      parseFloat(d.precio),
@@ -156,25 +149,18 @@ export default function RegistroVentas() {
 
     try {
       setCargando(true);
-      const res = await fetch(`${API_BASE}/ventas.php`, {
+      const res  = await fetch(`${API_BASE}/pedidos.php`, {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify(body),
       });
-
-      if (!res.ok) {
-        mostrarAlerta('Error del servidor', `El servidor respondió con estado ${res.status}.`);
-        return;
-      }
-
       const json = await res.json();
       if (json.success) {
-        mostrarAlerta('Éxito', 'Venta registrada correctamente.', () => router.back());
+        mostrarAlerta('Éxito', 'Pedido registrado correctamente.', () => router.back());
       } else {
-        mostrarAlerta('Error', json.mensaje ?? 'No se pudo registrar la venta.');
+        mostrarAlerta('Error', json.mensaje ?? 'No se pudo registrar el pedido.');
       }
     } catch (e: any) {
-      console.error('Error registrarVenta:', e);
       mostrarAlerta('Error de conexión', `No se pudo conectar con el servidor.\n${e?.message ?? ''}`);
     } finally {
       setCargando(false);
@@ -184,33 +170,32 @@ export default function RegistroVentas() {
   // ─────────────────────────────────────────────────────────────────────────
   return (
     <SafeAreaView style={s.safe}>
-      {/* Header */}
       <View style={s.header}>
         <TouchableOpacity onPress={() => router.back()} style={s.backBtn}>
           <Ionicons name="arrow-back" size={22} color="#fff" />
         </TouchableOpacity>
-        <Text style={s.headerTitle}>Nueva Venta</Text>
+        <Text style={s.headerTitle}>Nuevo Pedido</Text>
       </View>
 
       <ScrollView style={s.scroll} contentContainerStyle={{ paddingBottom: 40 }}>
 
-        {/* ── Sección cabecera ── */}
+        {/* ── Datos del pedido ── */}
         <View style={s.card}>
-          <Text style={s.cardTitle}>Datos de la Venta</Text>
+          <Text style={s.cardTitle}>Datos del Pedido</Text>
 
-          <Text style={s.label}>Fecha Venta</Text>
-          <View style={s.inputBox}>
-            <TextInput style={s.input} value={fechaVenta} editable={false} />
+          <Text style={s.label}>Fecha Pedido</Text>
+          <View style={[s.inputBox, s.inputReadonly]}>
+            <Text style={s.inputReadonlyText}>{fechaPedido}</Text>
           </View>
 
-          <Text style={s.label}>Hora</Text>
-          <View style={s.inputBox}>
-            <TextInput style={s.input} value={hora} editable={false} />
+          <Text style={s.label}>Hora Pedido</Text>
+          <View style={[s.inputBox, s.inputReadonly]}>
+            <Text style={s.inputReadonlyText}>{horaPedido}</Text>
           </View>
 
           <Text style={s.label}>Método de Pago</Text>
-          <View style={s.pickerRow}>
-            {(['Efectivo', 'Transferencia'] as const).map(op => (
+          <View style={s.chipsWrap}>
+            {METODOS_PAGO.map(op => (
               <TouchableOpacity
                 key={op}
                 style={[s.chip, metodoPago === op && s.chipActivo]}
@@ -221,21 +206,91 @@ export default function RegistroVentas() {
             ))}
           </View>
 
-          <Text style={s.label}>Id Vendedor</Text>
+          <Text style={s.label}>Tipo de Entrega</Text>
+          <View style={s.chipsWrap}>
+            {TIPOS_ENTREGA.map(op => (
+              <TouchableOpacity
+                key={op}
+                style={[s.chip, tipoEntrega === op && s.chipActivo]}
+                onPress={() => setTipoEntrega(op)}
+              >
+                <Text style={[s.chipText, tipoEntrega === op && s.chipTextActivo]}>{op}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          <Text style={s.label}>Dirección Entrega</Text>
+          <View style={s.inputBox}>
+            <TextInput
+              style={s.input} placeholder="Ej: Calle 10 #5-20"
+              placeholderTextColor="#bbb" value={direccionEntrega}
+              onChangeText={setDireccionEntrega}
+            />
+          </View>
+
+          <Text style={s.label}>Ciudad Entrega</Text>
+          <View style={s.inputBox}>
+            <TextInput
+              style={s.input} placeholder="Ej: Bogotá"
+              placeholderTextColor="#bbb" value={ciudadEntrega}
+              onChangeText={setCiudadEntrega}
+            />
+          </View>
+
+          <Text style={s.label}>Teléfono Contacto</Text>
+          <View style={s.inputBox}>
+            <TextInput
+              style={s.input} keyboardType="phone-pad"
+              placeholder="Ej: 3001234567" placeholderTextColor="#bbb"
+              value={telefonoContacto} onChangeText={setTelefonoContacto}
+            />
+          </View>
+
+          <Text style={s.label}>Fecha de Entrega</Text>
+          <View style={s.inputBox}>
+            <TextInput
+              style={s.input} placeholder="YYYY-MM-DD"
+              placeholderTextColor="#bbb" value={fechaEntrega}
+              onChangeText={setFechaEntrega}
+            />
+          </View>
+
+          <Text style={s.label}>Costo de Envío</Text>
+          <View style={s.inputBox}>
+            <TextInput
+              style={s.input} keyboardType="numeric"
+              placeholder="0" placeholderTextColor="#bbb"
+              value={costoEnvio} onChangeText={setCostoEnvio}
+            />
+          </View>
+
+          <Text style={s.label}>Id Cliente</Text>
           <View style={s.inputBox}>
             <TextInput
               style={s.input} keyboardType="numeric"
               placeholder="Ej: 1" placeholderTextColor="#bbb"
-              value={idVendedor} onChangeText={setIdVendedor}
+              value={idUsuario} onChangeText={setIdUsuario}
             />
+          </View>
+
+          <Text style={s.label}>Estado</Text>
+          <View style={s.chipsWrap}>
+            {ESTADOS.map(op => (
+              <TouchableOpacity
+                key={op}
+                style={[s.chip, estado === op && s.chipActivo]}
+                onPress={() => setEstado(op)}
+              >
+                <Text style={[s.chipText, estado === op && s.chipTextActivo]}>{op}</Text>
+              </TouchableOpacity>
+            ))}
           </View>
         </View>
 
         {/* ── Tabla de productos ── */}
         <View style={s.card}>
-          <Text style={s.cardTitle}>Productos Vendidos</Text>
+          <Text style={s.cardTitle}>Productos del Pedido</Text>
 
-          {/* Encabezado tabla */}
           <View style={s.tablaHeader}>
             <Text style={[s.th, { flex: 2 }]}>Id Producto</Text>
             <Text style={[s.th, { flex: 1.5 }]}>Cantidad</Text>
@@ -253,22 +308,19 @@ export default function RegistroVentas() {
               <TextInput
                 style={[s.tdInput, { flex: 2 }]}
                 keyboardType="numeric" placeholder="ID"
-                placeholderTextColor="#bbb"
-                value={d.id_producto}
+                placeholderTextColor="#bbb" value={d.id_producto}
                 onChangeText={v => actualizarFila(d.id, 'id_producto', v)}
               />
               <TextInput
                 style={[s.tdInput, { flex: 1.5 }]}
                 keyboardType="numeric" placeholder="Cant"
-                placeholderTextColor="#bbb"
-                value={d.cantidad}
+                placeholderTextColor="#bbb" value={d.cantidad}
                 onChangeText={v => actualizarFila(d.id, 'cantidad', v)}
               />
               <TextInput
                 style={[s.tdInput, { flex: 2 }]}
                 keyboardType="numeric" placeholder="Precio"
-                placeholderTextColor="#bbb"
-                value={d.precio}
+                placeholderTextColor="#bbb" value={d.precio}
                 onChangeText={v => actualizarFila(d.id, 'precio', v)}
               />
               <Text style={[s.tdValor, { flex: 2 }]}>
@@ -289,28 +341,12 @@ export default function RegistroVentas() {
           </TouchableOpacity>
         </View>
 
-        {/* ── Totales ── */}
+        {/* ── Total ── */}
         <View style={s.card}>
-          <Text style={s.cardTitle}>Totales</Text>
-
-          <Text style={s.label}>Costo Total</Text>
+          <Text style={s.cardTitle}>Total</Text>
           <View style={[s.inputBox, s.inputReadonly]}>
-            <Text style={s.inputReadonlyText}>${costoTotal.toLocaleString('es-CO')}</Text>
-          </View>
-
-          <Text style={s.label}>Pago Recibido</Text>
-          <View style={s.inputBox}>
-            <TextInput
-              style={s.input} keyboardType="numeric"
-              placeholder="0" placeholderTextColor="#bbb"
-              value={pagoRecibido} onChangeText={setPagoRecibido}
-            />
-          </View>
-
-          <Text style={s.label}>Cambio</Text>
-          <View style={[s.inputBox, s.inputReadonly]}>
-            <Text style={[s.inputReadonlyText, { color: cambio >= 0 ? '#27ae60' : '#e74c3c' }]}>
-              ${cambio.toLocaleString('es-CO')}
+            <Text style={s.inputReadonlyText}>
+              ${totalPedido.toLocaleString('es-CO')}
             </Text>
           </View>
         </View>
@@ -320,10 +356,10 @@ export default function RegistroVentas() {
           <TouchableOpacity style={s.btnSecundario} onPress={() => router.back()}>
             <Text style={s.btnSecundarioText}>Regresar</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={s.btnPrincipal} onPress={registrarVenta} disabled={cargando}>
+          <TouchableOpacity style={s.btnPrincipal} onPress={registrarPedido} disabled={cargando}>
             {cargando
               ? <ActivityIndicator color="#fff" />
-              : <Text style={s.btnPrincipalText}>Registrar Venta</Text>
+              : <Text style={s.btnPrincipalText}>Registrar Pedido</Text>
             }
           </TouchableOpacity>
         </View>
@@ -350,13 +386,12 @@ const s = StyleSheet.create({
   inputReadonly:     { backgroundColor: '#f9f9f9', borderRadius: 4, borderBottomWidth: 0, paddingHorizontal: 8, paddingVertical: 8 },
   inputReadonlyText: { fontSize: 16, color: DARK, fontWeight: '600' },
 
-  pickerRow: { flexDirection: 'row', gap: 10, marginTop: 4, marginBottom: 4 },
-  chip:      { borderWidth: 1, borderColor: BORDER, borderRadius: 20, paddingHorizontal: 16, paddingVertical: 8 },
+  chipsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 4, marginBottom: 4 },
+  chip:      { borderWidth: 1, borderColor: BORDER, borderRadius: 20, paddingHorizontal: 14, paddingVertical: 8 },
   chipActivo:     { backgroundColor: ACCENT, borderColor: ACCENT },
-  chipText:       { color: '#555', fontSize: 14 },
+  chipText:       { color: '#555', fontSize: 13 },
   chipTextActivo: { color: '#fff', fontWeight: '600' },
 
-  // Tabla
   tablaHeader: { flexDirection: 'row', backgroundColor: DARK, borderRadius: 4, paddingVertical: 8, paddingHorizontal: 4, marginBottom: 4 },
   th: { color: '#fff', fontSize: 11, fontWeight: '600', textAlign: 'center' },
 
