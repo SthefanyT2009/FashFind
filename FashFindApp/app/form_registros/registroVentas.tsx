@@ -21,7 +21,7 @@ const ACCENT = '#e91e8c';
 const DARK   = '#3A3A3A';
 const BORDER = '#000';
 
-const API_BASE = 'http://172.30.3.163/FashFind/api';
+const API_BASE = Platform.OS === 'web' ? 'http://localhost/FashFind/api' : 'http://192.168.0.7/FashFind/api';
 
 interface DetalleItem {
   id: number;
@@ -83,8 +83,49 @@ export default function RegistroVentas() {
       mostrarAlerta('Error', 'Por favor complete todos los campos.');
       return;
     }
-    // Lógica de envío...
-    mostrarAlerta('Éxito', 'Venta registrada correctamente.');
+
+    setCargando(true);
+    try {
+      // Convertir fecha de formato "d/m/yyyy" a "yyyy-mm-dd"
+      const [dia, mes, anio] = fechaVenta.split('/');
+      const fechaFormato = `${anio}-${mes.padStart(2, '0')}-${dia.padStart(2, '0')}`;
+
+      const ventaData = {
+        fecha_venta: fechaFormato,
+        hora: hora,
+        metodo_pago: metodoPago,
+        costo_total: costoTotal,
+        pago_recibido: parseFloat(pagoRecibido),
+        cambio: cambio,
+        id_usuario: idVendedor,
+        detalles: detalles.map(d => ({
+          id_producto: d.id_producto,
+          cantidad: parseInt(d.cantidad) || 0,
+          precio: parseFloat(d.precio) || 0,
+        }))
+      };
+
+      const res = await fetch(`${API_BASE}/ventas.php`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(ventaData)
+      });
+
+      const json = await res.json();
+      
+      if (json.success) {
+        mostrarAlerta('Éxito', json.mensaje || 'Venta registrada correctamente.', () => {
+          router.back();
+        });
+      } else {
+        mostrarAlerta('Error', json.mensaje || 'No se pudo registrar la venta.');
+      }
+    } catch (error) {
+      console.error('Error registrando venta:', error);
+      mostrarAlerta('Error de conexión', 'No se pudo conectar con el servidor.');
+    } finally {
+      setCargando(false);
+    }
   };
 
   return (
@@ -217,8 +258,16 @@ export default function RegistroVentas() {
                 <TextInput style={s.inputLine} value={`$ ${cambio}`} editable={false} />
               </View>
 
-              <TouchableOpacity style={[s.btnRosa, { marginTop: 20 }]} onPress={registrarVenta}>
-                <Text style={s.btnRosaText}>Registrar Venta</Text>
+              <TouchableOpacity 
+                style={[s.btnRosa, { marginTop: 20, opacity: cargando ? 0.6 : 1 }]} 
+                onPress={registrarVenta}
+                disabled={cargando}
+              >
+                {cargando ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Text style={s.btnRosaText}>Registrar Venta</Text>
+                )}
               </TouchableOpacity>
 
               <TouchableOpacity style={s.btnRegresar} onPress={() => router.back()}>

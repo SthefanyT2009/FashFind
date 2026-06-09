@@ -28,7 +28,17 @@ const SIDEBAR_WIDTH = 220;
 const ES_WEB_ESCRITORIO = Platform.OS === 'web' && width >= 768;
 
 // Si estás en el mismo PC, usa localhost. Si estás en móvil, usa tu IP.
-const API_BASE = Platform.OS === 'web' ? 'http://localhost/FashFind/api' : 'http://172.30.3.163/FashFind/api';
+const API_BASE = Platform.OS === 'web' ? 'http://localhost/FashFind/api' : 'http://192.168.0.7/FashFind/api';
+
+// Helper compatible con web y móvil (SOLO PARA VENTAS)
+const mostrarAlerta = (titulo: string, mensaje: string, onOk?: () => void) => {
+  if (Platform.OS === 'web') {
+    window.alert(`${titulo}\n\n${mensaje}`);
+    onOk?.();
+  } else {
+    Alert.alert(titulo, mensaje, onOk ? [{ text: 'OK', onPress: onOk }] : undefined);
+  }
+};
 
 type Seccion = 'pagina_principal' | 'usuario' | 'venta' | 'pedido' | 'producto' | 'inventario';
 
@@ -74,12 +84,24 @@ export default function VistaAdministrador() {
   const [menuAbierto, setMenuAbierto] = useState(false);
   const [busqueda, setBusqueda] = useState('');
   const [refreshing, setRefreshing] = useState(false);
+  const buscadorRef = useRef<TextInput>(null);
 
   const [ventas, setVentas] = useState<any[]>([]);
   const [cargandoVentas, setCargandoVentas] = useState(false);
 
   const [pedidos, setPedidos] = useState<any[]>([]);
   const [cargandoPedidos, setCargandoPedidos] = useState(false);
+
+  const [estadisticas, setEstadisticas] = useState<any>({
+    usuarios_activos: 0,
+    usuarios_inactivos: 0,
+    clientes_registrados: 0,
+    clientes_inactivos: 0,
+    ventas_quincenales: 0,
+    pedidos_por_entregar: 0,
+    pedidos_entregados: 0,
+    productos_activos: 0,
+  });
 
   const cargarVentas = useCallback(async (mostrarCarga = true) => {
     try {
@@ -89,11 +111,11 @@ export default function VistaAdministrador() {
       if (json.success) {
         setVentas(json.data ?? []);
       } else {
-        Alert.alert('Error', json.mensaje ?? 'No se pudieron cargar las ventas.');
+        mostrarAlerta('Error', json.mensaje ?? 'No se pudieron cargar las ventas.');
       }
     } catch (error) {
       console.error('Error cargando ventas:', error);
-      Alert.alert('Error de conexión', 'No se pudo conectar con el servidor.');
+      mostrarAlerta('Error de conexión', 'No se pudo conectar con el servidor.');
     } finally {
       if (mostrarCarga) setCargandoVentas(false);
       setRefreshing(false);
@@ -120,14 +142,28 @@ export default function VistaAdministrador() {
     }
   }, []);
 
+  const cargarEstadisticas = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_BASE}/estadisticas.php`);
+      const json = await res.json();
+      if (json.success) {
+        setEstadisticas(json.data);
+      }
+    } catch (error) {
+      console.error('Error cargando estadísticas:', error);
+    }
+  }, []);
+
   useFocusEffect(
     useCallback(() => {
       if (seccionActiva === 'venta') {
         cargarVentas();
       } else if (seccionActiva === 'pedido') {
         cargarPedidos();
+      } else if (seccionActiva === 'pagina_principal') {
+        cargarEstadisticas();
       }
-    }, [seccionActiva, cargarVentas, cargarPedidos])
+    }, [seccionActiva, cargarVentas, cargarPedidos, cargarEstadisticas])
   );
 
   useEffect(() => {
@@ -135,8 +171,10 @@ export default function VistaAdministrador() {
       cargarVentas();
     } else if (seccionActiva === 'pedido') {
       cargarPedidos();
+    } else if (seccionActiva === 'pagina_principal') {
+      cargarEstadisticas();
     }
-  }, [seccionActiva, cargarVentas, cargarPedidos]);
+  }, [seccionActiva, cargarVentas, cargarPedidos, cargarEstadisticas]);
 
   const ventasFiltradas = ventas.filter(v => {
     if (!busqueda.trim()) return true;
@@ -184,27 +222,31 @@ export default function VistaAdministrador() {
     const mensaje = esEliminar
       ? `¿Desactivar la venta #${venta.id_venta}?`
       : `¿Reactivar la venta #${venta.id_venta}?`;
-    Alert.alert('Confirmar', mensaje, [
-      { text: 'Cancelar', style: 'cancel' },
-      {
-        text: 'Confirmar',
-        onPress: async () => {
-          try {
-            const res = await fetch(`${API_BASE}/ventas.php?id=${venta.id_venta}&action=${accion}`, { method: 'PUT' });
-            const json = await res.json();
-            if (json.success) {
-              Alert.alert('Éxito', json.mensaje);
-              await cargarVentas(false);
-            } else {
-              Alert.alert('Error', json.mensaje ?? 'No se pudo completar la acción.');
-            }
-          } catch (error) {
-            console.error('Error:', error);
-            Alert.alert('Error de conexión', 'No se pudo conectar con el servidor.');
-          }
-        },
-      },
-    ]);
+    
+    const confirmar = Platform.OS === 'web'
+      ? window.confirm(mensaje)
+      : await new Promise<boolean>((resolve) =>
+          Alert.alert('Confirmar', mensaje, [
+            { text: 'Cancelar', style: 'cancel', onPress: () => resolve(false) },
+            { text: 'Confirmar', onPress: () => resolve(true) },
+          ])
+        );
+    
+    if (!confirmar) return;
+    
+    try {
+      const res = await fetch(`${API_BASE}/ventas.php?id=${venta.id_venta}&action=${accion}`, { method: 'PUT' });
+      const json = await res.json();
+      if (json.success) {
+        mostrarAlerta('Éxito', json.mensaje);
+        await cargarVentas(false);
+      } else {
+        mostrarAlerta('Error', json.mensaje ?? 'No se pudo completar la acción.');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      mostrarAlerta('Error de conexión', 'No se pudo conectar con el servidor.');
+    }
   };
 
   const accionFilaPedido = async (btn: string, pedido: any) => {
@@ -271,14 +313,14 @@ export default function VistaAdministrador() {
   ];
 
   const cajas = [
-    { titulo: 'Usuarios Activos', valor: '3' },
-    { titulo: 'Usuarios Inactivos', valor: '4' },
-    { titulo: 'Clientes Registrados', valor: '5' },
-    { titulo: 'Clientes Inactivos', valor: '8' },
-    { titulo: 'Ventas Quincenales', valor: '$500.000' },
-    { titulo: 'Pedidos Por Entregar', valor: '5' },
-    { titulo: 'Pedidos Entregados', valor: '20' },
-    { titulo: 'Productos Activos', valor: '20' },
+    { titulo: 'Usuarios Activos', valor: String(estadisticas.usuarios_activos) },
+    { titulo: 'Usuarios Inactivos', valor: String(estadisticas.usuarios_inactivos) },
+    { titulo: 'Clientes Registrados', valor: String(estadisticas.clientes_registrados) },
+    { titulo: 'Clientes Inactivos', valor: String(estadisticas.clientes_inactivos) },
+    { titulo: 'Ventas Quincenales', valor: `$${Number(estadisticas.ventas_quincenales).toLocaleString('es-CO')}` },
+    { titulo: 'Pedidos Por Entregar', valor: String(estadisticas.pedidos_por_entregar) },
+    { titulo: 'Pedidos Entregados', valor: String(estadisticas.pedidos_entregados) },
+    { titulo: 'Productos Activos', valor: String(estadisticas.productos_activos) },
   ];
 
   const BarraLateral = ({ onClose }: { onClose?: () => void }) => (
@@ -303,7 +345,7 @@ export default function VistaAdministrador() {
     </View>
   );
 
-  const Contenido = () => (
+  const contenidoJSX = (
     <View style={styles.contenidoPrincipal}>
       {/* Barra superior */}
       <View style={styles.barraSuperior}>
@@ -331,6 +373,7 @@ export default function VistaAdministrador() {
         <View style={styles.buscador}>
           <Ionicons name="search-outline" size={20} color="#999" style={styles.buscadorIcon} />
           <TextInput
+            ref={buscadorRef}
             style={styles.buscadorInput}
             placeholder="Buscar por ID, fecha, método de pago, estado, cliente..."
             placeholderTextColor="#999"
@@ -339,6 +382,7 @@ export default function VistaAdministrador() {
             autoCorrect={false}
             autoCapitalize="none"
             autoComplete="off"
+            editable={true}
           />
           {busqueda !== '' && (
             <TouchableOpacity onPress={limpiarBusqueda} style={styles.buscadorLimpiar}>
@@ -421,19 +465,19 @@ export default function VistaAdministrador() {
                         </Text>
                       </View>
                       <View style={styles.ventaCardBtns}>
-                        {botonesFilaPorSeccion.venta.map((btn, i) => (
-                          <TouchableOpacity
-                            key={i}
-                            style={[
-                              styles.ventaBtn,
-                              btn === 'Eliminar'   && { backgroundColor: '#e74c3c' },
-                              btn === 'Reactivar' && { backgroundColor: '#27ae60' },
-                            ]}
-                            onPress={() => accionFila(btn, v)}
-                          >
-                            <Text style={styles.ventaBtnTxt}>{btn}</Text>
+                        <TouchableOpacity style={styles.ventaBtn} onPress={() => accionFila('Actualizar', v)}>
+                          <Text style={styles.ventaBtnTxt}>Actualizar</Text>
+                        </TouchableOpacity>
+                        {v.estado === 'Activo' && (
+                          <TouchableOpacity style={[styles.ventaBtn, { backgroundColor: '#e74c3c' }]} onPress={() => accionFila('Eliminar', v)}>
+                            <Text style={styles.ventaBtnTxt}>Eliminar</Text>
                           </TouchableOpacity>
-                        ))}
+                        )}
+                        {v.estado === 'Inactivo' && (
+                          <TouchableOpacity style={[styles.ventaBtn, { backgroundColor: '#27ae60' }]} onPress={() => accionFila('Reactivar', v)}>
+                            <Text style={styles.ventaBtnTxt}>Reactivar</Text>
+                          </TouchableOpacity>
+                        )}
                       </View>
                     </View>
                   ))
@@ -550,7 +594,7 @@ export default function VistaAdministrador() {
       <SafeAreaView style={styles.container}>
         <View style={styles.layoutWeb}>
           <BarraLateral />
-          <Contenido />
+          {contenidoJSX}
         </View>
       </SafeAreaView>
     );
@@ -564,7 +608,7 @@ export default function VistaAdministrador() {
           <BarraLateral onClose={() => setMenuAbierto(false)} />
         </View>
       )}
-      <Contenido />
+      {contenidoJSX}
     </SafeAreaView>
   );
 }
