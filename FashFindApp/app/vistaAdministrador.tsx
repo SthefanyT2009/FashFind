@@ -28,7 +28,7 @@ const SIDEBAR_WIDTH = 220;
 const ES_WEB_ESCRITORIO = Platform.OS === 'web' && width >= 768;
 
 // Si estás en el mismo PC, usa localhost. Si estás en móvil, usa tu IP.
-const API_BASE = Platform.OS === 'web' ? 'http://localhost/FashFind/api' : 'http://192.168.0.7/FashFind/api';
+const API_BASE = Platform.OS === 'web' ? 'http://localhost/FashFind/api' : 'http://172.30.4.210/FashFind/api';
 
 // Helper compatible con web y móvil (SOLO PARA VENTAS)
 const mostrarAlerta = (titulo: string, mensaje: string, onOk?: () => void) => {
@@ -60,9 +60,9 @@ const accionesPorSeccion: Record<Seccion, { label: string; ruta: string }[]> = {
   ],
   pedido: [
     { label: 'Crear Nuevo Pedido', ruta: '/form_registros/registroPedidos' },
-    { label: 'Reporte de Pedidos', ruta: '/reportePedidos' },
+    { label: 'Reporte de Pedidos', ruta: '/form_actualizaciones/reportePedidos' },
   ],
-  producto: [{ label: 'Crear Nuevo Producto', ruta: '/registroProductos' }],
+  producto: [{ label: 'Crear Nuevo Producto', ruta: '/form_registros/registroProductos' }],
   inventario: [
     { label: 'Crear Nuevo Inventario', ruta: '/registroInventario' },
     { label: 'Reporte de Inventario', ruta: '/reporteInventario' },
@@ -91,6 +91,9 @@ export default function VistaAdministrador() {
 
   const [pedidos, setPedidos] = useState<any[]>([]);
   const [cargandoPedidos, setCargandoPedidos] = useState(false);
+
+  const [productos, setProductos] = useState<any[]>([]);
+  const [cargandoProductos, setCargandoProductos] = useState(false);
 
   const [estadisticas, setEstadisticas] = useState<any>({
     usuarios_activos: 0,
@@ -142,6 +145,25 @@ export default function VistaAdministrador() {
     }
   }, []);
 
+  const cargarProductos = useCallback(async (mostrarCarga = true) => {
+    try {
+      if (mostrarCarga) setCargandoProductos(true);
+      const res = await fetch(`${API_BASE}/productos.php`);
+      const json = await res.json();
+      if (json.success) {
+        setProductos(json.data ?? []);
+      } else {
+        mostrarAlerta('Error', json.mensaje ?? 'No se pudieron cargar los productos.');
+      }
+    } catch (error) {
+      console.error('Error cargando productos:', error);
+      mostrarAlerta('Error de conexión', 'No se pudo conectar con el servidor.');
+    } finally {
+      if (mostrarCarga) setCargandoProductos(false);
+      setRefreshing(false);
+    }
+  }, []);
+
   const cargarEstadisticas = useCallback(async () => {
     try {
       const res = await fetch(`${API_BASE}/estadisticas.php`);
@@ -160,10 +182,12 @@ export default function VistaAdministrador() {
         cargarVentas();
       } else if (seccionActiva === 'pedido') {
         cargarPedidos();
+      } else if (seccionActiva === 'producto') {
+        cargarProductos();
       } else if (seccionActiva === 'pagina_principal') {
         cargarEstadisticas();
       }
-    }, [seccionActiva, cargarVentas, cargarPedidos, cargarEstadisticas])
+    }, [seccionActiva, cargarVentas, cargarPedidos, cargarProductos, cargarEstadisticas])
   );
 
   useEffect(() => {
@@ -171,10 +195,10 @@ export default function VistaAdministrador() {
       cargarVentas();
     } else if (seccionActiva === 'pedido') {
       cargarPedidos();
-    } else if (seccionActiva === 'pagina_principal') {
-      cargarEstadisticas();
+    } else if (seccionActiva === 'producto') {
+      cargarProductos();
     }
-  }, [seccionActiva, cargarVentas, cargarPedidos, cargarEstadisticas]);
+  }, [seccionActiva, cargarVentas, cargarPedidos, cargarProductos]);
 
   const ventasFiltradas = ventas.filter(v => {
     if (!busqueda.trim()) return true;
@@ -207,6 +231,21 @@ export default function VistaAdministrador() {
       (p.apellidos && String(p.apellidos).toLowerCase().includes(q)) ||
       (p.telefono_contacto && String(p.telefono_contacto).toLowerCase().includes(q)) ||
       (p.total_pedido && String(p.total_pedido).includes(q))
+    );
+  });
+
+  const productosFiltrados = productos.filter(prod => {
+    if (!busqueda.trim()) return true;
+    const q = busqueda.toLowerCase();
+    return (
+      (prod.id_producto && String(prod.id_producto).includes(q)) ||
+      (prod.nombre_producto && String(prod.nombre_producto).toLowerCase().includes(q)) ||
+      (prod.descripcion && String(prod.descripcion).toLowerCase().includes(q)) ||
+      (prod.categoria && String(prod.categoria).toLowerCase().includes(q)) ||
+      (prod.talla && String(prod.talla).toLowerCase().includes(q)) ||
+      (prod.color && String(prod.color).toLowerCase().includes(q)) ||
+      (prod.precio && String(prod.precio).includes(q)) ||
+      (prod.estado && String(prod.estado).toLowerCase().includes(q))
     );
   });
 
@@ -290,6 +329,45 @@ export default function VistaAdministrador() {
     }
   };
 
+  const accionFilaProducto = async (btn: string, producto: any) => {
+    if (btn === 'Actualizar') {
+      router.push({ pathname: '/form_actualizaciones/editarProductos', params: { id: String(producto.id_producto) } } as any);
+      return;
+    }
+    const esEliminar = btn === 'Eliminar';
+    const esReactivar = btn === 'Reactivar';
+    if (!esEliminar && !esReactivar) return;
+    const accion = esEliminar ? 'eliminar' : 'reactivar';
+    const mensaje = esEliminar
+      ? `¿Desactivar el producto #${producto.id_producto}?`
+      : `¿Reactivar el producto #${producto.id_producto}?`;
+    
+    const confirmar = Platform.OS === 'web'
+      ? window.confirm(mensaje)
+      : await new Promise<boolean>((resolve) =>
+          Alert.alert('Confirmar', mensaje, [
+            { text: 'Cancelar', style: 'cancel', onPress: () => resolve(false) },
+            { text: 'Confirmar', onPress: () => resolve(true) },
+          ])
+        );
+    
+    if (!confirmar) return;
+    
+    try {
+      const res = await fetch(`${API_BASE}/productos.php?id=${producto.id_producto}&action=${accion}`, { method: 'PUT' });
+      const json = await res.json();
+      if (json.success) {
+        mostrarAlerta('Éxito', json.mensaje);
+        await cargarProductos(false);
+      } else {
+        mostrarAlerta('Error', json.mensaje ?? 'No se pudo completar la acción.');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      mostrarAlerta('Error de conexión', 'No se pudo conectar con el servidor.');
+    }
+  };
+
   const limpiarBusqueda = () => { setBusqueda(''); };
 
   const onRefresh = useCallback(() => {
@@ -298,10 +376,12 @@ export default function VistaAdministrador() {
       cargarVentas(false);
     } else if (seccionActiva === 'pedido') {
       cargarPedidos(false);
+    } else if (seccionActiva === 'producto') {
+      cargarProductos(false);
     } else {
       setRefreshing(false);
     }
-  }, [seccionActiva, cargarVentas, cargarPedidos]);
+  }, [seccionActiva, cargarVentas, cargarPedidos, cargarProductos]);
 
   const menuItems: { id: Seccion; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
     { id: 'pagina_principal', label: 'Página Principal', icon: 'home-outline' },
@@ -398,6 +478,8 @@ export default function VistaAdministrador() {
               ? `🔍 ${ventasFiltradas.length} resultado(s) encontrado(s) para "${busqueda}"`
               : seccionActiva === 'pedido'
               ? `🔍 ${pedidosFiltrados.length} resultado(s) encontrado(s) para "${busqueda}"`
+              : seccionActiva === 'producto'
+              ? `🔍 ${productosFiltrados.length} resultado(s) encontrado(s) para "${busqueda}"`
               : `🔍 Resultados para "${busqueda}"`
             }
           </Text>
@@ -538,8 +620,57 @@ export default function VistaAdministrador() {
               </View>
             )}
 
+            {/* ── Tarjetas de Productos ── */}
+            {seccionActiva === 'producto' && (
+              <View>
+                {cargandoProductos ? (
+                  <View style={{ paddingVertical: 30, alignItems: 'center' }}>
+                    <ActivityIndicator size="large" color={ACCENT} />
+                    <Text style={{ color: '#888', marginTop: 8 }}>Cargando productos...</Text>
+                  </View>
+                ) : productosFiltrados.length === 0 ? (
+                  <Text style={{ color: '#888', padding: 16 }}>
+                    {busqueda ? 'No hay productos que coincidan con tu búsqueda.' : 'No hay productos registrados.'}
+                  </Text>
+                ) : (
+                  productosFiltrados.map((prod) => (
+                    <View key={prod.id_producto} style={styles.ventaCard}>
+                      <View style={styles.ventaCardHeader}>
+                        <Text style={styles.ventaCardId}>Producto #{prod.id_producto}</Text>
+                        <Text style={[styles.ventaCardEstado, {
+                          backgroundColor: prod.estado === 'Activo' ? '#27ae60' : '#e74c3c',
+                        }]}>{prod.estado}</Text>
+                      </View>
+                      <View style={styles.ventaCardInfo}>
+                        <Text style={styles.ventaCardTxt}><Text style={{ fontWeight: 'bold' }}>Nombre:</Text> {prod.nombre_producto}</Text>
+                        <Text style={styles.ventaCardTxt}><Text style={{ fontWeight: 'bold' }}>Descripción:</Text> {prod.descripcion || 'N/A'}</Text>
+                        <Text style={styles.ventaCardTxt}><Text style={{ fontWeight: 'bold' }}>Categoría:</Text> {prod.categoria}</Text>
+                        <Text style={styles.ventaCardTxt}><Text style={{ fontWeight: 'bold' }}>Talla:</Text> {prod.talla}  |  <Text style={{ fontWeight: 'bold' }}>Color:</Text> {prod.color}</Text>
+                        <Text style={styles.ventaCardTxt}><Text style={{ fontWeight: 'bold' }}>Precio:</Text> ${Number(prod.precio).toLocaleString('es-CO')}</Text>
+                      </View>
+                      <View style={styles.ventaCardBtns}>
+                        <TouchableOpacity style={styles.ventaBtn} onPress={() => accionFilaProducto('Actualizar', prod)}>
+                          <Text style={styles.ventaBtnTxt}>Actualizar</Text>
+                        </TouchableOpacity>
+                        {prod.estado === 'Activo' && (
+                          <TouchableOpacity style={[styles.ventaBtn, { backgroundColor: '#e74c3c' }]} onPress={() => accionFilaProducto('Eliminar', prod)}>
+                            <Text style={styles.ventaBtnTxt}>Eliminar</Text>
+                          </TouchableOpacity>
+                        )}
+                        {prod.estado === 'Inactivo' && (
+                          <TouchableOpacity style={[styles.ventaBtn, { backgroundColor: '#27ae60' }]} onPress={() => accionFilaProducto('Reactivar', prod)}>
+                            <Text style={styles.ventaBtnTxt}>Reactivar</Text>
+                          </TouchableOpacity>
+                        )}
+                      </View>
+                    </View>
+                  ))
+                )}
+              </View>
+            )}
+
             {/* Otras secciones (tabla genérica) */}
-            {seccionActiva !== 'venta' && seccionActiva !== 'pedido' && seccionActiva !== 'pagina_principal' && (
+            {seccionActiva !== 'venta' && seccionActiva !== 'pedido' && seccionActiva !== 'producto' && seccionActiva !== 'pagina_principal' && (
               <ScrollView horizontal={!ES_WEB_ESCRITORIO} showsHorizontalScrollIndicator={!ES_WEB_ESCRITORIO}>
                 <View style={ES_WEB_ESCRITORIO ? { width: '100%' } : {}}>
                   <View style={styles.tablaHeader}>

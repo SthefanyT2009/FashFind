@@ -14,12 +14,12 @@ const API_BASE = Platform.OS === 'web'
   ? 'http://localhost/FashFind/api'
   : 'http://172.30.4.210/FashFind/api';
 
-export default function ReporteVentas() {
+export default function ReportePedidos() {
   const router = useRouter();
 
   const abrir = (formato: 'pdf' | 'excel') => {
     if (Platform.OS === 'web') {
-      window.open(`${API_BASE}/reporteVentas.php?formato=${formato}`, '_blank');
+      window.open(`${API_BASE}/reportePedidos.php?formato=${formato}`, '_blank');
     }
   };
 
@@ -29,16 +29,16 @@ export default function ReporteVentas() {
         <TouchableOpacity onPress={() => router.back()} style={styles.btnVolver}>
           <Ionicons name="arrow-back" size={22} color="#fff" />
         </TouchableOpacity>
-        <Text style={styles.barraTitulo}>Reporte de Ventas</Text>
+        <Text style={styles.barraTitulo}>Reporte de Pedidos</Text>
       </View>
 
       <ScrollView contentContainerStyle={styles.contenido}>
         <View style={styles.tarjeta}>
-          <Ionicons name="document-text-outline" size={48} color={ACCENT} style={{ marginBottom: 16 }} />
-          <Text style={styles.titulo}>Reporte Quincenal de Ventas</Text>
+          <Ionicons name="cart-outline" size={48} color={ACCENT} style={{ marginBottom: 16 }} />
+          <Text style={styles.titulo}>Reporte Quincenal de Pedidos</Text>
           <Text style={styles.descripcion}>
-            Genera un reporte con todas las ventas activas de la quincena actual, incluyendo
-            detalle de productos, cliente, método de pago e ingresos totales.
+            Genera un reporte con todos los pedidos de la quincena actual, incluyendo
+            estado, detalle de productos, datos de entrega e ingresos totales.
           </Text>
 
           <View style={styles.botonesGroup}>
