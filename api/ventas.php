@@ -54,7 +54,7 @@ switch ($method) {
                 SELECT v.*, u.nombres, u.apellidos
                 FROM Venta v
                 INNER JOIN Usuario u ON v.id_usuario = u.id_usuario
-                ORDER BY v.fecha_venta DESC, v.hora DESC
+                ORDER BY v.id_venta DESC
             ")->fetchAll(PDO::FETCH_ASSOC);
 
             echo json_encode(["success" => true, "data" => $ventas]);
