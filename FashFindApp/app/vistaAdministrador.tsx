@@ -563,7 +563,7 @@ export default function VistaAdministrador() {
                     </View>
                     <Text style={styles.filtroGrupoTitulo}>Método de pago</Text>
                     <View style={styles.chipsRow}>
-                      {['', 'Efectivo', 'Tarjeta', 'Transferencia', 'Nequi', 'Daviplata'].map(v => (
+                      {['', 'Efectivo', 'Transferencia'].map(v => (
                         <Chip key={v} label={v || 'Todos'} activo={filtroVentaMetodo === v} onPress={() => setFiltroVentaMetodo(v)} />
                       ))}
                     </View>
@@ -587,7 +587,7 @@ export default function VistaAdministrador() {
                   <>
                     <Text style={styles.filtroGrupoTitulo}>Estado</Text>
                     <View style={styles.chipsRow}>
-                      {['', 'Pendiente', 'En camino', 'Entregado', 'Cancelado'].map(v => (
+                      {['', 'Por Entregar', 'Entregado', 'Cancelado'].map(v => (
                         <Chip key={v} label={v || 'Todos'} activo={filtroPedidoEstado === v} onPress={() => setFiltroPedidoEstado(v)} />
                       ))}
                     </View>
