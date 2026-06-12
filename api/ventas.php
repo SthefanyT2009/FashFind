@@ -106,16 +106,9 @@ switch ($method) {
                 INSERT INTO Detalle_Venta (cantidad, precio, sub_total, id_venta, id_producto)
                 VALUES (?, ?, ?, ?, ?)
             ");
-            $stmtStock = $db->prepare("
-                UPDATE Inventario
-                SET stock_disponible = stock_disponible - ?
-                WHERE id_producto = ?
-            ");
-
             foreach ($data['detalles'] as $d) {
                 $sub_total = $d['cantidad'] * $d['precio'];
                 $stmtDet->execute([$d['cantidad'], $d['precio'], $sub_total, $id_venta, $d['id_producto']]);
-                $stmtStock->execute([$d['cantidad'], $d['id_producto']]);
             }
 
             $db->commit();
@@ -139,16 +132,26 @@ switch ($method) {
         }
 
         if ($action === 'eliminar') {
-            $stmt = $db->prepare("UPDATE Venta SET estado = 'Inactivo' WHERE id_venta = ?");
-            $stmt->execute([$id]);
-            echo json_encode(["success" => true, "mensaje" => "Venta desactivada correctamente"]);
+            require_once BASE_PATH . '/models/Venta.php';
+            $resultado = Venta::eliminar($id);
+            if ($resultado) {
+                echo json_encode(["success" => true, "mensaje" => "Venta desactivada correctamente y stock devuelto"]);
+            } else {
+                http_response_code(500);
+                echo json_encode(["success" => false, "mensaje" => "Error al desactivar la venta"]);
+            }
             exit;
         }
 
         if ($action === 'reactivar') {
-            $stmt = $db->prepare("UPDATE Venta SET estado = 'Activo' WHERE id_venta = ?");
-            $stmt->execute([$id]);
-            echo json_encode(["success" => true, "mensaje" => "Venta reactivada correctamente"]);
+            require_once BASE_PATH . '/models/Venta.php';
+            $resultado = Venta::reactivar($id);
+            if ($resultado) {
+                echo json_encode(["success" => true, "mensaje" => "Venta reactivada correctamente y stock descontado"]);
+            } else {
+                http_response_code(500);
+                echo json_encode(["success" => false, "mensaje" => "Error al reactivar la venta. Verifique stock y estado de productos."]);
+            }
             exit;
         }
 
@@ -164,27 +167,8 @@ switch ($method) {
             }
         }
 
-        $stmt = $db->prepare("
-            UPDATE Venta
-            SET fecha_venta   = ?,
-                hora          = ?,
-                metodo_pago   = ?,
-                costo_total   = ?,
-                pago_recibido = ?,
-                cambio        = ?,
-                id_usuario    = ?
-            WHERE id_venta = ?
-        ");
-        $resultado = $stmt->execute([
-            $data['fecha_venta'],
-            $data['hora'],
-            $data['metodo_pago'],
-            $data['costo_total'],
-            $data['pago_recibido'],
-            $data['cambio'],
-            $data['id_usuario'],
-            $id
-        ]);
+        require_once BASE_PATH . '/models/Venta.php';
+        $resultado = Venta::actualizar($id, $data);
 
         if ($resultado) {
             echo json_encode(["success" => true, "mensaje" => "Venta actualizada correctamente"]);

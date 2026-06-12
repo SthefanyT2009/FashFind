@@ -37,6 +37,17 @@ class Pedido {
         $db = Database::conectar();
         try {
             $db->beginTransaction();
+
+            // Validar que los productos estén activos
+            $stmtCheck = $db->prepare("SELECT estado FROM Producto WHERE id_producto = ?");
+            foreach ($datos['productos'] as $producto) {
+                $stmtCheck->execute([$producto['id_producto']]);
+                $prod = $stmtCheck->fetch(PDO::FETCH_ASSOC);
+                if (!$prod || $prod['estado'] !== 'Activo') {
+                    throw new Exception("El producto con ID " . $producto['id_producto'] . " no está activo.");
+                }
+            }
+
             $stmt = $db->prepare("
                 INSERT INTO Pedido(
                     fecha_pedido,
@@ -88,14 +99,29 @@ class Pedido {
 
     public static function cancelar($id_pedido) {
         $db = Database::conectar();
-        // Verificamos que el estado sea uno de los permitidos en el ENUM: "Por Entregar", "Entregado", "Cancelado"
-        $stmt = $db->prepare("
-            UPDATE Pedido
-            SET estado = 'Cancelado'
-            WHERE id_pedido = ?
-        ");
-        $ok = $stmt->execute([$id_pedido]);
-        return ["success" => $ok];
+        try {
+            $db->beginTransaction();
+
+            // 1. Cambiar estado
+            $stmt = $db->prepare("UPDATE Pedido SET estado = 'Cancelado' WHERE id_pedido = ?");
+            $stmt->execute([$id_pedido]);
+
+            // 2. Devolver stock
+            $stmtDetalles = $db->prepare("SELECT id_producto, cantidad FROM Detalle_Pedido WHERE id_pedido = ?");
+            $stmtDetalles->execute([$id_pedido]);
+            $detalles = $stmtDetalles->fetchAll(PDO::FETCH_ASSOC);
+
+            $stmtStock = $db->prepare("UPDATE Inventario SET stock_disponible = stock_disponible + ? WHERE id_producto = ?");
+            foreach ($detalles as $d) {
+                $stmtStock->execute([$d['cantidad'], $d['id_producto']]);
+            }
+
+            $db->commit();
+            return ["success" => true];
+        } catch (Exception $e) {
+            $db->rollBack();
+            return ["success" => false, "mensaje" => $e->getMessage()];
+        }
     }
 
     public static function entregar($id_pedido) {
@@ -111,14 +137,45 @@ class Pedido {
 
     public static function reactivar($id_pedido) {
         $db = Database::conectar();
-        // Reactivar vuelve al estado inicial del ENUM
-        $stmt = $db->prepare("
-            UPDATE Pedido
-            SET estado = 'Por Entregar'
-            WHERE id_pedido = ?
-        ");
-        $ok = $stmt->execute([$id_pedido]);
-        return ["success" => $ok];
+        try {
+            $db->beginTransaction();
+
+            // 1. Validar stock y estado de productos
+            $stmtDetalles = $db->prepare("
+                SELECT dp.id_producto, dp.cantidad, p.estado, i.stock_disponible 
+                FROM Detalle_Pedido dp
+                JOIN Producto p ON dp.id_producto = p.id_producto
+                JOIN Inventario i ON dp.id_producto = i.id_producto
+                WHERE dp.id_pedido = ?
+            ");
+            $stmtDetalles->execute([$id_pedido]);
+            $detalles = $stmtDetalles->fetchAll(PDO::FETCH_ASSOC);
+
+            foreach ($detalles as $d) {
+                if ($d['estado'] !== 'Activo') {
+                    throw new Exception("No se puede reactivar el pedido porque el producto ID " . $d['id_producto'] . " está inactivo.");
+                }
+                if ($d['stock_disponible'] < $d['cantidad']) {
+                    throw new Exception("No hay suficiente stock para el producto ID " . $d['id_producto']);
+                }
+            }
+
+            // 2. Cambiar estado
+            $stmt = $db->prepare("UPDATE Pedido SET estado = 'Por Entregar' WHERE id_pedido = ?");
+            $stmt->execute([$id_pedido]);
+
+            // 3. Descontar stock
+            $stmtStock = $db->prepare("UPDATE Inventario SET stock_disponible = stock_disponible - ? WHERE id_producto = ?");
+            foreach ($detalles as $d) {
+                $stmtStock->execute([$d['cantidad'], $d['id_producto']]);
+            }
+
+            $db->commit();
+            return ["success" => true];
+        } catch (Exception $e) {
+            $db->rollBack();
+            return ["success" => false, "mensaje" => $e->getMessage()];
+        }
     }
 
     public static function actualizar($datos) {
