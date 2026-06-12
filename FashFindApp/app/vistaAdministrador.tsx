@@ -27,10 +27,8 @@ const SIDEBAR_WIDTH = 220;
 
 const ES_WEB_ESCRITORIO = Platform.OS === 'web' && width >= 768;
 
-// Si estás en el mismo PC, usa localhost. Si estás en móvil, usa tu IP.
-const API_BASE = Platform.OS === 'web' ? 'http://localhost/FashFind/api' : 'http://172.30.4.210/FashFind/api';
+const API_BASE = Platform.OS === 'web' ? 'http://localhost/FashFind/api' : 'http://172.30.3.163/FashFind/api';
 
-// Helper compatible con web y móvil (SOLO PARA VENTAS)
 const mostrarAlerta = (titulo: string, mensaje: string, onOk?: () => void) => {
   if (Platform.OS === 'web') {
     window.alert(`${titulo}\n\n${mensaje}`);
@@ -53,7 +51,7 @@ const columnasPorSeccion: Record<Seccion, string[]> = {
 
 const accionesPorSeccion: Record<Seccion, { label: string; ruta: string }[]> = {
   pagina_principal: [],
-  usuario: [{ label: 'Crear Nuevo Usuario', ruta: '/registroUsuarios' }],
+  usuario: [{ label: 'Crear Nuevo Usuario', ruta: '/form_registros/registroUsuarios' }],
   venta: [
     { label: 'Crear Nueva Venta', ruta: '/form_registros/registroVentas' },
     { label: 'Reporte de Ventas', ruta: '/form_actualizaciones/reporteVentas' },
@@ -90,8 +88,8 @@ export default function VistaAdministrador() {
   const [mostrarFiltros, setMostrarFiltros] = useState(false);
 
   // Filtros ventas
-  const [filtroVentaEstado,    setFiltroVentaEstado]    = useState('');
-  const [filtroVentaMetodo,    setFiltroVentaMetodo]    = useState('');
+  const [filtroVentaEstado,     setFiltroVentaEstado]     = useState('');
+  const [filtroVentaMetodo,     setFiltroVentaMetodo]     = useState('');
   const [filtroVentaFechaDesde, setFiltroVentaFechaDesde] = useState('');
   const [filtroVentaFechaHasta, setFiltroVentaFechaHasta] = useState('');
 
@@ -108,16 +106,19 @@ export default function VistaAdministrador() {
   const [filtroProductoTalla,     setFiltroProductoTalla]     = useState('');
   const [filtroProductoEstado,    setFiltroProductoEstado]    = useState('');
 
-  const [ventas, setVentas] = useState<any[]>([]);
+  const [usuarios, setUsuarios]               = useState<any[]>([]);
+  const [cargandoUsuarios, setCargandoUsuarios] = useState(false);
+
+  const [ventas, setVentas]             = useState<any[]>([]);
   const [cargandoVentas, setCargandoVentas] = useState(false);
 
-  const [pedidos, setPedidos] = useState<any[]>([]);
+  const [pedidos, setPedidos]             = useState<any[]>([]);
   const [cargandoPedidos, setCargandoPedidos] = useState(false);
 
-  const [productos, setProductos] = useState<any[]>([]);
+  const [productos, setProductos]             = useState<any[]>([]);
   const [cargandoProductos, setCargandoProductos] = useState(false);
 
-  const [inventarios, setInventarios] = useState<any[]>([]);
+  const [inventarios, setInventarios]             = useState<any[]>([]);
   const [cargandoInventarios, setCargandoInventarios] = useState(false);
 
   const [estadisticas, setEstadisticas] = useState<any>({
@@ -130,6 +131,26 @@ export default function VistaAdministrador() {
     pedidos_entregados: 0,
     productos_activos: 0,
   });
+
+  // ── Cargar Usuarios ──
+  const cargarUsuarios = useCallback(async (mostrarCarga = true) => {
+    try {
+      if (mostrarCarga) setCargandoUsuarios(true);
+      const res = await fetch(`${API_BASE}/usuarios.php`);
+      const json = await res.json();
+      if (json.success) {
+        setUsuarios(json.data ?? []);
+      } else {
+        mostrarAlerta('Error', json.mensaje ?? 'No se pudieron cargar los usuarios.');
+      }
+    } catch (error) {
+      console.error('Error cargando usuarios:', error);
+      mostrarAlerta('Error de conexión', 'No se pudo conectar con el servidor.');
+    } finally {
+      if (mostrarCarga) setCargandoUsuarios(false);
+      setRefreshing(false);
+    }
+  }, []);
 
   const cargarVentas = useCallback(async (mostrarCarga = true) => {
     try {
@@ -155,9 +176,7 @@ export default function VistaAdministrador() {
       if (mostrarCarga) setCargandoPedidos(true);
       const res = await fetch(`${API_BASE}/pedidos.php`);
       const json = await res.json();
-      console.log("RESPUESTA PEDIDOS:", json);
       if (json.success) {
-        console.log("DATOS PEDIDOS:", json.data);
         setPedidos(json.data ?? []);
       } else {
         Alert.alert('Error', json.mensaje ?? 'No se pudieron cargar los pedidos.');
@@ -222,7 +241,9 @@ export default function VistaAdministrador() {
 
   useFocusEffect(
     useCallback(() => {
-      if (seccionActiva === 'venta') {
+      if (seccionActiva === 'usuario') {
+        cargarUsuarios();
+      } else if (seccionActiva === 'venta') {
         cargarVentas();
       } else if (seccionActiva === 'pedido') {
         cargarPedidos();
@@ -233,11 +254,13 @@ export default function VistaAdministrador() {
       } else if (seccionActiva === 'pagina_principal') {
         cargarEstadisticas();
       }
-    }, [seccionActiva, cargarVentas, cargarPedidos, cargarProductos, cargarInventarios, cargarEstadisticas])
+    }, [seccionActiva, cargarUsuarios, cargarVentas, cargarPedidos, cargarProductos, cargarInventarios, cargarEstadisticas])
   );
 
   useEffect(() => {
-    if (seccionActiva === 'venta') {
+    if (seccionActiva === 'usuario') {
+      cargarUsuarios();
+    } else if (seccionActiva === 'venta') {
       cargarVentas();
     } else if (seccionActiva === 'pedido') {
       cargarPedidos();
@@ -246,7 +269,20 @@ export default function VistaAdministrador() {
     } else if (seccionActiva === 'inventario') {
       cargarInventarios();
     }
-  }, [seccionActiva, cargarVentas, cargarPedidos, cargarProductos, cargarInventarios]);
+  }, [seccionActiva, cargarUsuarios, cargarVentas, cargarPedidos, cargarProductos, cargarInventarios]);
+
+  // ── Filtros ──
+  const usuariosFiltrados = usuarios.filter(u => {
+    const q = busqueda.trim().toLowerCase();
+    if (q && !(
+      (u.id_usuario && String(u.id_usuario).includes(q)) ||
+      (u.nombres && String(u.nombres).toLowerCase().includes(q)) ||
+      (u.apellidos && String(u.apellidos).toLowerCase().includes(q)) ||
+      (u.cargo && String(u.cargo).toLowerCase().includes(q)) ||
+      (u.estado && String(u.estado).toLowerCase().includes(q))
+    )) return false;
+    return true;
+  });
 
   const ventasFiltradas = ventas.filter(v => {
     const q = busqueda.trim().toLowerCase();
@@ -260,7 +296,7 @@ export default function VistaAdministrador() {
       (v.apellidos && String(v.apellidos).toLowerCase().includes(q)) ||
       (v.costo_total && String(v.costo_total).includes(q))
     )) return false;
-    if (filtroVentaEstado  && v.estado     !== filtroVentaEstado)  return false;
+    if (filtroVentaEstado  && v.estado      !== filtroVentaEstado)  return false;
     if (filtroVentaMetodo  && v.metodo_pago !== filtroVentaMetodo)  return false;
     if (filtroVentaFechaDesde && v.fecha_venta < filtroVentaFechaDesde) return false;
     if (filtroVentaFechaHasta && v.fecha_venta > filtroVentaFechaHasta) return false;
@@ -341,7 +377,6 @@ export default function VistaAdministrador() {
     return false;
   };
 
-  // Chip reutilizable para filtros inline
   const Chip = ({ label, activo, onPress }: { label: string; activo: boolean; onPress: () => void }) => (
     <TouchableOpacity
       onPress={onPress}
@@ -355,19 +390,20 @@ export default function VistaAdministrador() {
     </TouchableOpacity>
   );
 
-  const accionFila = async (btn: string, venta: any) => {
+  // ── Acciones de fila ──
+  const accionFilaUsuario = async (btn: string, usuario: any) => {
     if (btn === 'Actualizar') {
-      router.push({ pathname: '/form_actualizaciones/editarVentas', params: { id: String(venta.id_venta) } } as any);
+      router.push({ pathname: '/form_actualizaciones/editarUsuario', params: { id: String(usuario.id_usuario) } } as any);
       return;
     }
-    const esEliminar = btn === 'Eliminar';
+    const esEliminar  = btn === 'Eliminar';
     const esReactivar = btn === 'Reactivar';
     if (!esEliminar && !esReactivar) return;
-    const accion = esEliminar ? 'eliminar' : 'reactivar';
+    const accion  = esEliminar ? 'eliminar' : 'reactivar';
     const mensaje = esEliminar
-      ? `¿Desactivar la venta #${venta.id_venta}?`
-      : `¿Reactivar la venta #${venta.id_venta}?`;
-    
+      ? `¿Desactivar al usuario ${usuario.nombres} ${usuario.apellidos}?`
+      : `¿Reactivar al usuario ${usuario.nombres} ${usuario.apellidos}?`;
+
     const confirmar = Platform.OS === 'web'
       ? window.confirm(mensaje)
       : await new Promise<boolean>((resolve) =>
@@ -376,11 +412,50 @@ export default function VistaAdministrador() {
             { text: 'Confirmar', onPress: () => resolve(true) },
           ])
         );
-    
+
     if (!confirmar) return;
-    
+
     try {
-      const res = await fetch(`${API_BASE}/ventas.php?id=${venta.id_venta}&action=${accion}`, { method: 'PUT' });
+      const res  = await fetch(`${API_BASE}/usuarios.php?id=${usuario.id_usuario}&action=${accion}`, { method: 'PUT' });
+      const json = await res.json();
+      if (json.success) {
+        mostrarAlerta('Éxito', json.mensaje);
+        await cargarUsuarios(false);
+      } else {
+        mostrarAlerta('Error', json.mensaje ?? 'No se pudo completar la acción.');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      mostrarAlerta('Error de conexión', 'No se pudo conectar con el servidor.');
+    }
+  };
+
+  const accionFila = async (btn: string, venta: any) => {
+    if (btn === 'Actualizar') {
+      router.push({ pathname: '/form_actualizaciones/editarVentas', params: { id: String(venta.id_venta) } } as any);
+      return;
+    }
+    const esEliminar  = btn === 'Eliminar';
+    const esReactivar = btn === 'Reactivar';
+    if (!esEliminar && !esReactivar) return;
+    const accion  = esEliminar ? 'eliminar' : 'reactivar';
+    const mensaje = esEliminar
+      ? `¿Desactivar la venta #${venta.id_venta}?`
+      : `¿Reactivar la venta #${venta.id_venta}?`;
+
+    const confirmar = Platform.OS === 'web'
+      ? window.confirm(mensaje)
+      : await new Promise<boolean>((resolve) =>
+          Alert.alert('Confirmar', mensaje, [
+            { text: 'Cancelar', style: 'cancel', onPress: () => resolve(false) },
+            { text: 'Confirmar', onPress: () => resolve(true) },
+          ])
+        );
+
+    if (!confirmar) return;
+
+    try {
+      const res  = await fetch(`${API_BASE}/ventas.php?id=${venta.id_venta}&action=${accion}`, { method: 'PUT' });
       const json = await res.json();
       if (json.success) {
         mostrarAlerta('Éxito', json.mensaje);
@@ -396,19 +471,17 @@ export default function VistaAdministrador() {
 
   const accionFilaPedido = async (btn: string, pedido: any) => {
     if (btn === 'Actualizar') {
-      router.push({
-        pathname: '/form_actualizaciones/editarPedidos',
-        params: { id: String(pedido.id_pedido) }
-      } as any);
+      router.push({ pathname: '/form_actualizaciones/editarPedidos', params: { id: String(pedido.id_pedido) } } as any);
       return;
     }
-    const esCancelar = btn === 'Cancelar';
+    const esCancelar  = btn === 'Cancelar';
     const esReactivar = btn === 'Reactivar';
     if (!esCancelar && !esReactivar) return;
-    const accion = esCancelar ? 'cancelar' : 'reactivar';
+    const accion  = esCancelar ? 'cancelar' : 'reactivar';
     const mensaje = esCancelar
       ? `¿Cancelar el pedido #${pedido.id_pedido}?`
       : `¿Reactivar el pedido #${pedido.id_pedido}?`;
+
     const confirmar = Platform.OS === 'web'
       ? window.confirm(mensaje)
       : await new Promise<boolean>((resolve) =>
@@ -417,9 +490,11 @@ export default function VistaAdministrador() {
             { text: 'Sí', onPress: () => resolve(true) },
           ])
         );
+
     if (!confirmar) return;
+
     try {
-      const res = await fetch(`${API_BASE}/pedidos.php?id=${pedido.id_pedido}&action=${accion}`, { method: 'PUT' });
+      const res  = await fetch(`${API_BASE}/pedidos.php?id=${pedido.id_pedido}&action=${accion}`, { method: 'PUT' });
       const json = await res.json();
       if (json.success) {
         Platform.OS === 'web' ? window.alert(json.mensaje) : Alert.alert('Éxito', json.mensaje);
@@ -440,14 +515,14 @@ export default function VistaAdministrador() {
       router.push({ pathname: '/form_actualizaciones/editarProductos', params: { id: String(producto.id_producto) } } as any);
       return;
     }
-    const esEliminar = btn === 'Eliminar';
+    const esEliminar  = btn === 'Eliminar';
     const esReactivar = btn === 'Reactivar';
     if (!esEliminar && !esReactivar) return;
-    const accion = esEliminar ? 'eliminar' : 'reactivar';
+    const accion  = esEliminar ? 'eliminar' : 'reactivar';
     const mensaje = esEliminar
       ? `¿Desactivar el producto #${producto.id_producto}?`
       : `¿Reactivar el producto #${producto.id_producto}?`;
-    
+
     const confirmar = Platform.OS === 'web'
       ? window.confirm(mensaje)
       : await new Promise<boolean>((resolve) =>
@@ -456,11 +531,11 @@ export default function VistaAdministrador() {
             { text: 'Confirmar', onPress: () => resolve(true) },
           ])
         );
-    
+
     if (!confirmar) return;
-    
+
     try {
-      const res = await fetch(`${API_BASE}/productos.php?id=${producto.id_producto}&action=${accion}`, { method: 'PUT' });
+      const res  = await fetch(`${API_BASE}/productos.php?id=${producto.id_producto}&action=${accion}`, { method: 'PUT' });
       const json = await res.json();
       if (json.success) {
         mostrarAlerta('Éxito', json.mensaje);
@@ -477,7 +552,6 @@ export default function VistaAdministrador() {
   const accionFilaInventario = async (btn: string, inventario: any) => {
     if (btn === 'Actualizar') {
       router.push({ pathname: '/form_actualizaciones/editarInventario', params: { id: String(inventario.id_inventario) } } as any);
-      return;
     }
   };
 
@@ -485,7 +559,9 @@ export default function VistaAdministrador() {
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
-    if (seccionActiva === 'venta') {
+    if (seccionActiva === 'usuario') {
+      cargarUsuarios(false);
+    } else if (seccionActiva === 'venta') {
       cargarVentas(false);
     } else if (seccionActiva === 'pedido') {
       cargarPedidos(false);
@@ -496,26 +572,26 @@ export default function VistaAdministrador() {
     } else {
       setRefreshing(false);
     }
-  }, [seccionActiva, cargarVentas, cargarPedidos, cargarProductos]);
+  }, [seccionActiva, cargarUsuarios, cargarVentas, cargarPedidos, cargarProductos, cargarInventarios]);
 
   const menuItems: { id: Seccion; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
     { id: 'pagina_principal', label: 'Página Principal', icon: 'home-outline' },
-    { id: 'usuario', label: 'Gestión de Usuarios', icon: 'people-outline' },
-    { id: 'venta', label: 'Gestión de Ventas', icon: 'cash-outline' },
-    { id: 'pedido', label: 'Gestión de Pedidos', icon: 'cart-outline' },
-    { id: 'producto', label: 'Gestión de Productos', icon: 'shirt-outline' },
-    { id: 'inventario', label: 'Gestión de Inventario', icon: 'layers-outline' },
+    { id: 'usuario',          label: 'Gestión de Usuarios',   icon: 'people-outline' },
+    { id: 'venta',            label: 'Gestión de Ventas',     icon: 'cash-outline' },
+    { id: 'pedido',           label: 'Gestión de Pedidos',    icon: 'cart-outline' },
+    { id: 'producto',         label: 'Gestión de Productos',  icon: 'shirt-outline' },
+    { id: 'inventario',       label: 'Gestión de Inventario', icon: 'layers-outline' },
   ];
 
   const cajas = [
-    { titulo: 'Usuarios Activos', valor: String(estadisticas.usuarios_activos) },
-    { titulo: 'Usuarios Inactivos', valor: String(estadisticas.usuarios_inactivos) },
-    { titulo: 'Clientes Registrados', valor: String(estadisticas.clientes_registrados) },
-    { titulo: 'Clientes Inactivos', valor: String(estadisticas.clientes_inactivos) },
-    { titulo: 'Ventas Quincenales', valor: `$${Number(estadisticas.ventas_quincenales).toLocaleString('es-CO')}` },
-    { titulo: 'Pedidos Por Entregar', valor: String(estadisticas.pedidos_por_entregar) },
-    { titulo: 'Pedidos Entregados', valor: String(estadisticas.pedidos_entregados) },
-    { titulo: 'Productos Activos', valor: String(estadisticas.productos_activos) },
+    { titulo: 'Usuarios Activos',      valor: String(estadisticas.usuarios_activos) },
+    { titulo: 'Usuarios Inactivos',    valor: String(estadisticas.usuarios_inactivos) },
+    { titulo: 'Clientes Registrados',  valor: String(estadisticas.clientes_registrados) },
+    { titulo: 'Clientes Inactivos',    valor: String(estadisticas.clientes_inactivos) },
+    { titulo: 'Ventas Quincenales',    valor: `$${Number(estadisticas.ventas_quincenales).toLocaleString('es-CO')}` },
+    { titulo: 'Pedidos Por Entregar',  valor: String(estadisticas.pedidos_por_entregar) },
+    { titulo: 'Pedidos Entregados',    valor: String(estadisticas.pedidos_entregados) },
+    { titulo: 'Productos Activos',     valor: String(estadisticas.productos_activos) },
   ];
 
   const BarraLateral = ({ onClose }: { onClose?: () => void }) => (
@@ -564,7 +640,7 @@ export default function VistaAdministrador() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[ACCENT]} />
         }
       >
-        {/* Buscador + filtros avanzados (ventas / pedidos / productos / inventario) */}
+        {/* Buscador con filtros avanzados (ventas / pedidos / productos / inventario) */}
         {(seccionActiva === 'venta' || seccionActiva === 'pedido' || seccionActiva === 'producto' || seccionActiva === 'inventario') && (
           <View style={{ marginBottom: 4 }}>
             <View style={styles.buscador}>
@@ -696,12 +772,12 @@ export default function VistaAdministrador() {
         )}
 
         {/* Buscador simple para usuario */}
-        {(seccionActiva === 'usuario') && (
+        {seccionActiva === 'usuario' && (
           <View style={styles.buscador}>
             <Ionicons name="search-outline" size={20} color="#999" style={styles.buscadorIcon} />
             <TextInput
               style={styles.buscadorInput}
-              placeholder="Buscar..."
+              placeholder="Buscar por nombre, cargo, estado..."
               placeholderTextColor="#999"
               onChangeText={setBusqueda}
               value={busqueda}
@@ -720,7 +796,9 @@ export default function VistaAdministrador() {
         {/* Resultados encontrados */}
         {(busqueda !== '' || hayFiltrosActivos()) && (
           <Text style={styles.resultadoBusqueda}>
-            {seccionActiva === 'venta'
+            {seccionActiva === 'usuario'
+              ? `🔍 ${usuariosFiltrados.length} resultado(s) encontrado(s)`
+              : seccionActiva === 'venta'
               ? `🔍 ${ventasFiltradas.length} resultado(s) encontrado(s)`
               : seccionActiva === 'pedido'
               ? `🔍 ${pedidosFiltrados.length} resultado(s) encontrado(s)`
@@ -757,11 +835,63 @@ export default function VistaAdministrador() {
                     style={styles.btnSeccionSuperior}
                     onPress={() => router.push(accion.ruta as any)}
                   >
-                    <Text style={styles.btnSeccionTexto}>{accion.label.includes('Reporte') ? accion.label : accion.label.replace('Informe', 'Reporte')}</Text>
+                    <Text style={styles.btnSeccionTexto}>{accion.label}</Text>
                   </TouchableOpacity>
                 ))}
               </View>
             </View>
+
+            {/* ── Tarjetas de Usuarios ── */}
+            {seccionActiva === 'usuario' && (
+              <View>
+                {cargandoUsuarios ? (
+                  <View style={{ paddingVertical: 30, alignItems: 'center' }}>
+                    <ActivityIndicator size="large" color={ACCENT} />
+                    <Text style={{ color: '#888', marginTop: 8 }}>Cargando usuarios...</Text>
+                  </View>
+                ) : usuariosFiltrados.length === 0 ? (
+                  <Text style={{ color: '#888', padding: 16 }}>
+                    {busqueda ? 'No hay usuarios que coincidan con tu búsqueda.' : 'No hay usuarios registrados.'}
+                  </Text>
+                ) : (
+                  usuariosFiltrados.map((u) => (
+                    <View key={u.id_usuario} style={styles.ventaCard}>
+                      <View style={styles.ventaCardHeader}>
+                        <Text style={styles.ventaCardId}>Usuario #{u.id_usuario}</Text>
+                        <Text style={[styles.ventaCardEstado, {
+                          backgroundColor: u.estado === 'Activo' ? '#27ae60' : '#e74c3c',
+                        }]}>{u.estado}</Text>
+                      </View>
+                      <View style={styles.ventaCardInfo}>
+                        <Text style={styles.ventaCardTxt}>
+                          <Text style={{ fontWeight: 'bold' }}>Nombre: </Text>
+                          {u.nombres} {u.apellidos}
+                        </Text>
+                        <Text style={styles.ventaCardTxt}>
+                          <Text style={{ fontWeight: 'bold' }}>Cargo: </Text>
+                          {u.cargo}
+                        </Text>
+                      </View>
+                      <View style={styles.ventaCardBtns}>
+                        <TouchableOpacity style={styles.ventaBtn} onPress={() => accionFilaUsuario('Actualizar', u)}>
+                          <Text style={styles.ventaBtnTxt}>Actualizar</Text>
+                        </TouchableOpacity>
+                        {u.estado === 'Activo' && (
+                          <TouchableOpacity style={[styles.ventaBtn, { backgroundColor: '#e74c3c' }]} onPress={() => accionFilaUsuario('Eliminar', u)}>
+                            <Text style={styles.ventaBtnTxt}>Eliminar</Text>
+                          </TouchableOpacity>
+                        )}
+                        {u.estado === 'Inactivo' && (
+                          <TouchableOpacity style={[styles.ventaBtn, { backgroundColor: '#27ae60' }]} onPress={() => accionFilaUsuario('Reactivar', u)}>
+                            <Text style={styles.ventaBtnTxt}>Reactivar</Text>
+                          </TouchableOpacity>
+                        )}
+                      </View>
+                    </View>
+                  ))
+                )}
+              </View>
+            )}
 
             {/* ── Tarjetas de Ventas ── */}
             {seccionActiva === 'venta' && (
@@ -953,8 +1083,8 @@ export default function VistaAdministrador() {
               </View>
             )}
 
-            {/* Otras secciones (tabla genérica) */}
-            {seccionActiva !== 'venta' && seccionActiva !== 'pedido' && seccionActiva !== 'producto' && seccionActiva !== 'inventario' && seccionActiva !== 'pagina_principal' && (
+            {/* Otras secciones (tabla genérica — ya no aplica a usuario) */}
+            {seccionActiva !== 'usuario' && seccionActiva !== 'venta' && seccionActiva !== 'pedido' && seccionActiva !== 'producto' && seccionActiva !== 'inventario' && seccionActiva !== 'pagina_principal' && (
               <ScrollView horizontal={!ES_WEB_ESCRITORIO} showsHorizontalScrollIndicator={!ES_WEB_ESCRITORIO}>
                 <View style={ES_WEB_ESCRITORIO ? { width: '100%' } : {}}>
                   <View style={styles.tablaHeader}>
@@ -1098,7 +1228,7 @@ const styles = StyleSheet.create({
   tabItem: { flex: 1, alignItems: 'center', paddingTop: 8, gap: 2 },
   tabLabel: { fontSize: 9, color: '#999', textAlign: 'center' },
 
-  // Tarjetas de ventas
+  // Tarjetas de ventas / usuarios / productos / inventario (comparten estilos)
   ventaCard: { backgroundColor: '#fff', borderRadius: 10, padding: 14, marginBottom: 12, elevation: 2, shadowColor: '#000', shadowOpacity: 0.07, shadowRadius: 6, borderLeftWidth: 4, borderLeftColor: ACCENT },
   ventaCardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
   ventaCardId: { fontSize: 15, fontWeight: 'bold', color: DARK },

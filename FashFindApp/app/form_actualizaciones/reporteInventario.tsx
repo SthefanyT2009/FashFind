@@ -12,7 +12,7 @@ const GREEN  = '#27ae60';
 
 const API_BASE = Platform.OS === 'web'
   ? 'http://localhost/FashFind/api'
-  : 'http://172.30.4.210/FashFind/api';
+  : 'http://172.30.3.163/FashFind/api';
 
 export default function ReporteInventario() {
   const router = useRouter();

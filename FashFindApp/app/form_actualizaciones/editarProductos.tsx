@@ -12,7 +12,7 @@ const DARK   = '#3A3A3A';
 const BORDER = '#000';
 const ERROR  = '#e74c3c';
 
-const API_BASE = 'http://172.30.4.210/FashFind/api';
+const API_BASE = 'http://172.30.3.163/FashFind/api';
 
 const mostrarAlerta = (titulo: string, mensaje: string, onOk?: () => void) => {
   if (Platform.OS === 'web') {

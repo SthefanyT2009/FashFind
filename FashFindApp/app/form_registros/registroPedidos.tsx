@@ -2,16 +2,18 @@ import React, { useState, useEffect } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
   TextInput, Alert, ActivityIndicator, Platform, ImageBackground,
+  Modal, FlatList
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import DateTimePicker from '@react-native-community/datetimepicker';
 
 const ACCENT = '#e91e8c';
 const DARK   = '#3A3A3A';
 const BORDER = '#000';
 
-const API_BASE = 'http://172.30.4.210/FashFind/api';
+const API_BASE = 'http://172.30.3.163/FashFind/api';
 
 const mostrarAlerta = (titulo: string, mensaje: string, onOk?: () => void) => {
   if (Platform.OS === 'web') {
@@ -29,9 +31,26 @@ const ESTADOS        = ['Por Entregar', 'Entregado'] as const;
 interface DetalleItem {
   id: number;
   id_producto: string;
+  nombre_producto: string;
   cantidad: string;
   precio: string;
   sub_total: number;
+}
+
+interface Producto {
+  id_producto: number;
+  nombre_producto: string;
+  talla: string;
+  color: string;
+  precio: number;
+  stock_disponible: number;
+  estado: string;
+}
+
+interface Cliente {
+  id_usuario: number;
+  nombres: string;
+  apellidos: string;
 }
 
 export default function RegistroPedidos() {
@@ -47,11 +66,18 @@ export default function RegistroPedidos() {
   const [fechaEntrega, setFechaEntrega]             = useState('');
   const [costoEnvio, setCostoEnvio]                 = useState('');
   const [idUsuario, setIdUsuario]                   = useState('');
+  const [nombreCliente, setNombreCliente]           = useState('Seleccionar Cliente');
   const [estado, setEstado]                         = useState<typeof ESTADOS[number]>('Por Entregar');
   const [detalles, setDetalles]                     = useState<DetalleItem[]>([]);
   const [nextId, setNextId]                         = useState(1);
   const [totalPedido, setTotalPedido]               = useState(0);
   const [cargando, setCargando]                     = useState(false);
+
+  const [productos, setProductos]         = useState<Producto[]>([]);
+  const [clientes, setClientes]           = useState<Cliente[]>([]);
+  const [modalCliente, setModalCliente]   = useState(false);
+  const [modalProducto, setModalProducto] = useState<{ visible: boolean, filaId: number }>({ visible: false, filaId: 0 });
+  const [mostrarDatePicker, setMostrarDatePicker] = useState(false);
 
   useEffect(() => {
     const ahora = new Date();
@@ -62,7 +88,25 @@ export default function RegistroPedidos() {
     const hh  = String(ahora.getHours()).padStart(2, '0');
     const min = String(ahora.getMinutes()).padStart(2, '0');
     setHoraPedido(`${hh}:${min}`);
+
+    cargarDatos();
   }, []);
+
+  const cargarDatos = async () => {
+    try {
+      const [resP, resC] = await Promise.all([
+        fetch(`${API_BASE}/productos.php`),
+        fetch(`${API_BASE}/usuarios.php?cargo=Cliente`)
+      ]);
+      const jsonP = await resP.json();
+      const jsonC = await resC.json();
+      
+      if (jsonP.success) setProductos(jsonP.data.filter((p: Producto) => p.estado === 'Activo'));
+      if (jsonC.success) setClientes(jsonC.data);
+    } catch (error) {
+      console.error("Error cargando datos:", error);
+    }
+  };
 
   useEffect(() => {
     const subtotales = detalles.reduce((acc, d) => acc + d.sub_total, 0);
@@ -71,7 +115,7 @@ export default function RegistroPedidos() {
   }, [detalles, costoEnvio]);
 
   const agregarFila = () => {
-    setDetalles(prev => [...prev, { id: nextId, id_producto: '', cantidad: '', precio: '', sub_total: 0 }]);
+    setDetalles(prev => [...prev, { id: nextId, id_producto: '', nombre_producto: 'Seleccionar', cantidad: '', precio: '', sub_total: 0 }]);
     setNextId(n => n + 1);
   };
 
@@ -79,19 +123,38 @@ export default function RegistroPedidos() {
     setDetalles(prev => prev.filter(d => d.id !== id));
   };
 
-  const actualizarFila = (id: number, campo: keyof DetalleItem, valor: string) => {
+  const seleccionarCliente = (c: Cliente) => {
+    setIdUsuario(c.id_usuario.toString());
+    setNombreCliente(`${c.nombres} ${c.apellidos}`);
+    setModalCliente(false);
+  };
+
+  const seleccionarProducto = (p: Producto) => {
+    const id = modalProducto.filaId;
     setDetalles(prev => prev.map(d => {
       if (d.id !== id) return d;
-      const updated = { ...d, [campo]: valor };
-      const cant    = parseFloat(campo === 'cantidad' ? valor : d.cantidad) || 0;
-      const prec    = parseFloat(campo === 'precio'   ? valor : d.precio)   || 0;
-      updated.sub_total = cant * prec;
-      return updated;
+      return { 
+        ...d, 
+        id_producto: p.id_producto.toString(), 
+        nombre_producto: p.nombre_producto,
+        precio: p.precio.toString(),
+        sub_total: (parseFloat(d.cantidad) || 0) * p.precio
+      };
+    }));
+    setModalProducto({ visible: false, filaId: 0 });
+  };
+
+  const actualizarCantidad = (id: number, cant: string) => {
+    setDetalles(prev => prev.map(d => {
+      if (d.id !== id) return d;
+      const c = parseFloat(cant) || 0;
+      const p = parseFloat(d.precio) || 0;
+      return { ...d, cantidad: cant, sub_total: c * p };
     }));
   };
 
   const registrarPedido = async () => {
-    if (!idUsuario.trim())         { mostrarAlerta('Campo requerido', 'Ingresa el Id del Cliente.'); return; }
+    if (!idUsuario.trim())         { mostrarAlerta('Campo requerido', 'Selecciona un Cliente.'); return; }
     if (!direccionEntrega.trim())  { mostrarAlerta('Campo requerido', 'Ingresa la Dirección de Entrega.'); return; }
     if (!ciudadEntrega.trim())     { mostrarAlerta('Campo requerido', 'Ingresa la Ciudad de Entrega.'); return; }
     if (!telefonoContacto.trim())  { mostrarAlerta('Campo requerido', 'Ingresa el Teléfono de Contacto.'); return; }
@@ -149,7 +212,6 @@ export default function RegistroPedidos() {
 
               <Text style={s.mainTitle}>Nuevo Pedido</Text>
 
-              {/* ── Datos del pedido ── */}
               <Text style={s.subTitle}>Datos del Pedido</Text>
 
               <View style={s.inputGroup}>
@@ -209,7 +271,33 @@ export default function RegistroPedidos() {
 
               <View style={s.inputGroup}>
                 <Text style={s.label}>Fecha de Entrega</Text>
-                <TextInput style={s.inputLine} placeholder="YYYY-MM-DD" placeholderTextColor="#bbb" value={fechaEntrega} onChangeText={setFechaEntrega} />
+                {Platform.OS === 'web' ? (
+                  <input
+                    type="date"
+                    value={fechaEntrega}
+                    min={new Date().toISOString().split('T')[0]}
+                    onChange={(e) => setFechaEntrega(e.target.value)}
+                    style={{
+                      width: '100%',
+                      border: 'none',
+                      borderBottom: '1px solid #000',
+                      padding: '5px 0',
+                      fontSize: 16,
+                      color: DARK,
+                      backgroundColor: 'transparent',
+                      outline: 'none'
+                    }}
+                  />
+                ) : (
+                  <TouchableOpacity 
+                    style={s.inputLine} 
+                    onPress={() => setMostrarDatePicker(true)}
+                  >
+                    <Text style={{ color: fechaEntrega ? DARK : '#bbb' }}>
+                      {fechaEntrega || 'Seleccionar fecha'}
+                    </Text>
+                  </TouchableOpacity>
+                )}
               </View>
 
               <View style={s.inputGroup}>
@@ -218,8 +306,10 @@ export default function RegistroPedidos() {
               </View>
 
               <View style={s.inputGroup}>
-                <Text style={s.label}>Id Cliente</Text>
-                <TextInput style={s.inputLine} keyboardType="numeric" placeholder="Ej: 1" placeholderTextColor="#bbb" value={idUsuario} onChangeText={setIdUsuario} />
+                <Text style={s.label}>Cliente</Text>
+                <TouchableOpacity style={s.inputLine} onPress={() => setModalCliente(true)}>
+                  <Text style={{ color: idUsuario ? DARK : '#bbb' }}>{nombreCliente}</Text>
+                </TouchableOpacity>
               </View>
 
               <View style={s.inputGroup}>
@@ -237,14 +327,13 @@ export default function RegistroPedidos() {
                 </View>
               </View>
 
-              {/* ── Tabla de productos ── */}
               <Text style={s.subTitle}>Productos del Pedido</Text>
 
               <View style={s.tabla}>
                 <View style={s.thRow}>
-                  <Text style={[s.th, { width: 80 }]}>Id{'\n'}Producto</Text>
-                  <Text style={[s.th, { width: 70 }]}>Cantidad</Text>
-                  <Text style={[s.th, { width: 100 }]}>Precio{'\n'}Unitario</Text>
+                  <Text style={[s.th, { width: 100 }]}>Producto</Text>
+                  <Text style={[s.th, { width: 60 }]}>Cant.</Text>
+                  <Text style={[s.th, { width: 90 }]}>Precio</Text>
                   <Text style={[s.th, { width: 80 }]}>Subtotal</Text>
                   <Text style={[s.th, { width: 32, borderRightWidth: 0 }]}> </Text>
                 </View>
@@ -257,21 +346,18 @@ export default function RegistroPedidos() {
 
                 {detalles.map((d, i) => (
                   <View key={d.id} style={[s.tr, i % 2 === 0 ? s.trPar : s.trImpar]}>
+                    <TouchableOpacity 
+                      style={[s.td, { width: 100 }]} 
+                      onPress={() => setModalProducto({ visible: true, filaId: d.id })}
+                    >
+                      <Text numberOfLines={1} style={{ fontSize: 11 }}>{d.nombre_producto}</Text>
+                    </TouchableOpacity>
                     <TextInput
-                      style={[s.td, { width: 80 }]}
-                      keyboardType="numeric" placeholder="---" placeholderTextColor="#bbb"
-                      value={d.id_producto} onChangeText={v => actualizarFila(d.id, 'id_producto', v)}
-                    />
-                    <TextInput
-                      style={[s.td, { width: 70 }]}
+                      style={[s.td, { width: 60 }]}
                       keyboardType="numeric" placeholder="0" placeholderTextColor="#bbb"
-                      value={d.cantidad} onChangeText={v => actualizarFila(d.id, 'cantidad', v)}
+                      value={d.cantidad} onChangeText={v => actualizarCantidad(d.id, v)}
                     />
-                    <TextInput
-                      style={[s.td, { width: 100 }]}
-                      keyboardType="numeric" placeholder="0" placeholderTextColor="#bbb"
-                      value={d.precio} onChangeText={v => actualizarFila(d.id, 'precio', v)}
-                    />
+                    <Text style={[s.tdText, { width: 90 }]}>${parseFloat(d.precio || '0').toLocaleString('es-CO')}</Text>
                     <Text style={[s.tdText, { width: 80 }]}>${d.sub_total.toLocaleString('es-CO')}</Text>
                     <TouchableOpacity style={s.btnEliminar} onPress={() => eliminarFila(d.id)}>
                       <Ionicons name="close-circle" size={20} color="#e91e8c" />
@@ -284,13 +370,11 @@ export default function RegistroPedidos() {
                 <Text style={s.btnRosaText}>Agregar producto</Text>
               </TouchableOpacity>
 
-              {/* ── Total ── */}
               <View style={s.inputGroup}>
                 <Text style={s.label}>Total Pedido</Text>
-                <TextInput style={s.inputLine} value={`$ ${totalPedido.toLocaleString('es-CO')}`} editable={false} />
+                <Text style={s.inputLine}>$ {totalPedido.toLocaleString('es-CO')}</Text>
               </View>
 
-              {/* ── Botones ── */}
               <TouchableOpacity style={[s.btnRosa, { marginTop: 10 }]} onPress={registrarPedido} disabled={cargando}>
                 {cargando
                   ? <ActivityIndicator color="#fff" />
@@ -306,6 +390,66 @@ export default function RegistroPedidos() {
           </ScrollView>
         </SafeAreaView>
       </ImageBackground>
+
+      {/* DatePicker para Móvil */}
+      {mostrarDatePicker && Platform.OS !== 'web' && (
+        <DateTimePicker
+          value={fechaEntrega ? new Date(fechaEntrega) : new Date()}
+          mode="date"
+          display="default"
+          minimumDate={new Date()}
+          onChange={(event, date) => {
+            setMostrarDatePicker(false);
+            if (date) {
+              setFechaEntrega(date.toISOString().split('T')[0]);
+            }
+          }}
+        />
+      )}
+
+      {/* Modal Clientes */}
+      <Modal visible={modalCliente} animationType="slide" transparent>
+        <View style={s.modalOverlay}>
+          <View style={s.modalContent}>
+            <Text style={s.modalTitle}>Seleccionar Cliente</Text>
+            <FlatList
+              data={clientes}
+              keyExtractor={item => item.id_usuario.toString()}
+              renderItem={({ item }) => (
+                <TouchableOpacity style={s.modalItem} onPress={() => seleccionarCliente(item)}>
+                  <Text>{item.nombres} {item.apellidos}</Text>
+                  <Text style={{ fontSize: 12, color: '#666' }}>CC: {item.cc}</Text>
+                </TouchableOpacity>
+              )}
+            />
+            <TouchableOpacity style={s.btnCerrar} onPress={() => setModalCliente(false)}>
+              <Text style={{ color: '#fff' }}>Cerrar</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Modal Productos */}
+      <Modal visible={modalProducto.visible} animationType="slide" transparent>
+        <View style={s.modalOverlay}>
+          <View style={s.modalContent}>
+            <Text style={s.modalTitle}>Seleccionar Producto</Text>
+            <FlatList
+              data={productos}
+              keyExtractor={item => item.id_producto.toString()}
+              renderItem={({ item }) => (
+                <TouchableOpacity style={s.modalItem} onPress={() => seleccionarProducto(item)}>
+                  <Text>{item.nombre_producto} ({item.talla} - {item.color})</Text>
+                  <Text style={{ fontSize: 12, color: '#666' }}>Stock: {item.stock_disponible} | ${item.precio}</Text>
+                </TouchableOpacity>
+              )}
+            />
+            <TouchableOpacity style={s.btnCerrar} onPress={() => setModalProducto({ visible: false, filaId: 0 })}>
+              <Text style={{ color: '#fff' }}>Cerrar</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -315,7 +459,6 @@ const s = StyleSheet.create({
   bg: { flex: 1, width: '100%', height: '100%' },
   safe: { flex: 1 },
   scrollContent: { flexGrow: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 50 },
-
   card: {
     backgroundColor: 'rgba(255, 255, 255, 0.95)',
     width: Platform.OS === 'web' ? 450 : '90%',
@@ -326,36 +469,35 @@ const s = StyleSheet.create({
     shadowRadius: 10,
     elevation: 10,
   },
-
   backIcon: { position: 'absolute', top: 20, left: 20 },
-
   mainTitle: { fontSize: 24, fontWeight: 'bold', color: ACCENT, textAlign: 'center', marginBottom: 25 },
   subTitle:  { fontSize: 22, fontWeight: 'bold', color: ACCENT, textAlign: 'center', marginTop: 30, marginBottom: 20 },
-
   inputGroup: { marginBottom: 20 },
   label:      { fontSize: 16, color: DARK, marginBottom: 5 },
-  inputLine:  { borderBottomWidth: 1, borderBottomColor: BORDER, paddingVertical: 5, fontSize: 16, color: DARK },
-
+  inputLine:  { borderBottomWidth: 1, borderBottomColor: BORDER, paddingVertical: 5, fontSize: 16, color: DARK, minHeight: 35, justifyContent: 'center' },
   chipsWrap:      { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 4 },
-  chip:           { borderWidth: 1, borderColor: '#9A9A9A', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 8 },
+  chip:           { borderWidth: 1, borderColor: '#ccc', borderRadius: 20, paddingHorizontal: 15, paddingVertical: 5 },
   chipActivo:     { backgroundColor: ACCENT, borderColor: ACCENT },
-  chipText:       { color: '#555', fontSize: 13 },
-  chipTextActivo: { color: '#fff', fontWeight: '600' },
-
-  tabla:     { borderWidth: 1, borderColor: '#e0c0d8', marginBottom: 15, borderRadius: 8, overflow: 'hidden' },
-  thRow:     { flexDirection: 'row', backgroundColor: '#f3d6ec', borderBottomWidth: 2, borderBottomColor: '#e91e8c' },
-  th:        { fontSize: 11, fontWeight: 'bold', paddingVertical: 10, paddingHorizontal: 3, textAlign: 'center', borderRightWidth: 1, borderRightColor: '#d9a8cc', color: DARK },
-  tr:        { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: '#f0e0eb', alignItems: 'center', minHeight: 44 },
-  trPar:     { backgroundColor: '#fff' },
-  trImpar:   { backgroundColor: '#fdf5fb' },
-  td:        { fontSize: 13, paddingVertical: 6, paddingHorizontal: 3, textAlign: 'center', borderRightWidth: 1, borderRightColor: '#f0e0eb', color: DARK },
-  tdText:    { fontSize: 13, paddingVertical: 6, textAlign: 'center', borderRightWidth: 1, borderRightColor: '#f0e0eb', color: DARK, fontWeight: '600' },
-  btnEliminar: { width: 32, alignItems: 'center', justifyContent: 'center' },
-  trVacio:     { paddingVertical: 16, alignItems: 'center' },
+  chipText:       { fontSize: 12, color: DARK },
+  chipTextActivo: { color: '#fff' },
+  tabla: { borderWidth: 1, borderColor: '#e0c0d8', marginBottom: 15, borderRadius: 8, overflow: 'hidden' },
+  thRow: { flexDirection: 'row', backgroundColor: '#f3d6ec', borderBottomWidth: 2, borderBottomColor: '#e91e8c' },
+  th: { fontSize: 11, fontWeight: 'bold', paddingVertical: 10, paddingHorizontal: 3, textAlign: 'center', borderRightWidth: 1, borderRightColor: '#d9a8cc', color: DARK },
+  tr: { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: '#f0e0eb', alignItems: 'center', minHeight: 44 },
+  trPar: { backgroundColor: '#fff' },
+  trImpar: { backgroundColor: '#fdf5fb' },
+  td: { fontSize: 11, paddingVertical: 6, paddingHorizontal: 3, textAlign: 'center', borderRightWidth: 1, borderRightColor: '#f0e0eb', color: DARK },
+  tdText: { fontSize: 11, paddingVertical: 6, textAlign: 'center', borderRightWidth: 1, borderRightColor: '#f0e0eb', color: DARK, fontWeight: '600' },
+  btnEliminar: { width: 28, alignItems: 'center', justifyContent: 'center' },
+  trVacio: { paddingVertical: 16, alignItems: 'center' },
   trVacioText: { fontSize: 12, color: '#bbb', fontStyle: 'italic' },
-
-  btnRosa:      { backgroundColor: ACCENT, paddingVertical: 12, borderRadius: 5, alignItems: 'center' },
-  btnRosaText:  { color: '#fff', fontWeight: 'bold', fontSize: 16 },
-  btnRegresar:  { marginTop: 15, alignItems: 'center' },
+  btnRosa: { backgroundColor: ACCENT, paddingVertical: 12, borderRadius: 5, alignItems: 'center' },
+  btnRosaText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+  btnRegresar: { marginTop: 15, alignItems: 'center' },
   btnRegresarText: { color: DARK, fontSize: 14, textDecorationLine: 'underline' },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
+  modalContent: { backgroundColor: '#fff', width: '85%', maxHeight: '70%', borderRadius: 10, padding: 20 },
+  modalTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 15, color: ACCENT },
+  modalItem: { paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#eee' },
+  btnCerrar: { backgroundColor: DARK, padding: 10, borderRadius: 5, marginTop: 15, alignItems: 'center' }
 });
