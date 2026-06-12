@@ -108,6 +108,10 @@ switch ($method) {
         if ($action === 'eliminar') {
             $stmt = $db->prepare("UPDATE Producto SET estado = 'Inactivo' WHERE id_producto = ?");
             $stmt->execute([$id]);
+            
+            $stmt = $db->prepare("UPDATE Inventario SET estado = 'Inactivo' WHERE id_producto = ?");
+            $stmt->execute([$id]);
+            
             echo json_encode(["success" => true, "mensaje" => "Producto desactivado correctamente"]);
             exit;
         }
@@ -115,6 +119,10 @@ switch ($method) {
         if ($action === 'reactivar') {
             $stmt = $db->prepare("UPDATE Producto SET estado = 'Activo' WHERE id_producto = ?");
             $stmt->execute([$id]);
+            
+            $stmt = $db->prepare("UPDATE Inventario SET estado = 'Activo' WHERE id_producto = ?");
+            $stmt->execute([$id]);
+            
             echo json_encode(["success" => true, "mensaje" => "Producto reactivado correctamente"]);
             exit;
         }

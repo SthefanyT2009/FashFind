@@ -23,7 +23,7 @@ const ERROR  = '#e74c3c';
 
 const API_BASE = Platform.OS === 'web'
   ? 'http://localhost/FashFind/api'
-  : 'http://192.168.1.7/FashFind/api';
+  : 'http://172.30.4.210/FashFind/api';
 
 // ── Reglas de validación ───────────────────────────────────────────────────
 const SOLO_LETRAS      = /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/;
@@ -195,12 +195,12 @@ export default function RegistroProductos() {
     <View style={s.container}>
       <ImageBackground source={require('../../assets/images/fondoLogin.jpeg')} style={s.bg}>
         <SafeAreaView style={s.safe}>
-          <TouchableOpacity style={s.backIcon} onPress={() => router.back()}>
-            <Ionicons name="arrow-back" size={24} color="#fff" />
-          </TouchableOpacity>
-
           <ScrollView contentContainerStyle={s.scrollContent} showsVerticalScrollIndicator={false}>
             <View style={s.card}>
+              <TouchableOpacity style={s.backIcon} onPress={() => router.back()}>
+                <Ionicons name="arrow-back" size={24} color={DARK} />
+              </TouchableOpacity>
+
               <Text style={s.mainTitle}>Registrar Producto</Text>
 
               {/* Nombre del Producto */}
@@ -331,7 +331,7 @@ const s = StyleSheet.create({
     elevation:       10,
   },
 
-  backIcon:  { position: 'absolute', top: 20, left: 20 },
+  backIcon:  { alignSelf: 'flex-start', marginBottom: 10 },
   mainTitle: { fontSize: 24, fontWeight: 'bold', color: ACCENT, textAlign: 'center', marginBottom: 25 },
 
   inputGroup: { marginBottom: 20 },

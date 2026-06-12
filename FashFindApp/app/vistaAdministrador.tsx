@@ -28,7 +28,7 @@ const SIDEBAR_WIDTH = 220;
 const ES_WEB_ESCRITORIO = Platform.OS === 'web' && width >= 768;
 
 // Si estás en el mismo PC, usa localhost. Si estás en móvil, usa tu IP.
-const API_BASE = Platform.OS === 'web' ? 'http://localhost/FashFind/api' : 'http://192.168.1.7/FashFind/api';
+const API_BASE = Platform.OS === 'web' ? 'http://localhost/FashFind/api' : 'http://172.30.4.210/FashFind/api';
 
 // Helper compatible con web y móvil (SOLO PARA VENTAS)
 const mostrarAlerta = (titulo: string, mensaje: string, onOk?: () => void) => {
@@ -66,8 +66,8 @@ const accionesPorSeccion: Record<Seccion, { label: string; ruta: string }[]> = {
     { label: 'Crear Nuevo Producto', ruta: '/form_registros/registroProductos' },
   ],
   inventario: [
-    { label: 'Crear Nuevo Inventario', ruta: '/registroInventario' },
-    { label: 'Reporte de Inventario', ruta: '/reporteInventario' },
+    { label: 'Crear Nuevo Inventario', ruta: '/form_registros/registroInventario' },
+    { label: 'Reporte de Inventario', ruta: '/form_actualizaciones/reporteInventario' },
   ],
 };
 
@@ -116,6 +116,9 @@ export default function VistaAdministrador() {
 
   const [productos, setProductos] = useState<any[]>([]);
   const [cargandoProductos, setCargandoProductos] = useState(false);
+
+  const [inventarios, setInventarios] = useState<any[]>([]);
+  const [cargandoInventarios, setCargandoInventarios] = useState(false);
 
   const [estadisticas, setEstadisticas] = useState<any>({
     usuarios_activos: 0,
@@ -186,6 +189,25 @@ export default function VistaAdministrador() {
     }
   }, []);
 
+  const cargarInventarios = useCallback(async (mostrarCarga = true) => {
+    try {
+      if (mostrarCarga) setCargandoInventarios(true);
+      const res = await fetch(`${API_BASE}/inventario.php`);
+      const json = await res.json();
+      if (json.success) {
+        setInventarios(json.data ?? []);
+      } else {
+        mostrarAlerta('Error', json.mensaje ?? 'No se pudieron cargar los inventarios.');
+      }
+    } catch (error) {
+      console.error('Error cargando inventarios:', error);
+      mostrarAlerta('Error de conexión', 'No se pudo conectar con el servidor.');
+    } finally {
+      if (mostrarCarga) setCargandoInventarios(false);
+      setRefreshing(false);
+    }
+  }, []);
+
   const cargarEstadisticas = useCallback(async () => {
     try {
       const res = await fetch(`${API_BASE}/estadisticas.php`);
@@ -206,10 +228,12 @@ export default function VistaAdministrador() {
         cargarPedidos();
       } else if (seccionActiva === 'producto') {
         cargarProductos();
+      } else if (seccionActiva === 'inventario') {
+        cargarInventarios();
       } else if (seccionActiva === 'pagina_principal') {
         cargarEstadisticas();
       }
-    }, [seccionActiva, cargarVentas, cargarPedidos, cargarProductos, cargarEstadisticas])
+    }, [seccionActiva, cargarVentas, cargarPedidos, cargarProductos, cargarInventarios, cargarEstadisticas])
   );
 
   useEffect(() => {
@@ -219,8 +243,10 @@ export default function VistaAdministrador() {
       cargarPedidos();
     } else if (seccionActiva === 'producto') {
       cargarProductos();
+    } else if (seccionActiva === 'inventario') {
+      cargarInventarios();
     }
-  }, [seccionActiva, cargarVentas, cargarPedidos, cargarProductos]);
+  }, [seccionActiva, cargarVentas, cargarPedidos, cargarProductos, cargarInventarios]);
 
   const ventasFiltradas = ventas.filter(v => {
     const q = busqueda.trim().toLowerCase();
@@ -283,6 +309,18 @@ export default function VistaAdministrador() {
     if (filtroProductoEstado    && prod.estado    !== filtroProductoEstado)    return false;
     return true;
   });
+
+  const inventariosFiltrados = inventarios.filter(inv => {
+    const q = busqueda.trim().toLowerCase();
+    if (q && !(
+      (inv.id_inventario && String(inv.id_inventario).includes(q)) ||
+      (inv.stock_disponible && String(inv.stock_disponible).includes(q)) ||
+      (inv.stock_minimo && String(inv.stock_minimo).includes(q)) ||
+      (inv.id_producto && String(inv.id_producto).includes(q)) ||
+      (inv.nombre_producto && String(inv.nombre_producto).toLowerCase().includes(q))
+    )) return false;
+    return true;
+  }).sort((a, b) => b.id_inventario - a.id_inventario);
 
   const limpiarFiltrosSeccion = () => {
     setFiltroVentaEstado(''); setFiltroVentaMetodo('');
@@ -436,6 +474,13 @@ export default function VistaAdministrador() {
     }
   };
 
+  const accionFilaInventario = async (btn: string, inventario: any) => {
+    if (btn === 'Actualizar') {
+      router.push({ pathname: '/form_actualizaciones/editarInventario', params: { id: String(inventario.id_inventario) } } as any);
+      return;
+    }
+  };
+
   const limpiarBusqueda = () => { setBusqueda(''); setMostrarFiltros(false); limpiarFiltrosSeccion(); };
 
   const onRefresh = useCallback(() => {
@@ -446,6 +491,8 @@ export default function VistaAdministrador() {
       cargarPedidos(false);
     } else if (seccionActiva === 'producto') {
       cargarProductos(false);
+    } else if (seccionActiva === 'inventario') {
+      cargarInventarios(false);
     } else {
       setRefreshing(false);
     }
@@ -517,8 +564,8 @@ export default function VistaAdministrador() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[ACCENT]} />
         }
       >
-        {/* Buscador + filtros avanzados (ventas / pedidos / productos) */}
-        {(seccionActiva === 'venta' || seccionActiva === 'pedido' || seccionActiva === 'producto') && (
+        {/* Buscador + filtros avanzados (ventas / pedidos / productos / inventario) */}
+        {(seccionActiva === 'venta' || seccionActiva === 'pedido' || seccionActiva === 'producto' || seccionActiva === 'inventario') && (
           <View style={{ marginBottom: 4 }}>
             <View style={styles.buscador}>
               <Ionicons name="search-outline" size={20} color="#999" style={styles.buscadorIcon} />
@@ -648,8 +695,8 @@ export default function VistaAdministrador() {
           </View>
         )}
 
-        {/* Buscador simple para usuario / inventario */}
-        {(seccionActiva === 'usuario' || seccionActiva === 'inventario') && (
+        {/* Buscador simple para usuario */}
+        {(seccionActiva === 'usuario') && (
           <View style={styles.buscador}>
             <Ionicons name="search-outline" size={20} color="#999" style={styles.buscadorIcon} />
             <TextInput
@@ -868,8 +915,46 @@ export default function VistaAdministrador() {
               </View>
             )}
 
+            {/* ── Tarjetas de Inventarios ── */}
+            {seccionActiva === 'inventario' && (
+              <View>
+                {cargandoInventarios ? (
+                  <View style={{ paddingVertical: 30, alignItems: 'center' }}>
+                    <ActivityIndicator size="large" color={ACCENT} />
+                    <Text style={{ color: '#888', marginTop: 8 }}>Cargando inventarios...</Text>
+                  </View>
+                ) : inventariosFiltrados.length === 0 ? (
+                  <Text style={{ color: '#888', padding: 16 }}>
+                    {busqueda ? 'No hay inventarios que coincidan con tu búsqueda.' : 'No hay inventarios registrados.'}
+                  </Text>
+                ) : (
+                  inventariosFiltrados.map((inv) => (
+                    <View key={inv.id_inventario} style={styles.ventaCard}>
+                      <View style={styles.ventaCardHeader}>
+                        <Text style={styles.ventaCardId}>Inventario #{inv.id_inventario}</Text>
+                        <Text style={[styles.ventaCardEstado, {
+                          backgroundColor: inv.estado === 'Activo' ? '#27ae60' : '#e74c3c',
+                        }]}>{inv.estado}</Text>
+                      </View>
+                      <View style={styles.ventaCardInfo}>
+                        <Text style={styles.ventaCardTxt}><Text style={{ fontWeight: 'bold' }}>Producto:</Text> {inv.nombre_producto}</Text>
+                        <Text style={styles.ventaCardTxt}><Text style={{ fontWeight: 'bold' }}>ID Producto:</Text> {inv.id_producto}</Text>
+                        <Text style={styles.ventaCardTxt}><Text style={{ fontWeight: 'bold' }}>Stock Disponible:</Text> {inv.stock_disponible} unidades</Text>
+                        <Text style={styles.ventaCardTxt}><Text style={{ fontWeight: 'bold' }}>Stock Mínimo:</Text> {inv.stock_minimo} unidades</Text>
+                      </View>
+                      <View style={styles.ventaCardBtns}>
+                        <TouchableOpacity style={styles.ventaBtn} onPress={() => accionFilaInventario('Actualizar', inv)}>
+                          <Text style={styles.ventaBtnTxt}>Actualizar</Text>
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  ))
+                )}
+              </View>
+            )}
+
             {/* Otras secciones (tabla genérica) */}
-            {seccionActiva !== 'venta' && seccionActiva !== 'pedido' && seccionActiva !== 'producto' && seccionActiva !== 'pagina_principal' && (
+            {seccionActiva !== 'venta' && seccionActiva !== 'pedido' && seccionActiva !== 'producto' && seccionActiva !== 'inventario' && seccionActiva !== 'pagina_principal' && (
               <ScrollView horizontal={!ES_WEB_ESCRITORIO} showsHorizontalScrollIndicator={!ES_WEB_ESCRITORIO}>
                 <View style={ES_WEB_ESCRITORIO ? { width: '100%' } : {}}>
                   <View style={styles.tablaHeader}>
