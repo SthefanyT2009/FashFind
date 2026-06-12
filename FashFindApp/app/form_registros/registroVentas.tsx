@@ -21,7 +21,7 @@ const ACCENT = '#e91e8c';
 const DARK   = '#3A3A3A';
 const BORDER = '#000';
 
-const API_BASE = Platform.OS === 'web' ? 'http://localhost/FashFind/api' : 'http://172.30.4.210/FashFind/api';
+const API_BASE = Platform.OS === 'web' ? 'http://localhost/FashFind/api' : 'http://192.168.1.7/FashFind/api';
 
 interface DetalleItem {
   id: number;

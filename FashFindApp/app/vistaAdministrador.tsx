@@ -28,7 +28,7 @@ const SIDEBAR_WIDTH = 220;
 const ES_WEB_ESCRITORIO = Platform.OS === 'web' && width >= 768;
 
 // Si estás en el mismo PC, usa localhost. Si estás en móvil, usa tu IP.
-const API_BASE = Platform.OS === 'web' ? 'http://localhost/FashFind/api' : 'http://172.30.4.210/FashFind/api';
+const API_BASE = Platform.OS === 'web' ? 'http://localhost/FashFind/api' : 'http://192.168.1.7/FashFind/api';
 
 // Helper compatible con web y móvil (SOLO PARA VENTAS)
 const mostrarAlerta = (titulo: string, mensaje: string, onOk?: () => void) => {
@@ -62,7 +62,9 @@ const accionesPorSeccion: Record<Seccion, { label: string; ruta: string }[]> = {
     { label: 'Crear Nuevo Pedido', ruta: '/form_registros/registroPedidos' },
     { label: 'Reporte de Pedidos', ruta: '/form_actualizaciones/reportePedidos' },
   ],
-  producto: [{ label: 'Crear Nuevo Producto', ruta: '/form_registros/registroProductos' }],
+  producto: [
+    { label: 'Crear Nuevo Producto', ruta: '/form_registros/registroProductos' },
+  ],
   inventario: [
     { label: 'Crear Nuevo Inventario', ruta: '/registroInventario' },
     { label: 'Reporte de Inventario', ruta: '/reporteInventario' },
@@ -85,6 +87,26 @@ export default function VistaAdministrador() {
   const [busqueda, setBusqueda] = useState('');
   const [refreshing, setRefreshing] = useState(false);
   const buscadorRef = useRef<TextInput>(null);
+  const [mostrarFiltros, setMostrarFiltros] = useState(false);
+
+  // Filtros ventas
+  const [filtroVentaEstado,    setFiltroVentaEstado]    = useState('');
+  const [filtroVentaMetodo,    setFiltroVentaMetodo]    = useState('');
+  const [filtroVentaFechaDesde, setFiltroVentaFechaDesde] = useState('');
+  const [filtroVentaFechaHasta, setFiltroVentaFechaHasta] = useState('');
+
+  // Filtros pedidos
+  const [filtroPedidoEstado,      setFiltroPedidoEstado]      = useState('');
+  const [filtroPedidoTipoEntrega, setFiltroPedidoTipoEntrega] = useState('');
+  const [filtroPedidoCiudad,      setFiltroPedidoCiudad]      = useState('');
+  const [filtroPedidoFechaDesde,  setFiltroPedidoFechaDesde]  = useState('');
+  const [filtroPedidoFechaHasta,  setFiltroPedidoFechaHasta]  = useState('');
+
+  // Filtros productos
+  const [filtroProductoCategoria, setFiltroProductoCategoria] = useState('');
+  const [filtroProductoColor,     setFiltroProductoColor]     = useState('');
+  const [filtroProductoTalla,     setFiltroProductoTalla]     = useState('');
+  const [filtroProductoEstado,    setFiltroProductoEstado]    = useState('');
 
   const [ventas, setVentas] = useState<any[]>([]);
   const [cargandoVentas, setCargandoVentas] = useState(false);
@@ -201,9 +223,8 @@ export default function VistaAdministrador() {
   }, [seccionActiva, cargarVentas, cargarPedidos, cargarProductos]);
 
   const ventasFiltradas = ventas.filter(v => {
-    if (!busqueda.trim()) return true;
-    const q = busqueda.toLowerCase();
-    return (
+    const q = busqueda.trim().toLowerCase();
+    if (q && !(
       (v.id_venta && String(v.id_venta).includes(q)) ||
       (v.fecha_venta && String(v.fecha_venta).toLowerCase().includes(q)) ||
       (v.hora && String(v.hora).toLowerCase().includes(q)) ||
@@ -212,13 +233,17 @@ export default function VistaAdministrador() {
       (v.nombres && String(v.nombres).toLowerCase().includes(q)) ||
       (v.apellidos && String(v.apellidos).toLowerCase().includes(q)) ||
       (v.costo_total && String(v.costo_total).includes(q))
-    );
+    )) return false;
+    if (filtroVentaEstado  && v.estado     !== filtroVentaEstado)  return false;
+    if (filtroVentaMetodo  && v.metodo_pago !== filtroVentaMetodo)  return false;
+    if (filtroVentaFechaDesde && v.fecha_venta < filtroVentaFechaDesde) return false;
+    if (filtroVentaFechaHasta && v.fecha_venta > filtroVentaFechaHasta) return false;
+    return true;
   });
 
   const pedidosFiltrados = pedidos.filter(p => {
-    if (!busqueda.trim()) return true;
-    const q = busqueda.toLowerCase();
-    return (
+    const q = busqueda.trim().toLowerCase();
+    if (q && !(
       (p.id_pedido && String(p.id_pedido).includes(q)) ||
       (p.fecha_pedido && String(p.fecha_pedido).toLowerCase().includes(q)) ||
       (p.hora_pedido && String(p.hora_pedido).toLowerCase().includes(q)) ||
@@ -231,13 +256,18 @@ export default function VistaAdministrador() {
       (p.apellidos && String(p.apellidos).toLowerCase().includes(q)) ||
       (p.telefono_contacto && String(p.telefono_contacto).toLowerCase().includes(q)) ||
       (p.total_pedido && String(p.total_pedido).includes(q))
-    );
+    )) return false;
+    if (filtroPedidoEstado      && p.estado       !== filtroPedidoEstado)      return false;
+    if (filtroPedidoTipoEntrega && p.tipo_entrega !== filtroPedidoTipoEntrega) return false;
+    if (filtroPedidoCiudad      && !String(p.ciudad_entrega ?? '').toLowerCase().includes(filtroPedidoCiudad.toLowerCase())) return false;
+    if (filtroPedidoFechaDesde  && p.fecha_pedido < filtroPedidoFechaDesde)    return false;
+    if (filtroPedidoFechaHasta  && p.fecha_pedido > filtroPedidoFechaHasta)    return false;
+    return true;
   });
 
   const productosFiltrados = productos.filter(prod => {
-    if (!busqueda.trim()) return true;
-    const q = busqueda.toLowerCase();
-    return (
+    const q = busqueda.trim().toLowerCase();
+    if (q && !(
       (prod.id_producto && String(prod.id_producto).includes(q)) ||
       (prod.nombre_producto && String(prod.nombre_producto).toLowerCase().includes(q)) ||
       (prod.descripcion && String(prod.descripcion).toLowerCase().includes(q)) ||
@@ -246,8 +276,46 @@ export default function VistaAdministrador() {
       (prod.color && String(prod.color).toLowerCase().includes(q)) ||
       (prod.precio && String(prod.precio).includes(q)) ||
       (prod.estado && String(prod.estado).toLowerCase().includes(q))
-    );
+    )) return false;
+    if (filtroProductoCategoria && prod.categoria !== filtroProductoCategoria) return false;
+    if (filtroProductoTalla     && prod.talla     !== filtroProductoTalla)     return false;
+    if (filtroProductoColor     && !String(prod.color ?? '').toLowerCase().includes(filtroProductoColor.toLowerCase())) return false;
+    if (filtroProductoEstado    && prod.estado    !== filtroProductoEstado)    return false;
+    return true;
   });
+
+  const limpiarFiltrosSeccion = () => {
+    setFiltroVentaEstado(''); setFiltroVentaMetodo('');
+    setFiltroVentaFechaDesde(''); setFiltroVentaFechaHasta('');
+    setFiltroPedidoEstado(''); setFiltroPedidoTipoEntrega('');
+    setFiltroPedidoCiudad(''); setFiltroPedidoFechaDesde(''); setFiltroPedidoFechaHasta('');
+    setFiltroProductoCategoria(''); setFiltroProductoColor('');
+    setFiltroProductoTalla(''); setFiltroProductoEstado('');
+  };
+
+  const hayFiltrosActivos = (): boolean => {
+    if (seccionActiva === 'venta')
+      return !!(filtroVentaEstado || filtroVentaMetodo || filtroVentaFechaDesde || filtroVentaFechaHasta);
+    if (seccionActiva === 'pedido')
+      return !!(filtroPedidoEstado || filtroPedidoTipoEntrega || filtroPedidoCiudad || filtroPedidoFechaDesde || filtroPedidoFechaHasta);
+    if (seccionActiva === 'producto')
+      return !!(filtroProductoCategoria || filtroProductoColor || filtroProductoTalla || filtroProductoEstado);
+    return false;
+  };
+
+  // Chip reutilizable para filtros inline
+  const Chip = ({ label, activo, onPress }: { label: string; activo: boolean; onPress: () => void }) => (
+    <TouchableOpacity
+      onPress={onPress}
+      style={{
+        paddingHorizontal: 12, paddingVertical: 5, borderRadius: 20,
+        borderWidth: 1, borderColor: activo ? ACCENT : '#ccc',
+        backgroundColor: activo ? ACCENT : '#f5f5f5', marginRight: 6, marginBottom: 6,
+      }}
+    >
+      <Text style={{ fontSize: 12, color: activo ? '#fff' : '#555', fontWeight: activo ? '700' : '400' }}>{label}</Text>
+    </TouchableOpacity>
+  );
 
   const accionFila = async (btn: string, venta: any) => {
     if (btn === 'Actualizar') {
@@ -368,7 +436,7 @@ export default function VistaAdministrador() {
     }
   };
 
-  const limpiarBusqueda = () => { setBusqueda(''); };
+  const limpiarBusqueda = () => { setBusqueda(''); setMostrarFiltros(false); limpiarFiltrosSeccion(); };
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
@@ -449,37 +517,168 @@ export default function VistaAdministrador() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[ACCENT]} />
         }
       >
-        {/* Buscador */}
-        <View style={styles.buscador}>
-          <Ionicons name="search-outline" size={20} color="#999" style={styles.buscadorIcon} />
-          <TextInput
-            ref={buscadorRef}
-            style={styles.buscadorInput}
-            placeholder="Buscar por ID, fecha, método de pago, estado, cliente..."
-            placeholderTextColor="#999"
-            onChangeText={setBusqueda}
-            value={busqueda}
-            autoCorrect={false}
-            autoCapitalize="none"
-            autoComplete="off"
-            editable={true}
-          />
-          {busqueda !== '' && (
-            <TouchableOpacity onPress={limpiarBusqueda} style={styles.buscadorLimpiar}>
-              <Ionicons name="close-circle" size={20} color="#999" />
-            </TouchableOpacity>
-          )}
-        </View>
+        {/* Buscador + filtros avanzados (ventas / pedidos / productos) */}
+        {(seccionActiva === 'venta' || seccionActiva === 'pedido' || seccionActiva === 'producto') && (
+          <View style={{ marginBottom: 4 }}>
+            <View style={styles.buscador}>
+              <Ionicons name="search-outline" size={20} color="#999" style={styles.buscadorIcon} />
+              <TextInput
+                ref={buscadorRef}
+                style={styles.buscadorInput}
+                placeholder="Buscar por ID, fecha, estado, cliente..."
+                placeholderTextColor="#999"
+                onChangeText={setBusqueda}
+                value={busqueda}
+                autoCorrect={false}
+                autoCapitalize="none"
+                autoComplete="off"
+                editable={true}
+              />
+              <TouchableOpacity
+                onPress={() => setMostrarFiltros(!mostrarFiltros)}
+                style={[styles.buscadorFiltroBtn, (mostrarFiltros || hayFiltrosActivos()) && styles.buscadorFiltroBtnActivo]}
+              >
+                <Ionicons name="options-outline" size={20} color={(mostrarFiltros || hayFiltrosActivos()) ? '#fff' : '#666'} />
+                {hayFiltrosActivos() && <View style={styles.filtroIndicador} />}
+              </TouchableOpacity>
+              {(busqueda !== '' || hayFiltrosActivos()) && (
+                <TouchableOpacity onPress={limpiarBusqueda} style={styles.buscadorLimpiar}>
+                  <Ionicons name="close-circle" size={20} color="#999" />
+                </TouchableOpacity>
+              )}
+            </View>
+
+            {/* Panel filtros avanzados */}
+            {mostrarFiltros && (
+              <View style={styles.panelFiltros}>
+
+                {/* Ventas */}
+                {seccionActiva === 'venta' && (
+                  <>
+                    <Text style={styles.filtroGrupoTitulo}>Estado</Text>
+                    <View style={styles.chipsRow}>
+                      {['', 'Activo', 'Inactivo'].map(v => (
+                        <Chip key={v} label={v || 'Todos'} activo={filtroVentaEstado === v} onPress={() => setFiltroVentaEstado(v)} />
+                      ))}
+                    </View>
+                    <Text style={styles.filtroGrupoTitulo}>Método de pago</Text>
+                    <View style={styles.chipsRow}>
+                      {['', 'Efectivo', 'Tarjeta', 'Transferencia', 'Nequi', 'Daviplata'].map(v => (
+                        <Chip key={v} label={v || 'Todos'} activo={filtroVentaMetodo === v} onPress={() => setFiltroVentaMetodo(v)} />
+                      ))}
+                    </View>
+                    <Text style={styles.filtroGrupoTitulo}>Rango de fecha</Text>
+                    <View style={styles.rangoFechaRow}>
+                      <View style={styles.rangoFechaItem}>
+                        <Text style={styles.rangoFechaLabel}>Desde</Text>
+                        <TextInput style={styles.rangoFechaInput} {...(Platform.OS === 'web' ? { type: 'date' } : {})} onFocus={(e) => Platform.OS === 'web' && (e.target.type = 'date')} onBlur={(e) => Platform.OS === 'web' && !e.target.value && (e.target.type = 'text')} placeholder="AAAA-MM-DD" placeholderTextColor="#bbb" value={filtroVentaFechaDesde} onChangeText={setFiltroVentaFechaDesde} />
+                      </View>
+                      <Text style={styles.rangoFechaSep}>—</Text>
+                      <View style={styles.rangoFechaItem}>
+                        <Text style={styles.rangoFechaLabel}>Hasta</Text>
+                        <TextInput style={styles.rangoFechaInput} {...(Platform.OS === 'web' ? { type: 'date' } : {})} onFocus={(e) => Platform.OS === 'web' && (e.target.type = 'date')} onBlur={(e) => Platform.OS === 'web' && !e.target.value && (e.target.type = 'text')} placeholder="AAAA-MM-DD" placeholderTextColor="#bbb" value={filtroVentaFechaHasta} onChangeText={setFiltroVentaFechaHasta} />
+                      </View>
+                    </View>
+                  </>
+                )}
+
+                {/* Pedidos */}
+                {seccionActiva === 'pedido' && (
+                  <>
+                    <Text style={styles.filtroGrupoTitulo}>Estado</Text>
+                    <View style={styles.chipsRow}>
+                      {['', 'Pendiente', 'En camino', 'Entregado', 'Cancelado'].map(v => (
+                        <Chip key={v} label={v || 'Todos'} activo={filtroPedidoEstado === v} onPress={() => setFiltroPedidoEstado(v)} />
+                      ))}
+                    </View>
+                    <Text style={styles.filtroGrupoTitulo}>Tipo de entrega</Text>
+                    <View style={styles.chipsRow}>
+                      {['', 'Domicilio', 'Recogida en tienda'].map(v => (
+                        <Chip key={v} label={v || 'Todos'} activo={filtroPedidoTipoEntrega === v} onPress={() => setFiltroPedidoTipoEntrega(v)} />
+                      ))}
+                    </View>
+                    <Text style={styles.filtroGrupoTitulo}>Ciudad</Text>
+                    <TextInput style={styles.filtroInput} placeholder="Ej: Bogotá, Medellín…" placeholderTextColor="#bbb" value={filtroPedidoCiudad} onChangeText={setFiltroPedidoCiudad} autoCapitalize="words" />
+                    <Text style={styles.filtroGrupoTitulo}>Rango de fecha</Text>
+                    <View style={styles.rangoFechaRow}>
+                      <View style={styles.rangoFechaItem}>
+                        <Text style={styles.rangoFechaLabel}>Desde</Text>
+                        <TextInput style={styles.rangoFechaInput} {...(Platform.OS === 'web' ? { type: 'date' } : {})} onFocus={(e) => Platform.OS === 'web' && (e.target.type = 'date')} onBlur={(e) => Platform.OS === 'web' && !e.target.value && (e.target.type = 'text')} placeholder="AAAA-MM-DD" placeholderTextColor="#bbb" value={filtroPedidoFechaDesde} onChangeText={setFiltroPedidoFechaDesde} />
+                      </View>
+                      <Text style={styles.rangoFechaSep}>—</Text>
+                      <View style={styles.rangoFechaItem}>
+                        <Text style={styles.rangoFechaLabel}>Hasta</Text>
+                        <TextInput style={styles.rangoFechaInput} {...(Platform.OS === 'web' ? { type: 'date' } : {})} onFocus={(e) => Platform.OS === 'web' && (e.target.type = 'date')} onBlur={(e) => Platform.OS === 'web' && !e.target.value && (e.target.type = 'text')} placeholder="AAAA-MM-DD" placeholderTextColor="#bbb" value={filtroPedidoFechaHasta} onChangeText={setFiltroPedidoFechaHasta} />
+                      </View>
+                    </View>
+                  </>
+                )}
+
+                {/* Productos */}
+                {seccionActiva === 'producto' && (
+                  <>
+                    <Text style={styles.filtroGrupoTitulo}>Categoría</Text>
+                    <View style={styles.chipsRow}>
+                      {['', 'Camisas', 'Pantalones', 'Chaquetas', 'Camisetas', 'Vestidos', 'Sudaderas', 'Shorts', 'Blusas', 'Faldas'].map(v => (
+                        <Chip key={v} label={v || 'Todas'} activo={filtroProductoCategoria === v} onPress={() => setFiltroProductoCategoria(v)} />
+                      ))}
+                    </View>
+                    <Text style={styles.filtroGrupoTitulo}>Talla</Text>
+                    <View style={styles.chipsRow}>
+                      {['', 'XS', 'S', 'M', 'L', 'XL', '6', '8', '10', '12', '14', '16', '18', '20', '22', '24', '26', '28', '30', '32', '34', '36', '38', '40', '42', '44'].map(v => (
+                        <Chip key={v} label={v || 'Todas'} activo={filtroProductoTalla === v} onPress={() => setFiltroProductoTalla(v)} />
+                      ))}
+                    </View>
+                    <Text style={styles.filtroGrupoTitulo}>Estado</Text>
+                    <View style={styles.chipsRow}>
+                      {['', 'Activo', 'Inactivo'].map(v => (
+                        <Chip key={v} label={v || 'Todos'} activo={filtroProductoEstado === v} onPress={() => setFiltroProductoEstado(v)} />
+                      ))}
+                    </View>
+                    <Text style={styles.filtroGrupoTitulo}>Color</Text>
+                    <TextInput style={styles.filtroInput} placeholder="Ej: Rojo, Azul, Negro…" placeholderTextColor="#bbb" value={filtroProductoColor} onChangeText={setFiltroProductoColor} autoCapitalize="words" />
+                  </>
+                )}
+
+                <TouchableOpacity onPress={limpiarFiltrosSeccion} style={styles.btnLimpiarFiltros}>
+                  <Text style={styles.btnLimpiarFiltrosTxt}>Limpiar filtros</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+        )}
+
+        {/* Buscador simple para usuario / inventario */}
+        {(seccionActiva === 'usuario' || seccionActiva === 'inventario') && (
+          <View style={styles.buscador}>
+            <Ionicons name="search-outline" size={20} color="#999" style={styles.buscadorIcon} />
+            <TextInput
+              style={styles.buscadorInput}
+              placeholder="Buscar..."
+              placeholderTextColor="#999"
+              onChangeText={setBusqueda}
+              value={busqueda}
+              autoCorrect={false}
+              autoCapitalize="none"
+              editable={true}
+            />
+            {busqueda !== '' && (
+              <TouchableOpacity onPress={() => setBusqueda('')} style={styles.buscadorLimpiar}>
+                <Ionicons name="close-circle" size={20} color="#999" />
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
 
         {/* Resultados encontrados */}
-        {busqueda !== '' && (
+        {(busqueda !== '' || hayFiltrosActivos()) && (
           <Text style={styles.resultadoBusqueda}>
             {seccionActiva === 'venta'
-              ? `🔍 ${ventasFiltradas.length} resultado(s) encontrado(s) para "${busqueda}"`
+              ? `🔍 ${ventasFiltradas.length} resultado(s) encontrado(s)`
               : seccionActiva === 'pedido'
-              ? `🔍 ${pedidosFiltrados.length} resultado(s) encontrado(s) para "${busqueda}"`
+              ? `🔍 ${pedidosFiltrados.length} resultado(s) encontrado(s)`
               : seccionActiva === 'producto'
-              ? `🔍 ${productosFiltrados.length} resultado(s) encontrado(s) para "${busqueda}"`
+              ? `🔍 ${productosFiltrados.length} resultado(s) encontrado(s)`
               : `🔍 Resultados para "${busqueda}"`
             }
           </Text>
@@ -511,7 +710,7 @@ export default function VistaAdministrador() {
                     style={styles.btnSeccionSuperior}
                     onPress={() => router.push(accion.ruta as any)}
                   >
-                    <Text style={styles.btnSeccionTexto}>{accion.label}</Text>
+                    <Text style={styles.btnSeccionTexto}>{accion.label.includes('Reporte') ? accion.label : accion.label.replace('Informe', 'Reporte')}</Text>
                   </TouchableOpacity>
                 ))}
               </View>
@@ -770,6 +969,20 @@ const styles = StyleSheet.create({
   buscadorIcon: { marginRight: 8 },
   buscadorInput: { flex: 1, paddingVertical: 12, fontSize: 15, color: '#333', outline: 'none' },
   buscadorLimpiar: { padding: 4 },
+  buscadorFiltroBtn: { padding: 6, borderRadius: 6, marginLeft: 4, backgroundColor: '#f0f0f0' },
+  buscadorFiltroBtnActivo: { backgroundColor: ACCENT },
+  filtroIndicador: { position: 'absolute', top: 4, right: 4, width: 7, height: 7, borderRadius: 4, backgroundColor: '#fff', borderWidth: 1, borderColor: ACCENT },
+  panelFiltros: { backgroundColor: '#fff', borderRadius: 10, padding: 14, marginBottom: 8, borderWidth: 1, borderColor: '#eee', elevation: 2, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4 },
+  filtroGrupoTitulo: { fontSize: 12, fontWeight: '700', color: DARK, marginTop: 10, marginBottom: 6 },
+  chipsRow: { flexDirection: 'row', flexWrap: 'wrap' },
+  rangoFechaRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  rangoFechaItem: { flex: 1 },
+  rangoFechaLabel: { fontSize: 11, color: '#888', marginBottom: 3 },
+  rangoFechaInput: { borderWidth: 1, borderColor: '#ddd', borderRadius: 7, paddingHorizontal: 10, paddingVertical: 7, fontSize: 12, color: '#333', backgroundColor: '#fafafa' },
+  rangoFechaSep: { fontSize: 16, color: '#bbb', marginTop: 14 },
+  filtroInput: { borderWidth: 1, borderColor: '#ddd', borderRadius: 7, paddingHorizontal: 12, paddingVertical: 8, fontSize: 13, color: '#333', backgroundColor: '#fafafa' },
+  btnLimpiarFiltros: { marginTop: 12, alignSelf: 'flex-end', paddingHorizontal: 14, paddingVertical: 7, borderRadius: 6, borderWidth: 1, borderColor: ACCENT },
+  btnLimpiarFiltrosTxt: { fontSize: 12, color: ACCENT, fontWeight: '600' },
   resultadoBusqueda: { fontSize: 12, color: '#666', marginBottom: 12, marginTop: 0, fontStyle: 'italic' },
 
   seccionCajas: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },

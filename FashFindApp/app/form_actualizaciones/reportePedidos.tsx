@@ -12,7 +12,7 @@ const GREEN  = '#27ae60';
 
 const API_BASE = Platform.OS === 'web'
   ? 'http://localhost/FashFind/api'
-  : 'http://172.30.4.210/FashFind/api';
+  : 'http://192.168.1.7/FashFind/api';
 
 export default function ReportePedidos() {
   const router = useRouter();
