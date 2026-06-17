@@ -1,5 +1,5 @@
 
-const API_URL = 'http://172.30.3.163/FashFind/api';
+const API_URL = 'http://192.168.56.1/FashFind/api';
 export type Cargo = 'Administrador' | 'Vendedor' | 'Domiciliario' | 'Cliente';
 
 export interface Usuario {

@@ -10,7 +10,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 
 const ACCENT = '#e91e8c';
 const DARK   = '#3A3A3A';
-const API_BASE = 'http://172.30.3.163/FashFind/api';
+const API_BASE = 'http://192.168.56.1/FashFind/api';
 
 const CARGOS = ['Administrador', 'Vendedor', 'Domiciliario', 'Cliente'];
 const ESTADOS = ['Activo', 'Inactivo'];
@@ -54,7 +54,28 @@ export default function EditarUsuario() {
     }
   };
 
+  const validarEmail = (email: string) => {
+    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return regex.test(email);
+  };
+
   const guardar = async () => {
+    // Validaciones antes de enviar
+    if (!form.nombres.trim() || !form.apellidos.trim()) {
+      Alert.alert('Campo requerido', 'Los nombres y apellidos son obligatorios');
+      return;
+    }
+
+    if (form.correo && !validarEmail(form.correo)) {
+      Alert.alert('Correo inválido', 'Por favor ingresa un correo electrónico válido');
+      return;
+    }
+
+    if (form.telefono && form.telefono.length < 7) {
+      Alert.alert('Teléfono inválido', 'El teléfono debe tener al menos 7 dígitos');
+      return;
+    }
+
     try {
       setCargando(true);
       const res = await fetch(`${API_BASE}/usuarios.php?id=${id}`, {
@@ -64,7 +85,14 @@ export default function EditarUsuario() {
       });
       const json = await res.json();
       if (json.success) {
-        Alert.alert('Éxito', 'Usuario actualizado', () => router.back());
+        if (Platform.OS === 'web') {
+          window.alert('Éxito: Usuario actualizado');
+          router.back();
+        } else {
+          Alert.alert('Éxito', 'Usuario actualizado', [
+            { text: 'OK', onPress: () => router.back() }
+          ]);
+        }
       } else {
         Alert.alert('Error', json.mensaje);
       }
@@ -75,13 +103,25 @@ export default function EditarUsuario() {
     }
   };
 
+  // Función para manejar cambios en campos numéricos
+  const manejarCambioNumerico = (campo: string, valor: string) => {
+    const soloNumeros = valor.replace(/[^0-9]/g, '');
+    setForm({...form, [campo]: soloNumeros});
+  };
+
+  // Función para manejar cambios en nombres/apellidos (solo letras)
+  const manejarCambioTexto = (campo: string, valor: string) => {
+    const soloLetras = valor.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '');
+    setForm({...form, [campo]: soloLetras});
+  };
+
   if (cargandoDatos) return <ActivityIndicator size="large" color={ACCENT} style={{marginTop: 50}} />;
 
   return (
     <View style={s.container}>
       <ImageBackground source={require('../../assets/images/fondoLogin.jpeg')} style={s.bg}>
         <SafeAreaView style={s.safe}>
-          <ScrollView contentContainerStyle={s.scroll}>
+          <ScrollView contentContainerStyle={s.scrollContent}>
             <View style={s.card}>
               <TouchableOpacity onPress={() => router.back()} style={s.back}>
                 <Ionicons name="arrow-back" size={24} color={DARK} />
@@ -92,13 +132,56 @@ export default function EditarUsuario() {
               <TextInput style={[s.input, {color: '#888'}]} value={form.cc} editable={false} />
 
               <Text style={s.label}>Nombres</Text>
-              <TextInput style={s.input} value={form.nombres} onChangeText={v => setForm({...form, nombres: v})} />
+              <TextInput 
+                style={s.input} 
+                value={form.nombres} 
+                onChangeText={v => manejarCambioTexto('nombres', v)}
+                placeholder="Solo letras"
+              />
 
               <Text style={s.label}>Apellidos</Text>
-              <TextInput style={s.input} value={form.apellidos} onChangeText={v => setForm({...form, apellidos: v})} />
+              <TextInput 
+                style={s.input} 
+                value={form.apellidos} 
+                onChangeText={v => manejarCambioTexto('apellidos', v)}
+                placeholder="Solo letras"
+              />
+
+              <Text style={s.label}>Correo Electrónico</Text>
+              <TextInput 
+                style={s.input} 
+                value={form.correo} 
+                onChangeText={v => setForm({...form, correo: v})}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                placeholder="ejemplo@correo.com"
+              />
+
+              <Text style={s.label}>Teléfono</Text>
+              <TextInput 
+                style={s.input} 
+                value={form.telefono} 
+                onChangeText={v => manejarCambioNumerico('telefono', v)}
+                keyboardType="numeric"
+                maxLength={10}
+                placeholder="Solo números"
+              />
+
+              <Text style={s.label}>Dirección</Text>
+              <TextInput 
+                style={s.input} 
+                value={form.direccion} 
+                onChangeText={v => setForm({...form, direccion: v})}
+              />
 
               <Text style={s.label}>Nueva Contraseña (Opcional)</Text>
-              <TextInput style={s.input} secureTextEntry placeholder="Dejar en blanco para no cambiar" value={form.contrasena} onChangeText={v => setForm({...form, contrasena: v})} />
+              <TextInput 
+                style={s.input} 
+                secureTextEntry 
+                placeholder="Dejar en blanco para no cambiar" 
+                value={form.contrasena} 
+                onChangeText={v => setForm({...form, contrasena: v})} 
+              />
 
               <Text style={s.label}>Cargo</Text>
               <View style={s.row}>
@@ -151,10 +234,19 @@ export default function EditarUsuario() {
 
 const s = StyleSheet.create({
   container: { flex: 1 },
-  bg: { flex: 1 },
+  bg: { flex: 1, width: '100%', height: '100%' },
   safe: { flex: 1 },
-  scroll: { padding: 20, alignItems: 'center' },
-  card: { backgroundColor: 'rgba(255,255,255,0.9)', width: '100%', borderRadius: 15, padding: 25 },
+  scrollContent: { flexGrow: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 50 },
+  card: {
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    width: Platform.OS === 'web' ? 450 : '90%',
+    borderRadius: 15,
+    padding: 30,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    elevation: 10,
+  },
   back: { marginBottom: 10 },
   title: { fontSize: 22, fontWeight: 'bold', color: ACCENT, textAlign: 'center', marginBottom: 20 },
   label: { fontSize: 14, color: DARK, marginTop: 15, marginBottom: 5, fontWeight: '600' },

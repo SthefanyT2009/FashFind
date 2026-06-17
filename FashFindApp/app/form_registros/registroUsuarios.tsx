@@ -14,7 +14,7 @@ const BORDER = '#000';
 
 const API_BASE = Platform.OS === 'web'
   ? 'http://localhost/FashFind/api'
-  : 'http://172.30.3.163/FashFind/api';
+  : 'http://192.168.56.1/FashFind/api';
 
 const mostrarAlerta = (titulo: string, mensaje: string, onOk?: () => void) => {
   if (Platform.OS === 'web') {
@@ -47,8 +47,13 @@ export default function RegistroUsuarios() {
     cargo:          'Cliente',
   });
 
+  const validarEmail = (email: string) => {
+    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return regex.test(email);
+  };
+
   const registrar = async () => {
-    // Validaciones básicas antes de llamar al servidor
+    // Validaciones antes de llamar al servidor
     if (!form.cc.trim()) {
       mostrarAlerta('Error', 'La cédula es obligatoria.');
       return;
@@ -77,8 +82,16 @@ export default function RegistroUsuarios() {
       mostrarAlerta('Error', 'El correo es obligatorio.');
       return;
     }
+    if (!validarEmail(form.correo)) {
+      mostrarAlerta('Error', 'El formato del correo electrónico no es válido.');
+      return;
+    }
     if (!form.telefono.trim()) {
       mostrarAlerta('Error', 'El teléfono es obligatorio.');
+      return;
+    }
+    if (form.telefono.length < 7) {
+      mostrarAlerta('Error', 'El teléfono debe tener al menos 7 dígitos.');
       return;
     }
     if (!form.direccion.trim()) {
@@ -104,7 +117,6 @@ export default function RegistroUsuarios() {
       if (json.success) {
         mostrarAlerta('¡Éxito!', 'Usuario creado correctamente.', () => router.back());
       } else {
-        // Muestra el mensaje exacto que devuelve el backend (duplicados, límites, etc.)
         mostrarAlerta('Error', json.mensaje ?? 'No se pudo registrar el usuario.');
       }
     } catch (e) {
@@ -112,6 +124,18 @@ export default function RegistroUsuarios() {
     } finally {
       setCargando(false);
     }
+  };
+
+  // Función para manejar cambios en campos numéricos
+  const manejarCambioNumerico = (campo: string, valor: string) => {
+    const soloNumeros = valor.replace(/[^0-9]/g, '');
+    setForm({...form, [campo]: soloNumeros});
+  };
+
+  // Función para manejar cambios en nombres/apellidos (solo letras)
+  const manejarCambioTexto = (campo: string, valor: string) => {
+    const soloLetras = valor.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '');
+    setForm({...form, [campo]: soloLetras});
   };
 
   return (
@@ -134,10 +158,10 @@ export default function RegistroUsuarios() {
                 <TextInput
                   style={s.inputLine}
                   keyboardType="numeric"
-                  placeholder="Ej: 1001234567"
+                  placeholder="Solo números"
                   placeholderTextColor="#bbb"
                   value={form.cc}
-                  onChangeText={v => setForm({ ...form, cc: v })}
+                  onChangeText={v => manejarCambioNumerico('cc', v)}
                   maxLength={15}
                 />
               </View>
@@ -147,10 +171,10 @@ export default function RegistroUsuarios() {
                 <Text style={s.label}>Nombres *</Text>
                 <TextInput
                   style={s.inputLine}
-                  placeholder="Ej: Juan Carlos"
+                  placeholder="Solo letras"
                   placeholderTextColor="#bbb"
                   value={form.nombres}
-                  onChangeText={v => setForm({ ...form, nombres: v })}
+                  onChangeText={v => manejarCambioTexto('nombres', v)}
                   maxLength={100}
                 />
               </View>
@@ -160,10 +184,10 @@ export default function RegistroUsuarios() {
                 <Text style={s.label}>Apellidos *</Text>
                 <TextInput
                   style={s.inputLine}
-                  placeholder="Ej: Pérez Gómez"
+                  placeholder="Solo letras"
                   placeholderTextColor="#bbb"
                   value={form.apellidos}
-                  onChangeText={v => setForm({ ...form, apellidos: v })}
+                  onChangeText={v => manejarCambioTexto('apellidos', v)}
                   maxLength={100}
                 />
               </View>
@@ -215,11 +239,11 @@ export default function RegistroUsuarios() {
                 <Text style={s.label}>Teléfono *</Text>
                 <TextInput
                   style={s.inputLine}
-                  placeholder="Ej: 3001234567"
+                  placeholder="Solo números"
                   placeholderTextColor="#bbb"
                   keyboardType="numeric"
                   value={form.telefono}
-                  onChangeText={v => setForm({ ...form, telefono: v })}
+                  onChangeText={v => manejarCambioNumerico('telefono', v)}
                   maxLength={15}
                 />
               </View>

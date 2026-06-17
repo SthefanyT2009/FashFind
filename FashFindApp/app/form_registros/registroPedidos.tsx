@@ -13,7 +13,7 @@ const ACCENT = '#e91e8c';
 const DARK   = '#3A3A3A';
 const BORDER = '#000';
 
-const API_BASE = 'http://172.30.3.163/FashFind/api';
+const API_BASE = 'http://192.168.56.1/FashFind/api';
 
 const mostrarAlerta = (titulo: string, mensaje: string, onOk?: () => void) => {
   if (Platform.OS === 'web') {
@@ -51,6 +51,7 @@ interface Cliente {
   id_usuario: number;
   nombres: string;
   apellidos: string;
+  cc: string;
 }
 
 export default function RegistroPedidos() {
@@ -144,12 +145,61 @@ export default function RegistroPedidos() {
     setModalProducto({ visible: false, filaId: 0 });
   };
 
+  // --- VALIDACIONES DE ENTRADA ---
+
+  const handleCiudadChange = (text: string) => {
+    // Solo letras y espacios
+    const filtered = text.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ ]/g, '');
+    if (text !== filtered) {
+      mostrarAlerta('Entrada inválida', 'La ciudad solo puede contener letras.');
+    }
+    setCiudadEntrega(filtered);
+  };
+
+  const handleTelefonoChange = (text: string) => {
+    // Solo números y máximo 10 dígitos
+    const filtered = text.replace(/[^0-9]/g, '');
+    if (text !== filtered) {
+      mostrarAlerta('Entrada inválida', 'El teléfono solo puede contener números.');
+    }
+    if (filtered.length <= 10) {
+      setTelefonoContacto(filtered);
+    } else {
+      mostrarAlerta('Límite excedido', 'El teléfono no puede tener más de 10 dígitos.');
+    }
+  };
+
+  const handleCostoEnvioChange = (text: string) => {
+    // Solo números
+    const filtered = text.replace(/[^0-9]/g, '');
+    if (text !== filtered) {
+      mostrarAlerta('Entrada inválida', 'El costo de envío debe ser un valor numérico.');
+    }
+    setCostoEnvio(filtered);
+  };
+
   const actualizarCantidad = (id: number, cant: string) => {
+    // Solo números
+    const filtered = cant.replace(/[^0-9]/g, '');
+    if (cant !== filtered) {
+      mostrarAlerta('Entrada inválida', 'La cantidad debe ser un número entero.');
+    }
+    
     setDetalles(prev => prev.map(d => {
       if (d.id !== id) return d;
-      const c = parseFloat(cant) || 0;
+      
+      // Validar stock si hay producto seleccionado
+      if (d.id_producto) {
+        const prod = productos.find(p => p.id_producto.toString() === d.id_producto);
+        if (prod && parseInt(filtered) > prod.stock_disponible) {
+          mostrarAlerta('Sin Stock', `Solo hay ${prod.stock_disponible} unidades disponibles.`);
+          return d; // No actualiza si excede stock
+        }
+      }
+
+      const c = parseFloat(filtered) || 0;
       const p = parseFloat(d.precio) || 0;
-      return { ...d, cantidad: cant, sub_total: c * p };
+      return { ...d, cantidad: filtered, sub_total: c * p };
     }));
   };
 
@@ -157,11 +207,15 @@ export default function RegistroPedidos() {
     if (!idUsuario.trim())         { mostrarAlerta('Campo requerido', 'Selecciona un Cliente.'); return; }
     if (!direccionEntrega.trim())  { mostrarAlerta('Campo requerido', 'Ingresa la Dirección de Entrega.'); return; }
     if (!ciudadEntrega.trim())     { mostrarAlerta('Campo requerido', 'Ingresa la Ciudad de Entrega.'); return; }
-    if (!telefonoContacto.trim())  { mostrarAlerta('Campo requerido', 'Ingresa el Teléfono de Contacto.'); return; }
+    if (!telefonoContacto.trim() || telefonoContacto.length < 7)  { 
+      mostrarAlerta('Dato inválido', 'Ingresa un Teléfono de Contacto válido (mínimo 7 dígitos).'); 
+      return; 
+    }
     if (!fechaEntrega.trim())      { mostrarAlerta('Campo requerido', 'Ingresa la Fecha de Entrega.'); return; }
     if (detalles.length === 0)     { mostrarAlerta('Sin productos', 'Agrega al menos un producto.'); return; }
+    
     const filaIncompleta = detalles.find(d => !d.id_producto || !d.cantidad || !d.precio);
-    if (filaIncompleta)            { mostrarAlerta('Datos incompletos', 'Completa todas las filas.'); return; }
+    if (filaIncompleta)            { mostrarAlerta('Datos incompletos', 'Completa todas las filas de productos.'); return; }
 
     const body = {
       metodo_pago: metodoPago, costo_envio: parseFloat(costoEnvio) || 0,
@@ -256,17 +310,38 @@ export default function RegistroPedidos() {
 
               <View style={s.inputGroup}>
                 <Text style={s.label}>Dirección Entrega</Text>
-                <TextInput style={s.inputLine} placeholder="Ej: Calle 10 #5-20" placeholderTextColor="#bbb" value={direccionEntrega} onChangeText={setDireccionEntrega} />
+                <TextInput 
+                  style={s.inputLine} 
+                  placeholder="Ej: Calle 10 #5-20" 
+                  placeholderTextColor="#bbb" 
+                  value={direccionEntrega} 
+                  onChangeText={setDireccionEntrega} 
+                  maxLength={100}
+                />
               </View>
 
               <View style={s.inputGroup}>
                 <Text style={s.label}>Ciudad Entrega</Text>
-                <TextInput style={s.inputLine} placeholder="Ej: Bogotá" placeholderTextColor="#bbb" value={ciudadEntrega} onChangeText={setCiudadEntrega} />
+                <TextInput 
+                  style={s.inputLine} 
+                  placeholder="Ej: Bogotá" 
+                  placeholderTextColor="#bbb" 
+                  value={ciudadEntrega} 
+                  onChangeText={handleCiudadChange} 
+                  maxLength={50}
+                />
               </View>
 
               <View style={s.inputGroup}>
                 <Text style={s.label}>Teléfono Contacto</Text>
-                <TextInput style={s.inputLine} keyboardType="phone-pad" placeholder="Ej: 3001234567" placeholderTextColor="#bbb" value={telefonoContacto} onChangeText={setTelefonoContacto} />
+                <TextInput 
+                  style={s.inputLine} 
+                  keyboardType="phone-pad" 
+                  placeholder="Ej: 3001234567" 
+                  placeholderTextColor="#bbb" 
+                  value={telefonoContacto} 
+                  onChangeText={handleTelefonoChange} 
+                />
               </View>
 
               <View style={s.inputGroup}>
@@ -302,7 +377,14 @@ export default function RegistroPedidos() {
 
               <View style={s.inputGroup}>
                 <Text style={s.label}>Costo de Envío</Text>
-                <TextInput style={s.inputLine} keyboardType="numeric" placeholder="0" placeholderTextColor="#bbb" value={costoEnvio} onChangeText={setCostoEnvio} />
+                <TextInput 
+                  style={s.inputLine} 
+                  keyboardType="numeric" 
+                  placeholder="0" 
+                  placeholderTextColor="#bbb" 
+                  value={costoEnvio} 
+                  onChangeText={handleCostoEnvioChange} 
+                />
               </View>
 
               <View style={s.inputGroup}>
@@ -354,8 +436,11 @@ export default function RegistroPedidos() {
                     </TouchableOpacity>
                     <TextInput
                       style={[s.td, { width: 60 }]}
-                      keyboardType="numeric" placeholder="0" placeholderTextColor="#bbb"
-                      value={d.cantidad} onChangeText={v => actualizarCantidad(d.id, v)}
+                      keyboardType="numeric" 
+                      placeholder="0" 
+                      placeholderTextColor="#bbb"
+                      value={d.cantidad} 
+                      onChangeText={v => actualizarCantidad(d.id, v)}
                     />
                     <Text style={[s.tdText, { width: 90 }]}>${parseFloat(d.precio || '0').toLocaleString('es-CO')}</Text>
                     <Text style={[s.tdText, { width: 80 }]}>${d.sub_total.toLocaleString('es-CO')}</Text>

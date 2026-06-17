@@ -12,7 +12,7 @@ const ACCENT = '#e91e8c';
 const DARK   = '#3A3A3A';
 const BORDER = '#000';
 
-const API_BASE = 'http://172.30.3.163/FashFind/api';
+const API_BASE = 'http://192.168.56.1/FashFind/api';
 
 const mostrarAlerta = (titulo: string, mensaje: string, onOk?: () => void) => {
   if (Platform.OS === 'web') {
@@ -76,11 +76,47 @@ export default function EditarPedidos() {
     }
   };
 
+  // --- VALIDACIONES DE ENTRADA ---
+
+  const handleCiudadChange = (text: string) => {
+    // Solo letras y espacios
+    const filtered = text.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ ]/g, '');
+    if (text !== filtered) {
+      mostrarAlerta('Entrada inválida', 'La ciudad solo puede contener letras.');
+    }
+    setCiudadEntrega(filtered);
+  };
+
+  const handleTelefonoChange = (text: string) => {
+    // Solo números y máximo 10 dígitos
+    const filtered = text.replace(/[^0-9]/g, '');
+    if (text !== filtered) {
+      mostrarAlerta('Entrada inválida', 'El teléfono solo puede contener números.');
+    }
+    if (filtered.length <= 10) {
+      setTelefonoContacto(filtered);
+    } else {
+      mostrarAlerta('Límite excedido', 'El teléfono no puede tener más de 10 dígitos.');
+    }
+  };
+
+  const handleCostoEnvioChange = (text: string) => {
+    // Solo números
+    const filtered = text.replace(/[^0-9]/g, '');
+    if (text !== filtered) {
+      mostrarAlerta('Entrada inválida', 'El costo de envío debe ser un valor numérico.');
+    }
+    setCostoEnvio(filtered);
+  };
+
   const guardarCambios = async () => {
     if (!idUsuario.trim())        { mostrarAlerta('Campo requerido', 'Ingresa el Id del Cliente.'); return; }
     if (!direccionEntrega.trim()) { mostrarAlerta('Campo requerido', 'Ingresa la Dirección de Entrega.'); return; }
     if (!ciudadEntrega.trim())    { mostrarAlerta('Campo requerido', 'Ingresa la Ciudad de Entrega.'); return; }
-    if (!telefonoContacto.trim()) { mostrarAlerta('Campo requerido', 'Ingresa el Teléfono de Contacto.'); return; }
+    if (!telefonoContacto.trim() || telefonoContacto.length < 7) { 
+      mostrarAlerta('Dato inválido', 'Ingresa un Teléfono de Contacto válido (mínimo 7 dígitos).'); 
+      return; 
+    }
     if (!fechaEntrega.trim())     { mostrarAlerta('Campo requerido', 'Ingresa la Fecha de Entrega.'); return; }
 
     const body = {
@@ -185,17 +221,38 @@ export default function EditarPedidos() {
 
               <View style={s.inputGroup}>
                 <Text style={s.label}>Dirección Entrega</Text>
-                <TextInput style={s.inputLine} placeholder="Ej: Calle 10 #5-20" placeholderTextColor="#bbb" value={direccionEntrega} onChangeText={setDireccionEntrega} />
+                <TextInput 
+                  style={s.inputLine} 
+                  placeholder="Ej: Calle 10 #5-20" 
+                  placeholderTextColor="#bbb" 
+                  value={direccionEntrega} 
+                  onChangeText={setDireccionEntrega} 
+                  maxLength={100}
+                />
               </View>
 
               <View style={s.inputGroup}>
                 <Text style={s.label}>Ciudad Entrega</Text>
-                <TextInput style={s.inputLine} placeholder="Ej: Bogotá" placeholderTextColor="#bbb" value={ciudadEntrega} onChangeText={setCiudadEntrega} />
+                <TextInput 
+                  style={s.inputLine} 
+                  placeholder="Ej: Bogotá" 
+                  placeholderTextColor="#bbb" 
+                  value={ciudadEntrega} 
+                  onChangeText={handleCiudadChange} 
+                  maxLength={50}
+                />
               </View>
 
               <View style={s.inputGroup}>
                 <Text style={s.label}>Teléfono Contacto</Text>
-                <TextInput style={s.inputLine} keyboardType="phone-pad" placeholder="Ej: 3001234567" placeholderTextColor="#bbb" value={telefonoContacto} onChangeText={setTelefonoContacto} />
+                <TextInput 
+                  style={s.inputLine} 
+                  keyboardType="phone-pad" 
+                  placeholder="Ej: 3001234567" 
+                  placeholderTextColor="#bbb" 
+                  value={telefonoContacto} 
+                  onChangeText={handleTelefonoChange} 
+                />
               </View>
 
               <View style={s.inputGroup}>
@@ -230,7 +287,14 @@ export default function EditarPedidos() {
 
               <View style={s.inputGroup}>
                 <Text style={s.label}>Costo de Envío</Text>
-                <TextInput style={s.inputLine} keyboardType="numeric" placeholder="0" placeholderTextColor="#bbb" value={costoEnvio} onChangeText={setCostoEnvio} />
+                <TextInput 
+                  style={s.inputLine} 
+                  keyboardType="numeric" 
+                  placeholder="0" 
+                  placeholderTextColor="#bbb" 
+                  value={costoEnvio} 
+                  onChangeText={handleCostoEnvioChange} 
+                />
               </View>
 
               <View style={s.inputGroup}>
