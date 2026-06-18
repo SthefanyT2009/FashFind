@@ -49,9 +49,7 @@ export default function VistaCliente() {
   const [usuario, setUsuario] =
     useState<any>(null);
 
-  /* =========================
-     SLIDES
-  ========================= */
+  /* SLIDES */
 
   const slides = [
 
@@ -75,9 +73,7 @@ export default function VistaCliente() {
 
   ];
 
-  /* =========================
-     FILTRAR PRODUCTOS
-  ========================= */
+  /* FILTRAR PRODUCTOS */
 
   const productosFiltrados =
     categoriaActiva === 'Todos'
@@ -86,9 +82,7 @@ export default function VistaCliente() {
           p => p.categoria === categoriaActiva
         );
 
-  /* =========================
-     STORAGE
-  ========================= */
+  /* STORAGE */
 
   useEffect(() => {
 
@@ -171,9 +165,7 @@ export default function VistaCliente() {
     }
   };
 
-  /* =========================
-     AGREGAR CARRITO
-  ========================= */
+  /* AGREGAR CARRITO */
 
   const agregarAlCarrito = async (
     producto: any
@@ -217,9 +209,7 @@ export default function VistaCliente() {
     setCarritoVisible(true);
   };
 
-  /* =========================
-     ELIMINAR PRODUCTO
-  ========================= */
+  /* ELIMINAR PRODUCTO */
 
   const eliminarProducto = async (
     id: number
@@ -233,9 +223,7 @@ export default function VistaCliente() {
     await guardarCarrito(nuevo);
   };
 
-  /* =========================
-     CANTIDADES
-  ========================= */
+  /* CANTIDADES */
 
   const cambiarCantidad = async (
     id: number,
@@ -272,9 +260,7 @@ export default function VistaCliente() {
     await guardarCarrito(nuevo);
   };
 
-  /* =========================
-     FINALIZAR
-  ========================= */
+  /* FINALIZAR */
 
   const finalizarCompra = async () => {
 
@@ -310,9 +296,7 @@ export default function VistaCliente() {
     }
   };
 
-  /* =========================
-     TOTAL
-  ========================= */
+  /* TOTAL */
 
   const totalCarrito = carrito.reduce(
     (acc, p) =>

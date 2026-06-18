@@ -21,13 +21,13 @@ import { useFocusEffect } from '@react-navigation/native';
 const { width } = Dimensions.get('window');
 
 const ACCENT = '#e91e8c';
-const DARK = '#3A3A3A';
-const BORDER = '#9A9A9A';
+const DARK = '#6b2d8b';
+const BORDER = '#e8d5f5';
 const SIDEBAR_WIDTH = 220;
 
 const ES_WEB_ESCRITORIO = Platform.OS === 'web' && width >= 768;
 
-const API_BASE = Platform.OS === 'web' ? 'http://localhost/FashFind/api' : 'http://192.168.56.1/FashFind/api';
+const API_BASE = Platform.OS === 'web' ? 'http://localhost/FashFind/api' : 'http://192.168.0.7/FashFind/api';
 
 const mostrarAlerta = (titulo: string, mensaje: string, onOk?: () => void) => {
   if (Platform.OS === 'web') {
@@ -76,6 +76,69 @@ const botonesFilaPorSeccion: Record<Seccion, string[]> = {
   pedido: ['Actualizar', 'Cancelar', 'Reactivar'],
   producto: ['Actualizar', 'Eliminar', 'Reactivar'],
   inventario: ['Actualizar'],
+};
+
+// ── Gráfica de Ventas últimos 15 días ──────────────────────────
+const GraficaVentas = ({ ventas }: { ventas: any[] }) => {
+  if (Platform.OS !== 'web') return null;
+
+  const chartW = ES_WEB_ESCRITORIO ? Math.min(width - SIDEBAR_WIDTH - 80, 900) : width - 32;
+  const chartH = 220;
+  const pL = 62, pR = 16, pT = 16, pB = 40;
+  const innerW = chartW - pL - pR;
+  const innerH = chartH - pT - pB;
+
+  const hoy = new Date();
+  const dias: string[] = [];
+  for (let i = 14; i >= 0; i--) {
+    const d = new Date(hoy);
+    d.setDate(hoy.getDate() - i);
+    dias.push(d.toISOString().slice(0, 10));
+  }
+
+  const totales: Record<string, number> = {};
+  dias.forEach(d => { totales[d] = 0; });
+  ventas.forEach(v => {
+    if (v.estado === 'Activo' && totales[v.fecha_venta] !== undefined) {
+      totales[v.fecha_venta] += Number(v.costo_total) || 0;
+    }
+  });
+  const vals = dias.map(d => totales[d]);
+  const maxVal = Math.max(...vals, 1);
+
+  const gx = (i: number) => pL + (i / (dias.length - 1)) * innerW;
+  const gy = (v: number) => pT + innerH - (v / maxVal) * innerH;
+
+  const linePts = vals.map((v, i) => `${gx(i)},${gy(v)}`).join(' ');
+  const areaPts = [`${gx(0)},${pT + innerH}`, ...vals.map((v, i) => `${gx(i)},${gy(v)}`), `${gx(14)},${pT + innerH}`].join(' ');
+  const yTicks = [0, 0.25, 0.5, 0.75, 1].map(f => Math.round(maxVal * f));
+  const fmt = (n: number) => n >= 1_000_000 ? `$${(n/1_000_000).toFixed(1)}M` : n >= 1_000 ? `$${(n/1_000).toFixed(0)}k` : `$${n}`;
+
+  const svgHtml = `<svg xmlns="http://www.w3.org/2000/svg" width="${chartW}" height="${chartH}" style="overflow:visible">
+    ${yTicks.map(val => {
+      const y = gy(val);
+      return `<line x1="${pL}" y1="${y}" x2="${chartW - pR}" y2="${y}" stroke="#f0e6fb" stroke-width="1" stroke-dasharray="4,3"/>
+              <text x="${pL - 6}" y="${y + 4}" text-anchor="end" font-size="10" fill="#9b59b6">${fmt(val)}</text>`;
+    }).join('')}
+    <polygon points="${areaPts}" fill="#e91e8c" fill-opacity="0.08"/>
+    <polyline points="${linePts}" fill="none" stroke="#e91e8c" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+    ${vals.map((v, i) => `<circle cx="${gx(i)}" cy="${gy(v)}" r="4" fill="#fff" stroke="#e91e8c" stroke-width="2"/>`).join('')}
+    ${dias.map((d, i) => {
+      if (i % 3 !== 0 && i !== 14) return '';
+      const [, mm, dd] = d.split('-');
+      return `<text x="${gx(i)}" y="${chartH - 8}" text-anchor="middle" font-size="10" fill="#9b59b6">${dd}/${mm}</text>`;
+    }).join('')}
+  </svg>`;
+
+  return (
+    <View style={{ marginTop: 24, backgroundColor: '#fff', borderRadius: 12, padding: 16,
+      shadowColor: '#6b2d8b', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 8, elevation: 4 }}>
+      <Text style={{ fontSize: 15, fontWeight: '700', color: DARK, marginBottom: 12 }}>
+        Ventas — Últimos 15 días
+      </Text>
+      <div dangerouslySetInnerHTML={{ __html: svgHtml }} style={{ overflowX: 'auto' } as any} />
+    </View>
+  );
 };
 
 export default function VistaAdministrador() {
@@ -266,6 +329,7 @@ export default function VistaAdministrador() {
         cargarInventarios();
       } else if (seccionActiva === 'pagina_principal') {
         cargarEstadisticas();
+        cargarVentas();
       }
     }, [seccionActiva, cargarUsuarios, cargarVentas, cargarPedidos, cargarProductos, cargarInventarios, cargarEstadisticas])
   );
@@ -900,14 +964,17 @@ export default function VistaAdministrador() {
 
         {/* Página principal: cajas */}
         {seccionActiva === 'pagina_principal' && (
-          <View style={styles.seccionCajas}>
-            {cajas.map((caja, i) => (
-              <View key={i} style={[styles.caja, ES_WEB_ESCRITORIO && styles.cajaWeb]}>
-                <Text style={styles.cajaTitulo}>{caja.titulo}</Text>
-                <Text style={styles.cajaValor}>{caja.valor}</Text>
-              </View>
-            ))}
-          </View>
+          <>
+            <View style={styles.seccionCajas}>
+              {cajas.map((caja, i) => (
+                <View key={i} style={[styles.caja, ES_WEB_ESCRITORIO && styles.cajaWeb]}>
+                  <Text style={styles.cajaTitulo}>{caja.titulo}</Text>
+                  <Text style={styles.cajaValor}>{caja.valor}</Text>
+                </View>
+              ))}
+            </View>
+            <GraficaVentas ventas={ventas} />
+          </>
         )}
 
         {/* Secciones */}
@@ -1150,7 +1217,10 @@ export default function VistaAdministrador() {
                   inventariosFiltrados.map((inv) => (
                     <View key={inv.id_inventario} style={styles.ventaCard}>
                       <View style={styles.ventaCardHeader}>
-                        <Text style={styles.ventaCardId}>Inventario #{inv.id_inventario}</Text>
+                        <Text style={styles.ventaCardId}>Inventario # {inv.id_inventario}</Text>
+                        <Text style={[styles.ventaCardEstado, {
+                          backgroundColor: inv.estado === 'Activo' ? '#27ae60' : '#e74c3c',
+                        }]}>{inv.estado}</Text>
                       </View>
                       <View style={styles.ventaCardInfo}>
                         <Text style={styles.ventaCardTxt}><Text style={{ fontWeight: 'bold' }}>Producto:</Text> {inv.nombre_producto}</Text>
@@ -1255,7 +1325,7 @@ const styles = StyleSheet.create({
   barraItem: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14, paddingHorizontal: 10, borderRadius: 6 },
   barraItemActivo: { backgroundColor: ACCENT },
   barraItemText: { color: '#fff', fontSize: 16 },
-  barraCerrar: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14, paddingHorizontal: 10, borderTopWidth: 1, borderTopColor: '#555', marginTop: 10 },
+  barraCerrar: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14, paddingHorizontal: 10, borderTopWidth: 1, borderTopColor: '#9b59b6', marginTop: 10 },
 
   contenidoPrincipal: { flex: 1, width: '100%' },
   barraSuperior: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: DARK, paddingHorizontal: 16, paddingVertical: 14 },
@@ -1298,7 +1368,7 @@ const styles = StyleSheet.create({
   btnSeccionSuperior: { backgroundColor: DARK, borderRadius: 4, paddingHorizontal: 12, paddingVertical: 8 },
 
   tablaHeader: { flexDirection: 'row', backgroundColor: DARK, borderRadius: 4 },
-  tablaTh: { color: '#fff', fontWeight: '600', fontSize: 12, paddingHorizontal: 10, paddingVertical: 10, minWidth: 110, borderRightWidth: 1, borderRightColor: '#555' },
+  tablaTh: { color: '#fff', fontWeight: '600', fontSize: 12, paddingHorizontal: 10, paddingVertical: 10, minWidth: 110, borderRightWidth: 1, borderRightColor: '#9b59b6' },
   tablaFila: { flexDirection: 'row', borderWidth: 1, borderColor: BORDER, alignItems: 'center', backgroundColor: '#fff' },
   tablaTd: { fontSize: 13, color: '#555', paddingHorizontal: 14, paddingVertical: 12, minWidth: 110, borderRightWidth: 1, borderRightColor: BORDER },
   tablaTdVacio: { fontSize: 13, color: '#555', paddingHorizontal: 14, paddingVertical: 14, flex: 1, minWidth: 200, borderRightWidth: 1, borderRightColor: BORDER },

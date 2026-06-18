@@ -20,8 +20,9 @@ const mostrarAlerta = (titulo: string, mensaje: string, onOk?: () => void) => {
 const ACCENT = '#e91e8c';
 const DARK   = '#3A3A3A';
 const BORDER = '#000';
+const ERROR_COLOR = '#DC2626';
 
-const API_BASE = 'http://192.168.56.1/FashFind/api';
+const API_BASE = 'http://192.168.0.7/FashFind/api';
 
 interface DetalleItem {
   id: number;
@@ -67,6 +68,11 @@ export default function RegistroVentas() {
   const [vendedores, setVendedores]       = useState<Vendedor[]>([]);
   const [modalVendedor, setModalVendedor] = useState(false);
   const [modalProducto, setModalProducto] = useState<{ visible: boolean, filaId: number }>({ visible: false, filaId: 0 });
+
+  const [errores, setErrores] = useState({
+    vendedor: '',
+    pagoRecibido: '',
+  });
 
   useEffect(() => {
     const ahora = new Date();
@@ -115,6 +121,7 @@ export default function RegistroVentas() {
     setIdVendedor(v.id_usuario.toString());
     setNombreVendedor(`${v.nombres} ${v.apellidos}`);
     setModalVendedor(false);
+    setErrores({ ...errores, vendedor: '' });
   };
 
   const seleccionarProducto = (p: Producto) => {
@@ -141,9 +148,40 @@ export default function RegistroVentas() {
     }));
   };
 
+  const handlePagoRecibidoChange = (text: string) => {
+    const soloNumeros = text.replace(/[^0-9]/g, '');
+    setPagoRecibido(soloNumeros);
+    if (soloNumeros.trim()) {
+      setErrores({ ...errores, pagoRecibido: '' });
+    }
+  };
+
   const registrarVenta = async () => {
-    if (!idVendedor || detalles.length === 0 || !pagoRecibido) {
-      mostrarAlerta('Error', 'Por favor complete todos los campos.');
+    let hayErrores = false;
+    const nuevosErrores = { ...errores };
+
+    if (!idVendedor.trim()) {
+      nuevosErrores.vendedor = 'Selecciona un Vendedor.';
+      hayErrores = true;
+    } else {
+      nuevosErrores.vendedor = '';
+    }
+
+    if (!pagoRecibido.trim()) {
+      nuevosErrores.pagoRecibido = 'El pago recibido es obligatorio.';
+      hayErrores = true;
+    } else {
+      nuevosErrores.pagoRecibido = '';
+    }
+
+    setErrores(nuevosErrores);
+
+    // Si hay errores en los campos principales, detener
+    if (hayErrores) return;
+
+    // Validar productos
+    if (detalles.length === 0) {
+      mostrarAlerta('Error', 'Por favor agrega al menos un producto.');
       return;
     }
 
@@ -227,10 +265,11 @@ export default function RegistroVentas() {
               </View>
 
               <View style={s.inputGroup}>
-                <Text style={s.label}>Vendedor</Text>
+                <Text style={s.label}>Vendedor *</Text>
                 <TouchableOpacity style={s.inputLine} onPress={() => setModalVendedor(true)}>
                   <Text style={{ color: idVendedor ? DARK : '#bbb' }}>{nombreVendedor}</Text>
                 </TouchableOpacity>
+                {errores.vendedor ? <Text style={s.errorText}>{errores.vendedor}</Text> : null}
               </View>
 
               <Text style={s.subTitle}>Productos</Text>
@@ -282,14 +321,16 @@ export default function RegistroVentas() {
               </View>
 
               <View style={s.inputGroup}>
-                <Text style={s.label}>Pago Recibido</Text>
+                <Text style={s.label}>Pago Recibido *</Text>
                 <TextInput 
                   style={s.inputLine} 
                   keyboardType="numeric" 
                   value={pagoRecibido} 
-                  onChangeText={setPagoRecibido} 
+                  onChangeText={handlePagoRecibidoChange} 
                   placeholder="0"
+                  maxLength={10}
                 />
+                {errores.pagoRecibido ? <Text style={s.errorText}>{errores.pagoRecibido}</Text> : null}
               </View>
 
               <View style={s.inputGroup}>
@@ -385,6 +426,7 @@ const s = StyleSheet.create({
   inputGroup: { marginBottom: 20 },
   label: { fontSize: 16, color: DARK, marginBottom: 5 },
   inputLine: { borderBottomWidth: 1, borderBottomColor: BORDER, paddingVertical: 5, fontSize: 16, color: DARK, minHeight: 35, justifyContent: 'center' },
+  errorText: { color: ERROR_COLOR, fontSize: 12, marginTop: 3 },
   pickerOverlay: { flexDirection: 'row', gap: 10, marginTop: 5 },
   chip: { borderWidth: 1, borderColor: '#ccc', borderRadius: 20, paddingHorizontal: 15, paddingVertical: 5 },
   chipActivo: { backgroundColor: ACCENT, borderColor: ACCENT },

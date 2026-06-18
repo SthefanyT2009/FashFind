@@ -62,6 +62,11 @@ export default function RegistroScreen() {
   const [fortalezaPass, setFortalezaPass] = useState(0);
   const [mostrarDatePicker, setMostrarDatePicker] = useState(false);
   const [fechaSeleccionada, setFechaSeleccionada] = useState<Date | undefined>(undefined);
+  const [alerta, setAlerta] = useState<{ tipo: 'exito' | 'error'; texto: string; onClose?: () => void } | null>(null);
+
+  const mostrarAlerta = (tipo: 'exito' | 'error', texto: string, onClose?: () => void) => {
+    setAlerta({ tipo, texto, onClose });
+  };
 
   const evaluarFortaleza = (password: string) => {
     let puntaje = 0;
@@ -145,24 +150,12 @@ export default function RegistroScreen() {
       const resultado = await registro(campos);
 
       if (resultado.success) {
-        Alert.alert(
-          'Éxito',
-          'Cuenta creada correctamente'
-        );
-
-        router.replace('/login');
+        mostrarAlerta('exito', 'Cuenta creada correctamente', () => router.replace('/login'));
       } else {
-        Alert.alert(
-          'Error',
-          resultado.mensaje ||
-            'No se pudo registrar'
-        );
+        mostrarAlerta('error', resultado.mensaje || 'No se pudo registrar');
       }
     } catch (error) {
-      Alert.alert(
-        'Error',
-        'Ocurrió un problema'
-      );
+      mostrarAlerta('error', 'Ocurrió un problema');
     }
 
     setCargando(false);
@@ -170,6 +163,7 @@ export default function RegistroScreen() {
 
 
   return (
+    <>
     <ImageBackground
   source={require('../assets/images/fondoLogin.jpeg')}
   style={styles.background}
@@ -783,6 +777,38 @@ export default function RegistroScreen() {
         </ScrollView>
       </KeyboardAvoidingView>
     </ImageBackground>
+
+      {/* Modal alerta */}
+      {alerta && (
+        <Modal transparent animationType="fade" visible={!!alerta}>
+          <View style={styles.alertaOverlay}>
+            <View style={styles.alertaCaja}>
+              <View style={[styles.alertaIconoWrap, alerta.tipo === 'exito' ? styles.alertaIconoExito : styles.alertaIconoError]}>
+                <Ionicons
+                  name={alerta.tipo === 'exito' ? 'checkmark-circle' : 'alert-circle'}
+                  size={40}
+                  color="#fff"
+                />
+              </View>
+              <Text style={styles.alertaTitulo}>
+                {alerta.tipo === 'exito' ? '¡Éxito!' : 'Error'}
+              </Text>
+              <Text style={styles.alertaTexto}>{alerta.texto}</Text>
+              <TouchableOpacity
+                style={[styles.alertaBoton, alerta.tipo === 'exito' ? styles.alertaBotonExito : styles.alertaBotonError]}
+                onPress={() => {
+                  const cb = alerta.onClose;
+                  setAlerta(null);
+                  cb?.();
+                }}
+              >
+                <Text style={styles.alertaBotonTexto}>Aceptar</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+      )}
+    </>
   );
 }
 
@@ -1006,5 +1032,80 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#e91e8c',
     fontWeight: '700',
+  },
+
+  alertaOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  alertaCaja: {
+    width: 320,
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 30,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.25,
+    shadowRadius: 20,
+    elevation: 20,
+  },
+
+  alertaIconoWrap: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+
+  alertaIconoExito: {
+    backgroundColor: '#22c55e',
+  },
+
+  alertaIconoError: {
+    backgroundColor: '#ef4444',
+  },
+
+  alertaTitulo: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#1a1a2e',
+    marginBottom: 8,
+  },
+
+  alertaTexto: {
+    fontSize: 15,
+    color: '#555',
+    textAlign: 'center',
+    marginBottom: 24,
+    lineHeight: 22,
+  },
+
+  alertaBoton: {
+    width: '100%',
+    height: 48,
+    borderRadius: 6,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  alertaBotonExito: {
+    backgroundColor: '#1a1a2e',
+  },
+
+  alertaBotonError: {
+    backgroundColor: '#e91e8c',
+  },
+
+  alertaBotonTexto: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 15,
+    letterSpacing: 1,
   },
 });

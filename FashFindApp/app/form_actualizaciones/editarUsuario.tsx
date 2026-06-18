@@ -10,7 +10,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 
 const ACCENT = '#e91e8c';
 const DARK   = '#3A3A3A';
-const API_BASE = 'http://192.168.56.1/FashFind/api';
+const API_BASE = 'http://192.168.0.7/FashFind/api';
 
 const CARGOS = ['Administrador', 'Vendedor', 'Domiciliario', 'Cliente'];
 const ESTADOS = ['Activo', 'Inactivo'];
