@@ -41,7 +41,7 @@ try {
         $out  = "<table border='1' style='border-collapse:collapse;font-family:Arial;font-size:11px'>";
 
         // Encabezado
-        $out .= "<tr><td colspan='9' style='background:#3A3A3A;color:#e91e8c;font-size:14px;font-weight:bold;padding:8px'>FashFind — Reporte de Inventario</td></tr>";
+        $out .= "<tr><td colspan='9' style='background:#6b2d8b;color:#e91e8c;font-size:14px;font-weight:bold;padding:8px'>FashFind — Reporte de Inventario</td></tr>";
         $out .= "<tr><td colspan='9' style='padding:4px'>Generado: {$fechaHoy} &nbsp;|&nbsp; Total inventarios: {$total_inventarios} &nbsp;|&nbsp; Stock total: {$stock_total} unidades</td></tr>";
         $out .= "<tr><td colspan='9'></td></tr>";
 
@@ -117,12 +117,12 @@ try {
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
   body{font-family:Arial,sans-serif;font-size:12px;color:#333}
-  .header{background:#3A3A3A;color:white;padding:20px 24px;display:flex;justify-content:space-between;align-items:center}
+  .header{background:#6b2d8b;color:white;padding:20px 24px;display:flex;justify-content:space-between;align-items:center}
   .header-titulo{color:#e91e8c;font-size:22px;font-weight:bold}
   .header-sub{color:#ccc;font-size:11px;margin-top:4px}
   .header-fecha{color:#aaa;font-size:10px}
   .resumen{background:#f5f5f5;margin:16px;padding:14px;border-radius:4px;display:flex;gap:40px}
-  .resumen-item label{font-weight:bold;font-size:10px;color:#3A3A3A;display:block}
+  .resumen-item label{font-weight:bold;font-size:10px;color:#6b2d8b;display:block}
   .resumen-item span{font-size:11px;color:#555}
   .inventario-bloque{margin:0 16px 18px 16px;border:1px solid #eee;border-radius:4px;overflow:hidden}
   .inventario-header{background:#e91e8c;color:white;padding:8px 12px;display:flex;justify-content:space-between;align-items:center;font-weight:bold;font-size:11px}
@@ -132,7 +132,7 @@ try {
   .stock-item{display:flex;flex-direction:column;gap:4px}
   .stock-item label{font-size:9px;color:#777;font-weight:bold}
   .stock-valor{font-size:16px;color:#e91e8c;font-weight:bold}
-  .footer{background:#3A3A3A;color:#aaa;text-align:center;padding:10px;font-size:9px;margin-top:20px}
+  .footer{background:#6b2d8b;color:#aaa;text-align:center;padding:10px;font-size:9px;margin-top:20px}
   @media print{.inventario-bloque{page-break-inside:avoid}}
 </style>
 </head>

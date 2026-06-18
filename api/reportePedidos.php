@@ -92,14 +92,14 @@ try {
         echo "\xEF\xBB\xBF";
 
         $out  = "<table border='1' style='border-collapse:collapse;font-family:Arial;font-size:11px'>";
-        $out .= "<tr><td colspan='10' style='background:#3A3A3A;color:#e91e8c;font-size:14px;font-weight:bold;padding:8px'>FashFind — Reporte de Pedidos Quincenales</td></tr>";
+        $out .= "<tr><td colspan='10' style='background:#6b2d8b;color:#e91e8c;font-size:14px;font-weight:bold;padding:8px'>FashFind — Reporte de Pedidos Quincenales</td></tr>";
         $out .= "<tr><td colspan='10' style='padding:4px'>Período: {$inicio_quincena} al {$fin_quincena} &nbsp;|&nbsp; Total: {$total_pedidos} &nbsp;|&nbsp; Por entregar: {$por_entregar} &nbsp;|&nbsp; Entregados: {$entregados} &nbsp;|&nbsp; Cancelados: {$cancelados} &nbsp;|&nbsp; Ingresos: $" . number_format($total_ingresos,0,',','.') . "</td></tr>";
         $out .= "<tr><td colspan='10'></td></tr>";
 
         foreach ($pedidos as $p) {
             $cliente = $p['nombres'] . ' ' . $p['apellidos'];
             $estado  = $p['estado'];
-            $bgEstado = $colorEstado[$estado] ?? '#3A3A3A';
+            $bgEstado = $colorEstado[$estado] ?? '#6b2d8b';
 
             $out .= "<tr style='background:{$bgEstado};color:white;font-weight:bold'>"
                   . "<td colspan='10' style='padding:5px'>Pedido #{$p['id_pedido']} — {$p['fecha_pedido']} {$p['hora_pedido']} — Estado: {$estado} — Cliente: {$cliente} (CC: {$p['cc']})</td>"
@@ -122,7 +122,7 @@ try {
                       . "<td style='text-align:right'>$" . number_format($d['sub_total'], 0,',','.') . "</td>"
                       . "<td colspan='4'></td></tr>";
             }
-            $out .= "<tr style='background:#3A3A3A;color:#e91e8c;font-weight:bold'>"
+            $out .= "<tr style='background:#6b2d8b;color:#e91e8c;font-weight:bold'>"
                   . "<td colspan='5' style='text-align:right;padding:4px'>TOTAL PEDIDO:</td>"
                   . "<td style='text-align:right'>$" . number_format($p['total_pedido'],0,',','.') . "</td>"
                   . "<td colspan='4'></td></tr>";
@@ -152,7 +152,7 @@ try {
         $estado         = htmlspecialchars($p['estado']);
         $total          = '$' . number_format($p['total_pedido'], 0, ',', '.');
         $envio          = '$' . number_format($p['costo_envio'],  0, ',', '.');
-        $bgEstado       = $colorEstado[$p['estado']] ?? '#3A3A3A';
+        $bgEstado       = $colorEstado[$p['estado']] ?? '#6b2d8b';
 
         $filas_productos = '';
         foreach ($p['detalles'] as $i => $d) {
@@ -200,12 +200,12 @@ try {
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
   body{font-family:Arial,sans-serif;font-size:12px;color:#333}
-  .header{background:#3A3A3A;color:white;padding:20px 24px;display:flex;justify-content:space-between;align-items:center}
+  .header{background:#6b2d8b;color:white;padding:20px 24px;display:flex;justify-content:space-between;align-items:center}
   .header-titulo{color:#e91e8c;font-size:22px;font-weight:bold}
   .header-sub{color:#ccc;font-size:11px;margin-top:4px}
   .header-fecha{color:#aaa;font-size:10px}
   .resumen{background:#f5f5f5;margin:16px;padding:14px;border-radius:4px;display:flex;flex-wrap:wrap;gap:24px}
-  .resumen-item label{font-weight:bold;font-size:10px;color:#3A3A3A;display:block}
+  .resumen-item label{font-weight:bold;font-size:10px;color:#6b2d8b;display:block}
   .resumen-item span{font-size:11px;color:#555}
   .pedido-bloque{margin:0 16px 18px 16px;border:1px solid #eee;border-radius:4px;overflow:hidden}
   .pedido-header{background:#e91e8c;color:white;padding:7px 12px;display:flex;justify-content:space-between;align-items:center;font-weight:bold;font-size:11px;gap:8px}
@@ -216,9 +216,9 @@ try {
   .tabla-productos thead tr{background:#dcdcdc}
   .tabla-productos th{padding:5px 8px;text-align:left;font-size:9px;color:#282828}
   .tabla-productos td{padding:5px 8px;border-bottom:1px solid #f0f0f0}
-  .pedido-total{background:#3A3A3A;color:white;padding:6px 12px;text-align:right;font-size:11px}
+  .pedido-total{background:#6b2d8b;color:white;padding:6px 12px;text-align:right;font-size:11px}
   .pedido-total strong{color:#e91e8c}
-  .footer{background:#3A3A3A;color:#aaa;text-align:center;padding:10px;font-size:9px;margin-top:20px}
+  .footer{background:#6b2d8b;color:#aaa;text-align:center;padding:10px;font-size:9px;margin-top:20px}
   @media print{.pedido-bloque{page-break-inside:avoid}}
 </style>
 </head>

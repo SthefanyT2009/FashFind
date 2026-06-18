@@ -84,7 +84,7 @@ try {
         $out  = "<table border='1' style='border-collapse:collapse;font-family:Arial;font-size:11px'>";
 
         // Encabezado
-        $out .= "<tr><td colspan='9' style='background:#3A3A3A;color:#e91e8c;font-size:14px;font-weight:bold;padding:8px'>FashFind — Reporte de Ventas Quincenales</td></tr>";
+        $out .= "<tr><td colspan='9' style='background:#6b2d8b;color:#e91e8c;font-size:14px;font-weight:bold;padding:8px'>FashFind — Reporte de Ventas Quincenales</td></tr>";
         $out .= "<tr><td colspan='9' style='padding:4px'>Período: {$inicio_quincena} al {$fin_quincena} &nbsp;|&nbsp; Total ventas: {$total_ventas} &nbsp;|&nbsp; Total ingresos: $" . number_format($total_ingresos, 0, ',', '.') . "</td></tr>";
         $out .= "<tr><td colspan='9'></td></tr>";
 
@@ -110,7 +110,7 @@ try {
                       . "<td colspan='3'></td></tr>";
             }
             // Total venta
-            $out .= "<tr style='background:#3A3A3A;color:#e91e8c;font-weight:bold'>"
+            $out .= "<tr style='background:#6b2d8b;color:#e91e8c;font-weight:bold'>"
                   . "<td colspan='5' style='text-align:right;padding:4px'>TOTAL VENTA:</td>"
                   . "<td style='text-align:right'>$" . number_format($v['costo_total'],0,',','.') . "</td>"
                   . "<td colspan='3'></td></tr>";
@@ -179,12 +179,12 @@ try {
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
   body{font-family:Arial,sans-serif;font-size:12px;color:#333}
-  .header{background:#3A3A3A;color:white;padding:20px 24px;display:flex;justify-content:space-between;align-items:center}
+  .header{background:#6b2d8b;color:white;padding:20px 24px;display:flex;justify-content:space-between;align-items:center}
   .header-titulo{color:#e91e8c;font-size:22px;font-weight:bold}
   .header-sub{color:#ccc;font-size:11px;margin-top:4px}
   .header-fecha{color:#aaa;font-size:10px}
   .resumen{background:#f5f5f5;margin:16px;padding:14px;border-radius:4px;display:flex;gap:40px}
-  .resumen-item label{font-weight:bold;font-size:10px;color:#3A3A3A;display:block}
+  .resumen-item label{font-weight:bold;font-size:10px;color:#6b2d8b;display:block}
   .resumen-item span{font-size:11px;color:#555}
   .venta-bloque{margin:0 16px 18px 16px;border:1px solid #eee;border-radius:4px;overflow:hidden}
   .venta-header{background:#e91e8c;color:white;padding:7px 12px;display:flex;justify-content:space-between;font-weight:bold;font-size:11px}
@@ -194,9 +194,9 @@ try {
   .tabla-productos thead tr{background:#dcdcdc}
   .tabla-productos th{padding:5px 8px;text-align:left;font-size:9px;color:#282828}
   .tabla-productos td{padding:5px 8px;border-bottom:1px solid #f0f0f0}
-  .venta-total{background:#3A3A3A;color:white;padding:6px 12px;text-align:right;font-size:11px}
+  .venta-total{background:#6b2d8b;color:white;padding:6px 12px;text-align:right;font-size:11px}
   .venta-total strong{color:#e91e8c}
-  .footer{background:#3A3A3A;color:#aaa;text-align:center;padding:10px;font-size:9px;margin-top:20px}
+  .footer{background:#6b2d8b;color:#aaa;text-align:center;padding:10px;font-size:9px;margin-top:20px}
   @media print{.venta-bloque{page-break-inside:avoid}}
 </style>
 </head>
