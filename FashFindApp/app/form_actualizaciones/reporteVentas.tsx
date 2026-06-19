@@ -1,25 +1,26 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
-  View, Text, TouchableOpacity, StyleSheet, Platform, ScrollView, ImageBackground,
+  View, Text, TouchableOpacity, StyleSheet, Platform, ScrollView, ImageBackground, ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { descargarReporte } from '../reportService';
 
 const ACCENT = '#e91e8c';
 const DARK   = '#6b2d8b';
 const GREEN  = '#27ae60';
 
-const API_BASE = Platform.OS === 'web'
-  ? 'http://localhost/FashFind/api'
-  : 'http://192.168.0.7/FashFind/api';
-
 export default function ReporteVentas() {
   const router = useRouter();
+  const [cargando, setCargando] = useState(false);
 
-  const abrir = (formato: 'pdf' | 'excel') => {
-    if (Platform.OS === 'web') {
-      window.open(`${API_BASE}/reporteVentas.php?formato=${formato}`, '_blank');
+  const manejarDescarga = async (formato: 'pdf' | 'excel') => {
+    setCargando(true);
+    try {
+      await descargarReporte('reporteVentas.php', formato, 'Reporte_Ventas');
+    } finally {
+      setCargando(false);
     }
   };
 
@@ -32,7 +33,7 @@ export default function ReporteVentas() {
       >
         <SafeAreaView style={styles.container}>
           <View style={styles.barraSuperior}>
-            <TouchableOpacity onPress={() => router.back()} style={styles.btnVolver}>
+            <TouchableOpacity onPress={() => router.back()} style={styles.btnVolver} disabled={cargando}>
               <Ionicons name="arrow-back" size={22} color="#fff" />
             </TouchableOpacity>
             <Text style={styles.barraTitulo}>Reporte de Ventas</Text>
@@ -48,20 +49,37 @@ export default function ReporteVentas() {
               </Text>
 
               <View style={styles.botonesGroup}>
-                <TouchableOpacity style={[styles.btn, { backgroundColor: ACCENT }]} onPress={() => abrir('pdf')}>
-                  <Ionicons name="print-outline" size={20} color="#fff" />
-                  <Text style={styles.btnTexto}>Guardar como PDF</Text>
+                <TouchableOpacity 
+                  style={[styles.btn, { backgroundColor: ACCENT, opacity: cargando ? 0.6 : 1 }]} 
+                  onPress={() => manejarDescarga('pdf')}
+                  disabled={cargando}
+                >
+                  {cargando ? (
+                    <ActivityIndicator color="#fff" size="small" />
+                  ) : (
+                    <Ionicons name="print-outline" size={20} color="#fff" />
+                  )}
+                  <Text style={styles.btnTexto}>{cargando ? 'Descargando...' : 'Guardar como PDF'}</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity style={[styles.btn, { backgroundColor: GREEN }]} onPress={() => abrir('excel')}>
-                  <Ionicons name="grid-outline" size={20} color="#fff" />
-                  <Text style={styles.btnTexto}>Descargar Excel</Text>
+                <TouchableOpacity 
+                  style={[styles.btn, { backgroundColor: GREEN, opacity: cargando ? 0.6 : 1 }]} 
+                  onPress={() => manejarDescarga('excel')}
+                  disabled={cargando}
+                >
+                  {cargando ? (
+                    <ActivityIndicator color="#fff" size="small" />
+                  ) : (
+                    <Ionicons name="grid-outline" size={20} color="#fff" />
+                  )}
+                  <Text style={styles.btnTexto}>{cargando ? 'Descargando...' : 'Descargar Excel'}</Text>
                 </TouchableOpacity>
               </View>
 
               <Text style={styles.nota}>
-                PDF: se abrirá una ventana para imprimir o guardar.{'\n'}
-                Excel: se descargará el archivo directamente.
+                {Platform.OS === 'web' 
+                  ? 'PDF: se abrirá una ventana para imprimir o guardar.\nExcel: se descargará el archivo directamente.'
+                  : 'El archivo se descargará y podrás compartirlo o guardarlo en tu dispositivo.'}
               </Text>
             </View>
           </ScrollView>
