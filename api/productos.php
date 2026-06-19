@@ -57,7 +57,7 @@ switch ($method) {
 
         $data = $_POST;
 
-        $requeridos = ['nombre_producto', 'categoria', 'talla', 'color', 'precio'];
+        $requeridos = ['nombre_producto', 'talla', 'color', 'precio'];
 
         foreach ($requeridos as $campo) {
             if (!isset($data[$campo]) || trim($data[$campo]) === '') {
@@ -69,14 +69,13 @@ switch ($method) {
 
         try {
             $stmt = $db->prepare("
-                INSERT INTO Producto (nombre_producto, descripcion, categoria,
+                INSERT INTO Producto (nombre_producto, descripcion,
                                       talla, color, precio, estado)
-                VALUES (?, ?, ?, ?, ?, ?, 'Activo')
+                VALUES (?, ?, ?, ?, ?, 'Activo')
             ");
             $stmt->execute([
                 trim($data['nombre_producto']),
                 isset($data['descripcion']) ? trim($data['descripcion']) : null,
-                trim($data['categoria']),
                 trim($data['talla']),
                 trim($data['color']),
                 (int)$data['precio']
@@ -132,7 +131,7 @@ switch ($method) {
         $data = [];
         parse_str(file_get_contents('php://input'), $data);
 
-        $requeridos = ['nombre_producto', 'categoria', 'talla', 'color', 'precio'];
+        $requeridos = ['nombre_producto', 'talla', 'color', 'precio'];
 
         foreach ($requeridos as $campo) {
             if (!isset($data[$campo]) || trim($data[$campo]) === '') {
@@ -147,7 +146,6 @@ switch ($method) {
                 UPDATE Producto
                 SET nombre_producto = ?,
                     descripcion     = ?,
-                    categoria       = ?,
                     talla           = ?,
                     color           = ?,
                     precio          = ?
@@ -156,7 +154,6 @@ switch ($method) {
             $stmt->execute([
                 trim($data['nombre_producto']),
                 isset($data['descripcion']) ? trim($data['descripcion']) : null,
-                trim($data['categoria']),
                 trim($data['talla']),
                 trim($data['color']),
                 (int)$data['precio'],

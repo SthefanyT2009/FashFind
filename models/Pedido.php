@@ -180,6 +180,23 @@ class Pedido {
 
     public static function actualizar($datos) {
         $db = Database::conectar();
+
+        // Validar que la fecha de entrega no sea anterior a la fecha en que se registró el pedido
+        $stmtFecha = $db->prepare("SELECT fecha_pedido FROM Pedido WHERE id_pedido = ?");
+        $stmtFecha->execute([$datos['id_pedido']]);
+        $pedidoActual = $stmtFecha->fetch(PDO::FETCH_ASSOC);
+
+        if (!$pedidoActual) {
+            return ["success" => false, "mensaje" => "Pedido no encontrado"];
+        }
+
+        if ($datos['fecha_entrega'] < $pedidoActual['fecha_pedido']) {
+            return [
+                "success" => false,
+                "mensaje" => "La fecha de entrega no puede ser anterior a la fecha del pedido (" . $pedidoActual['fecha_pedido'] . ")"
+            ];
+        }
+
         $stmt = $db->prepare("
             UPDATE Pedido
             SET

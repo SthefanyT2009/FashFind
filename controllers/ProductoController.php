@@ -29,7 +29,6 @@ class ProductoController {
             $datos = [
                 'nombre_producto' => $_POST['nombre_producto'],
                 'descripcion'     => $_POST['descripcion'] ?? null,
-                'categoria'       => $_POST['categoria'],
                 'talla'           => $_POST['talla'],
                 'color'           => $_POST['color'],
                 'precio'          => $_POST['precio'],
@@ -63,7 +62,6 @@ class ProductoController {
             $datos = [
                 'nombre_producto' => $_POST['nombre_producto'],
                 'descripcion'     => $_POST['descripcion'] ?? null,
-                'categoria'       => $_POST['categoria'],
                 'talla'           => $_POST['talla'],
                 'color'           => $_POST['color'],
                 'precio'          => $_POST['precio'],

@@ -29,14 +29,13 @@ class Producto {
 
         try {
             $stmt = $db->prepare("
-                INSERT INTO Producto (nombre_producto, descripcion, categoria,
+                INSERT INTO Producto (nombre_producto, descripcion,
                                       talla, color, precio, estado)
-                VALUES (?, ?, ?, ?, ?, ?, 'Activo')
+                VALUES (?, ?, ?, ?, ?, 'Activo')
             ");
             $stmt->execute([
                 $datos['nombre_producto'],
                 $datos['descripcion'],
-                $datos['categoria'],
                 $datos['talla'],
                 $datos['color'],
                 $datos['precio']
@@ -56,7 +55,6 @@ class Producto {
                 UPDATE Producto
                 SET nombre_producto = ?,
                     descripcion     = ?,
-                    categoria       = ?,
                     talla           = ?,
                     color           = ?,
                     precio          = ?
@@ -65,7 +63,6 @@ class Producto {
             $stmt->execute([
                 $datos['nombre_producto'],
                 $datos['descripcion'],
-                $datos['categoria'],
                 $datos['talla'],
                 $datos['color'],
                 $datos['precio'],
@@ -88,18 +85,6 @@ class Producto {
         $stmt = Database::conectar()
             ->prepare("UPDATE Producto SET estado = 'Activo' WHERE id_producto = ?");
         return $stmt->execute([$id]);
-    }
-
-    // ─── HELPERS ──────────────────────────────────────────────────────────────
-
-    public static function obtenerCategorias() {
-        return Database::conectar()
-            ->query("
-                SELECT DISTINCT categoria
-                FROM Producto
-                ORDER BY categoria ASC
-            ")
-            ->fetchAll(PDO::FETCH_ASSOC);
     }
 }
 ?>

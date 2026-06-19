@@ -6,7 +6,7 @@ class Inventario {
     public static function obtenerTodos() {
         return Database::conectar()
             ->query("
-                SELECT i.*, p.nombre_producto, p.categoria, p.talla, p.color, p.precio
+                SELECT i.*, p.nombre_producto, p.talla, p.color, p.precio
                 FROM Inventario i
                 INNER JOIN Producto p ON i.id_producto = p.id_producto
                 WHERE p.estado = 'Activo' AND i.estado = 'Activo'
@@ -18,7 +18,7 @@ class Inventario {
     public static function obtenerPorId($id) {
         $stmt = Database::conectar()
             ->prepare("
-                SELECT i.*, p.nombre_producto, p.categoria, p.talla, p.color, p.precio
+                SELECT i.*, p.nombre_producto, p.talla, p.color, p.precio
                 FROM Inventario i
                 INNER JOIN Producto p ON i.id_producto = p.id_producto
                 WHERE i.id_inventario = ?

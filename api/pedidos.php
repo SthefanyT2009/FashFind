@@ -126,8 +126,8 @@ switch ($method) {
         if ($resultado['success']) {
             echo json_encode(["success" => true, "mensaje" => "Pedido actualizado correctamente"]);
         } else {
-            http_response_code(500);
-            echo json_encode(["success" => false, "mensaje" => "Error al actualizar el pedido"]);
+            http_response_code(400);
+            echo json_encode(["success" => false, "mensaje" => $resultado['mensaje'] ?? "Error al actualizar el pedido"]);
         }
         break;
 

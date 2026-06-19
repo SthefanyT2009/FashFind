@@ -24,7 +24,7 @@ switch ($method) {
 
         if ($id) {
             $stmt = $db->prepare("
-                SELECT i.*, p.nombre_producto, p.categoria, p.talla, p.color, p.precio
+                SELECT i.*, p.nombre_producto, p.talla, p.color, p.precio
                 FROM Inventario i
                 INNER JOIN Producto p ON i.id_producto = p.id_producto
                 WHERE i.id_inventario = ?
@@ -42,7 +42,7 @@ switch ($method) {
 
         } else {
             $inventarios = $db->query("
-                SELECT i.*, p.nombre_producto, p.categoria, p.talla, p.color, p.precio
+                SELECT i.*, p.nombre_producto, p.talla, p.color, p.precio
                 FROM Inventario i
                 INNER JOIN Producto p ON i.id_producto = p.id_producto
                 ORDER BY i.id_inventario DESC

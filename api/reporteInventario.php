@@ -15,7 +15,7 @@ try {
     // Todos los inventarios activos
     $sqlInventarios = "
         SELECT i.id_inventario, i.stock_disponible, i.stock_minimo, i.estado,
-               p.id_producto, p.nombre_producto, p.categoria, p.talla, p.color
+               p.id_producto, p.nombre_producto, p.talla, p.color
         FROM Inventario i
         INNER JOIN Producto p ON i.id_producto = p.id_producto
         WHERE i.estado = 'Activo'
@@ -60,7 +60,7 @@ try {
         // Cabecera columnas
         $out .= "<tr style='background:#dcdcdc;font-weight:bold'>"
               . "<td style='padding:4px'>ID Inv.</td><td>Producto</td><td>ID Prod.</td>"
-              . "<td>Categoría</td><td>Talla</td><td>Color</td>"
+              . "<td>Talla</td><td>Color</td>"
               . "<td style='text-align:center'>Stock Disp.</td><td style='text-align:center'>Stock Mín.</td>"
               . "<td style='text-align:center'>Estado</td></tr>";
 
@@ -71,7 +71,6 @@ try {
                   . "<td style='padding:4px'>" . htmlspecialchars($inv['id_inventario']) . "</td>"
                   . "<td>" . htmlspecialchars($inv['nombre_producto']) . "</td>"
                   . "<td style='text-align:center'>" . htmlspecialchars($inv['id_producto']) . "</td>"
-                  . "<td>" . htmlspecialchars($inv['categoria']) . "</td>"
                   . "<td style='text-align:center'>" . htmlspecialchars($inv['talla']) . "</td>"
                   . "<td style='text-align:center'>" . htmlspecialchars($inv['color']) . "</td>"
                   . "<td style='text-align:center;font-weight:bold'>" . htmlspecialchars($inv['stock_disponible']) . "</td>"
@@ -91,7 +90,6 @@ try {
     $filas_inventarios = '';
     foreach ($inventarios as $inv) {
         $nombre_producto = htmlspecialchars($inv['nombre_producto']);
-        $categoria       = htmlspecialchars($inv['categoria']);
         $talla           = htmlspecialchars($inv['talla']);
         $color           = htmlspecialchars($inv['color']);
         $estado          = htmlspecialchars($inv['estado']);
@@ -105,7 +103,7 @@ try {
             </div>
             <div class='inventario-info'>
                 <p><strong>Producto:</strong> {$nombre_producto} &nbsp;|&nbsp; <strong>ID Producto:</strong> {$inv['id_producto']}</p>
-                <p><strong>Categoría:</strong> {$categoria} &nbsp;|&nbsp; <strong>Talla:</strong> {$talla} &nbsp;|&nbsp; <strong>Color:</strong> {$color}</p>
+                <p><strong>Talla:</strong> {$talla} &nbsp;|&nbsp; <strong>Color:</strong> {$color}</p>
             </div>
             <div class='inventario-stock'>
                 <div class='stock-item'>
