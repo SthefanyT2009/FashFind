@@ -6,7 +6,7 @@ $db   = "Fash_Find";
 $user = "root";
 $pass = "";
 
-$formato = $_GET['formato'] ?? 'pdf'; // pdf | excel
+$formato = $_GET['formato'] ?? 'pdf'; // pdf | excel | json
 
 try {
     $pdo = new PDO("mysql:host=$host;dbname=$db;charset=utf8", $user, $pass);
@@ -72,6 +72,19 @@ try {
     $total_ingresos = array_sum(array_column($ventas, 'costo_total'));
     $fechaHoy       = (new DateTime())->format('d/m/Y');
     $nombreArchivo  = 'reporte_ventas_' . str_replace('-', '', $inicio_quincena);
+
+    // ── JSON (para la app móvil) ─────────────────────────────────
+    if ($formato === 'json') {
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode([
+            'inicio_quincena' => $inicio_quincena,
+            'fin_quincena'    => $fin_quincena,
+            'total_ventas'    => $total_ventas,
+            'total_ingresos'  => $total_ingresos,
+            'ventas'          => $ventas,
+        ], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
 
     // ── EXCEL ────────────────────────────────────────────────────
     if ($formato === 'excel') {

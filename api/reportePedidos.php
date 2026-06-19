@@ -6,7 +6,7 @@ $db   = "Fash_Find";
 $user = "root";
 $pass = "";
 
-$formato = $_GET['formato'] ?? 'pdf'; // pdf | excel
+$formato = $_GET['formato'] ?? 'pdf'; // pdf | excel | json
 
 try {
     $pdo = new PDO("mysql:host=$host;dbname=$db;charset=utf8", $user, $pass);
@@ -83,6 +83,22 @@ try {
         'Cancelado'    => '#e74c3c',
     ];
 
+    // ── JSON (para la app móvil) ─────────────────────────────────
+    if ($formato === 'json') {
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode([
+            'inicio_quincena' => $inicio_quincena,
+            'fin_quincena'    => $fin_quincena,
+            'total_pedidos'   => $total_pedidos,
+            'por_entregar'    => $por_entregar,
+            'entregados'      => $entregados,
+            'cancelados'      => $cancelados,
+            'total_ingresos'  => $total_ingresos,
+            'pedidos'         => $pedidos,
+        ], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
     // ── EXCEL ────────────────────────────────────────────────────
     if ($formato === 'excel') {
         header('Content-Type: application/vnd.ms-excel; charset=utf-8');
@@ -97,8 +113,8 @@ try {
         $out .= "<tr><td colspan='10'></td></tr>";
 
         foreach ($pedidos as $p) {
-            $cliente = $p['nombres'] . ' ' . $p['apellidos'];
-            $estado  = $p['estado'];
+            $cliente  = $p['nombres'] . ' ' . $p['apellidos'];
+            $estado   = $p['estado'];
             $bgEstado = $colorEstado[$estado] ?? '#6b2d8b';
 
             $out .= "<tr style='background:{$bgEstado};color:white;font-weight:bold'>"
@@ -246,3 +262,4 @@ try {
 } catch (PDOException $e) {
     echo "<p style='color:red'>Error: " . $e->getMessage() . "</p>";
 }
+?>

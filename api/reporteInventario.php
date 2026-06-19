@@ -6,7 +6,7 @@ $db   = "Fash_Find";
 $user = "root";
 $pass = "";
 
-$formato = $_GET['formato'] ?? 'pdf'; // pdf | excel
+$formato = $_GET['formato'] ?? 'pdf'; // pdf | excel | json
 
 try {
     $pdo = new PDO("mysql:host=$host;dbname=$db;charset=utf8", $user, $pass);
@@ -29,6 +29,18 @@ try {
     $stock_total       = array_sum(array_column($inventarios, 'stock_disponible'));
     $fechaHoy          = (new DateTime())->format('d/m/Y');
     $nombreArchivo     = 'reporte_inventario_' . date('Y-m-d');
+
+    // ── JSON (para la app móvil) ─────────────────────────────────
+    if ($formato === 'json') {
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode([
+            'fecha_generacion'  => $fechaHoy,
+            'total_inventarios' => $total_inventarios,
+            'stock_total'       => $stock_total,
+            'inventarios'       => $inventarios,
+        ], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
 
     // ── EXCEL ────────────────────────────────────────────────────
     if ($formato === 'excel') {
