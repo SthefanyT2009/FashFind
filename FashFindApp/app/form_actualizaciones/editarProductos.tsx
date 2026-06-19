@@ -12,7 +12,7 @@ const DARK   = '#3A3A3A';
 const BORDER = '#000';
 const ERROR  = '#e74c3c';
 
-const API_BASE = 'http://192.168.1.7/FashFind/api';
+const API_BASE = 'http://172.30.4.210/FashFind/api';
 
 const mostrarAlerta = (titulo: string, mensaje: string, onOk?: () => void) => {
   if (Platform.OS === 'web') {
@@ -23,7 +23,7 @@ const mostrarAlerta = (titulo: string, mensaje: string, onOk?: () => void) => {
   }
 };
 
-// ── Reglas de validación ───────────────────────────────────────────────────
+// Reglas de validación
 const SOLO_LETRAS  = /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/;
 const SOLO_ALFANUM = /^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ\s]+$/;
 const SOLO_NUMEROS = /^\d+$/;
@@ -31,7 +31,6 @@ const SOLO_NUMEROS = /^\d+$/;
 interface Errores {
   nombreProducto?:  string;
   descripcion?:     string;
-  categoria?:       string;
   talla?:           string;
   color?:           string;
   precio?:          string;
@@ -40,7 +39,6 @@ interface Errores {
 function validarCampos(
   nombreProducto:  string,
   descripcion:     string,
-  categoria:       string,
   talla:           string,
   color:           string,
   precio:          string,
@@ -63,16 +61,6 @@ function validarCampos(
     } else if (descripcion.trim().length > 200) {
       e.descripcion = 'Máximo 200 caracteres.';
     }
-  }
-
-  if (!categoria.trim()) {
-    e.categoria = 'La categoría es obligatoria.';
-  } else if (!SOLO_LETRAS.test(categoria.trim())) {
-    e.categoria = 'Solo se permiten letras y espacios.';
-  } else if (categoria.trim().length < 3) {
-    e.categoria = 'Mínimo 3 caracteres.';
-  } else if (categoria.trim().length > 50) {
-    e.categoria = 'Máximo 50 caracteres.';
   }
 
   if (!talla.trim()) {
@@ -114,7 +102,6 @@ export default function EditarProductos() {
 
   const [nombreProducto,  setNombreProducto]  = useState('');
   const [descripcion,     setDescripcion]     = useState('');
-  const [categoria,       setCategoria]       = useState('');
   const [talla,           setTalla]           = useState('');
   const [color,           setColor]           = useState('');
   const [precio,          setPrecio]          = useState('');
@@ -135,7 +122,6 @@ export default function EditarProductos() {
         const p = json.data;
         setNombreProducto(p.nombre_producto ?? '');
         setDescripcion(p.descripcion       ?? '');
-        setCategoria(p.categoria           ?? '');
         setTalla(p.talla                   ?? '');
         setColor(p.color                   ?? '');
         setPrecio(String(p.precio          ?? ''));
@@ -179,7 +165,7 @@ export default function EditarProductos() {
 
   const guardarCambios = async () => {
     const errs = validarCampos(
-      nombreProducto, descripcion, categoria,
+      nombreProducto, descripcion,
       talla, color, precio,
     );
     if (Object.keys(errs).length > 0) {
@@ -193,7 +179,6 @@ export default function EditarProductos() {
       const params = new URLSearchParams();
       params.append('nombre_producto', nombreProducto.trim());
       params.append('descripcion', descripcion.trim());
-      params.append('categoria', categoria.trim());
       params.append('talla', talla.trim());
       params.append('color', color.trim());
       params.append('precio', precio.trim());
@@ -272,20 +257,6 @@ export default function EditarProductos() {
                 />
                 <Text style={s.counter}>{descripcion.length}/200</Text>
                 {errores.descripcion && <Text style={s.errorText}>{errores.descripcion}</Text>}
-              </View>
-
-              {/* Categoría */}
-              <View style={s.inputGroup}>
-                <Text style={s.label}>Categoría *</Text>
-                <TextInput
-                  style={[s.inputLine, errores.categoria && s.inputError]}
-                  value={categoria}
-                  onChangeText={handleLetras(setCategoria, 'categoria')}
-                  placeholder=""
-                  placeholderTextColor="#bbb"
-                  maxLength={50}
-                />
-                {errores.categoria && <Text style={s.errorText}>{errores.categoria}</Text>}
               </View>
 
               {/* Talla */}

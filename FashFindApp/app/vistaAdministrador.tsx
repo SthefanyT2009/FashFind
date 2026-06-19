@@ -27,7 +27,7 @@ const SIDEBAR_WIDTH = 220;
 
 const ES_WEB_ESCRITORIO = Platform.OS === 'web' && width >= 768;
 
-const API_BASE = Platform.OS === 'web' ? 'http://localhost/FashFind/api' : 'http://192.168.1.7/FashFind/api';
+const API_BASE = Platform.OS === 'web' ? 'http://localhost/FashFind/api' : 'http://172.30.4.210/FashFind/api';
 
 const mostrarAlerta = (titulo: string, mensaje: string, onOk?: () => void) => {
   if (Platform.OS === 'web') {
@@ -45,7 +45,7 @@ const columnasPorSeccion: Record<Seccion, string[]> = {
   usuario: ['Id Usuario', 'CC', 'Nombre Usuario', 'Contraseña', 'Nombres', 'Apellidos', 'Teléfono', 'Correo', 'Dirección', 'Género', 'Fecha Nacimiento', 'Fecha Registro', 'Cargo', 'Estado', 'Acciones'],
   venta: [],
   pedido: [],
-  producto: ['Id Producto', 'Imagen', 'Nombre Producto', 'Descripción', 'Categoría', 'Talla', 'Color', 'Precio', 'Estado', 'Acciones'],
+  producto: ['Id Producto', 'Imagen', 'Nombre Producto', 'Descripción', 'Talla', 'Color', 'Precio', 'Estado', 'Acciones'],
   inventario: ['Id Inventario', 'Stock Disponible', 'Stock Mínimo', 'Id Producto', 'Acciones'],
 };
 
@@ -171,13 +171,11 @@ export default function VistaAdministrador() {
   const [filtroPedidoFechaHasta,  setFiltroPedidoFechaHasta]  = useState('');
 
   // Filtros productos
-  const [filtroProductoCategoria, setFiltroProductoCategoria] = useState('');
   const [filtroProductoColor,     setFiltroProductoColor]     = useState('');
   const [filtroProductoTalla,     setFiltroProductoTalla]     = useState('');
   const [filtroProductoEstado,    setFiltroProductoEstado]    = useState('');
 
   // Filtros inventario
-  const [filtroInventarioCategoria,   setFiltroInventarioCategoria]   = useState('');
   const [filtroInventarioTalla,       setFiltroInventarioTalla]       = useState('');
   const [filtroInventarioColor,       setFiltroInventarioColor]       = useState('');
   const [filtroInventarioEstadoStock, setFiltroInventarioEstadoStock] = useState('');
@@ -415,13 +413,11 @@ export default function VistaAdministrador() {
       (prod.id_producto && String(prod.id_producto).includes(q)) ||
       (prod.nombre_producto && String(prod.nombre_producto).toLowerCase().includes(q)) ||
       (prod.descripcion && String(prod.descripcion).toLowerCase().includes(q)) ||
-      (prod.categoria && String(prod.categoria).toLowerCase().includes(q)) ||
       (prod.talla && String(prod.talla).toLowerCase().includes(q)) ||
       (prod.color && String(prod.color).toLowerCase().includes(q)) ||
       (prod.precio && String(prod.precio).includes(q)) ||
       (prod.estado && String(prod.estado).toLowerCase().includes(q))
     )) return false;
-    if (filtroProductoCategoria && prod.categoria !== filtroProductoCategoria) return false;
     if (filtroProductoTalla     && prod.talla     !== filtroProductoTalla)     return false;
     if (filtroProductoColor     && !String(prod.color ?? '').toLowerCase().includes(filtroProductoColor.toLowerCase())) return false;
     if (filtroProductoEstado    && prod.estado    !== filtroProductoEstado)    return false;
@@ -437,7 +433,6 @@ export default function VistaAdministrador() {
       (inv.id_producto && String(inv.id_producto).includes(q)) ||
       (inv.nombre_producto && String(inv.nombre_producto).toLowerCase().includes(q))
     )) return false;
-    if (filtroInventarioCategoria && inv.categoria !== filtroInventarioCategoria) return false;
     if (filtroInventarioTalla     && inv.talla     !== filtroInventarioTalla)     return false;
     if (filtroInventarioColor     && !String(inv.color ?? '').toLowerCase().includes(filtroInventarioColor.toLowerCase())) return false;
     if (filtroInventarioEstadoStock) {
@@ -462,9 +457,9 @@ export default function VistaAdministrador() {
     setFiltroVentaFechaDesde(''); setFiltroVentaFechaHasta('');
     setFiltroPedidoEstado(''); setFiltroPedidoTipoEntrega('');
     setFiltroPedidoCiudad(''); setFiltroPedidoFechaDesde(''); setFiltroPedidoFechaHasta('');
-    setFiltroProductoCategoria(''); setFiltroProductoColor('');
+    setFiltroProductoColor('');
     setFiltroProductoTalla(''); setFiltroProductoEstado('');
-    setFiltroInventarioCategoria(''); setFiltroInventarioTalla('');
+    setFiltroInventarioTalla('');
     setFiltroInventarioColor(''); setFiltroInventarioEstadoStock('');
   };
 
@@ -476,9 +471,9 @@ export default function VistaAdministrador() {
     if (seccionActiva === 'pedido')
       return !!(filtroPedidoEstado || filtroPedidoTipoEntrega || filtroPedidoCiudad || filtroPedidoFechaDesde || filtroPedidoFechaHasta);
     if (seccionActiva === 'producto')
-      return !!(filtroProductoCategoria || filtroProductoColor || filtroProductoTalla || filtroProductoEstado);
+      return !!(filtroProductoColor || filtroProductoTalla || filtroProductoEstado);
     if (seccionActiva === 'inventario')
-      return !!(filtroInventarioCategoria || filtroInventarioTalla || filtroInventarioColor || filtroInventarioEstadoStock);
+      return !!(filtroInventarioTalla || filtroInventarioColor || filtroInventarioEstadoStock);
     return false;
   };
 
@@ -887,12 +882,6 @@ export default function VistaAdministrador() {
                 {/* Productos */}
                 {seccionActiva === 'producto' && (
                   <>
-                    <Text style={styles.filtroGrupoTitulo}>Categoría</Text>
-                    <View style={styles.chipsRow}>
-                      {['', 'Camisas', 'Pantalones', 'Chaquetas', 'Camisetas', 'Vestidos', 'Sudaderas', 'Shorts', 'Blusas', 'Faldas'].map(v => (
-                        <Chip key={v} label={v || 'Todas'} activo={filtroProductoCategoria === v} onPress={() => setFiltroProductoCategoria(v)} />
-                      ))}
-                    </View>
                     <Text style={styles.filtroGrupoTitulo}>Talla</Text>
                     <View style={styles.chipsRow}>
                       {['', 'XS', 'S', 'M', 'L', 'XL', '6', '8', '10', '12', '14', '16', '18', '20', '22', '24', '26', '28', '30', '32', '34', '36', '38', '40', '42', '44'].map(v => (
@@ -913,12 +902,6 @@ export default function VistaAdministrador() {
                 {/* Inventario */}
                 {seccionActiva === 'inventario' && (
                   <>
-                    <Text style={styles.filtroGrupoTitulo}>Categoría</Text>
-                    <View style={styles.chipsRow}>
-                      {['', 'Camisas', 'Pantalones', 'Chaquetas', 'Camisetas', 'Vestidos', 'Sudaderas', 'Shorts', 'Blusas', 'Faldas'].map(v => (
-                        <Chip key={v} label={v || 'Todas'} activo={filtroInventarioCategoria === v} onPress={() => setFiltroInventarioCategoria(v)} />
-                      ))}
-                    </View>
                     <Text style={styles.filtroGrupoTitulo}>Estado de stock</Text>
                     <View style={styles.chipsRow}>
                       {['', 'Bajo Stock', 'Normal', 'Sobrestock'].map(v => (
@@ -1176,7 +1159,6 @@ export default function VistaAdministrador() {
                       <View style={styles.ventaCardInfo}>
                         <Text style={styles.ventaCardTxt}><Text style={{ fontWeight: 'bold' }}>Nombre:</Text> {prod.nombre_producto}</Text>
                         <Text style={styles.ventaCardTxt}><Text style={{ fontWeight: 'bold' }}>Descripción:</Text> {prod.descripcion || 'N/A'}</Text>
-                        <Text style={styles.ventaCardTxt}><Text style={{ fontWeight: 'bold' }}>Categoría:</Text> {prod.categoria}</Text>
                         <Text style={styles.ventaCardTxt}><Text style={{ fontWeight: 'bold' }}>Talla:</Text> {prod.talla}  |  <Text style={{ fontWeight: 'bold' }}>Color:</Text> {prod.color}</Text>
                         <Text style={styles.ventaCardTxt}><Text style={{ fontWeight: 'bold' }}>Precio:</Text> ${Number(prod.precio).toLocaleString('es-CO')}</Text>
                       </View>

@@ -6,11 +6,10 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import DateTimePicker from '@react-native-community/datetimepicker';
 
 const ACCENT = '#e91e8c';
 const DARK   = '#3A3A3A';
-const API_BASE = 'http://192.168.1.7/FashFind/api';
+const API_BASE = 'http://172.30.4.210/FashFind/api';
 
 const CARGOS = ['Administrador', 'Vendedor', 'Domiciliario', 'Cliente'];
 const ESTADOS = ['Activo', 'Inactivo'];
@@ -20,7 +19,6 @@ export default function EditarUsuario() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [cargando, setCargando] = useState(false);
   const [cargandoDatos, setCargandoDatos] = useState(true);
-  const [mostrarDatePicker, setMostrarDatePicker] = useState(false);
 
   const [form, setForm] = useState({
     cc: '',
@@ -109,12 +107,6 @@ export default function EditarUsuario() {
     setForm({...form, [campo]: soloNumeros});
   };
 
-  // Función para manejar cambios en nombres/apellidos (solo letras)
-  const manejarCambioTexto = (campo: string, valor: string) => {
-    const soloLetras = valor.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '');
-    setForm({...form, [campo]: soloLetras});
-  };
-
   if (cargandoDatos) return <ActivityIndicator size="large" color={ACCENT} style={{marginTop: 50}} />;
 
   return (
@@ -129,23 +121,18 @@ export default function EditarUsuario() {
               <Text style={s.title}>Editar Usuario</Text>
 
               <Text style={s.label}>Cédula (No editable)</Text>
-              <TextInput style={[s.input, {color: '#888'}]} value={form.cc} editable={false} />
-
-              <Text style={s.label}>Nombres</Text>
-              <TextInput 
-                style={s.input} 
-                value={form.nombres} 
-                onChangeText={v => manejarCambioTexto('nombres', v)}
-                placeholder="Solo letras"
+              <TextInput
+                style={[s.input, {color: '#888'}]}
+                value={form.cc !== undefined && form.cc !== null ? String(form.cc) : ''}
+                editable={false}
+                placeholder="Sin cédula"
               />
 
-              <Text style={s.label}>Apellidos</Text>
-              <TextInput 
-                style={s.input} 
-                value={form.apellidos} 
-                onChangeText={v => manejarCambioTexto('apellidos', v)}
-                placeholder="Solo letras"
-              />
+              <Text style={s.label}>Nombres (No editable)</Text>
+              <TextInput style={[s.input, {color: '#888'}]} value={form.nombres} editable={false} />
+
+              <Text style={s.label}>Apellidos (No editable)</Text>
+              <TextInput style={[s.input, {color: '#888'}]} value={form.apellidos} editable={false} />
 
               <Text style={s.label}>Correo Electrónico</Text>
               <TextInput 
@@ -160,7 +147,7 @@ export default function EditarUsuario() {
               <Text style={s.label}>Teléfono</Text>
               <TextInput 
                 style={s.input} 
-                value={form.telefono} 
+                value={form.telefono !== undefined && form.telefono !== null ? String(form.telefono) : ''} 
                 onChangeText={v => manejarCambioNumerico('telefono', v)}
                 keyboardType="numeric"
                 maxLength={10}
@@ -201,14 +188,12 @@ export default function EditarUsuario() {
                 ))}
               </View>
 
-              <Text style={s.label}>Fecha Nacimiento</Text>
-              {Platform.OS === 'web' ? (
-                <input type="date" style={s.webDate} value={form.fecha_nacimiento} onChange={e => setForm({...form, fecha_nacimiento: e.target.value})} />
-              ) : (
-                <TouchableOpacity style={s.input} onPress={() => setMostrarDatePicker(true)}>
-                  <Text>{form.fecha_nacimiento || 'Seleccionar...'}</Text>
-                </TouchableOpacity>
-              )}
+              <Text style={s.label}>Fecha Nacimiento (No editable)</Text>
+              <TextInput
+                style={[s.input, {color: '#888'}]}
+                value={form.fecha_nacimiento}
+                editable={false}
+              />
 
               <TouchableOpacity style={s.btn} onPress={guardar} disabled={cargando}>
                 {cargando ? <ActivityIndicator color="#fff" /> : <Text style={s.btnText}>Guardar Cambios</Text>}
@@ -218,16 +203,6 @@ export default function EditarUsuario() {
         </SafeAreaView>
       </ImageBackground>
 
-      {mostrarDatePicker && Platform.OS !== 'web' && (
-        <DateTimePicker
-          value={form.fecha_nacimiento ? new Date(form.fecha_nacimiento + 'T12:00:00') : new Date()}
-          mode="date"
-          onChange={(e, d) => {
-            setMostrarDatePicker(false);
-            if (d) setForm({...form, fecha_nacimiento: d.toISOString().split('T')[0]});
-          }}
-        />
-      )}
     </View>
   );
 }

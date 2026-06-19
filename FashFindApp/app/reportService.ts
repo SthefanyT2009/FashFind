@@ -16,7 +16,7 @@ import * as XLSX from 'xlsx';
 // ─── URL base según plataforma ────────────────────────────────────────────────
 const BASE_URL = Platform.OS === 'web'
   ? 'http://localhost/FashFind/api'
-  : 'http://192.168.1.7/FashFind/api';
+  : 'http://172.30.4.210/FashFind/api';
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 interface DetalleVenta {

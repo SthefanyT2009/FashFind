@@ -12,7 +12,7 @@ const ACCENT = '#e91e8c';
 const DARK   = '#3A3A3A';
 const BORDER = '#000';
 
-const API_BASE = 'http://192.168.1.7/FashFind/api';
+const API_BASE = 'http://172.30.4.210/FashFind/api';
 
 const mostrarAlerta = (titulo: string, mensaje: string, onOk?: () => void) => {
   if (Platform.OS === 'web') {
@@ -37,6 +37,7 @@ export default function EditarPedidos() {
   const [ciudadEntrega, setCiudadEntrega]       = useState('');
   const [telefonoContacto, setTelefonoContacto] = useState('');
   const [fechaEntrega, setFechaEntrega]         = useState('');
+  const [fechaPedido, setFechaPedido]           = useState('');
   const [costoEnvio, setCostoEnvio]             = useState('');
   const [idUsuario, setIdUsuario]               = useState('');
   const [estado, setEstado]                     = useState<string>('Por Entregar');
@@ -62,6 +63,7 @@ export default function EditarPedidos() {
         setCiudadEntrega(p.ciudad_entrega ?? '');
         setTelefonoContacto(String(p.telefono_contacto ?? ''));
         setFechaEntrega(p.fecha_entrega ?? '');
+        setFechaPedido(p.fecha_pedido ?? p.fecha_creacion ?? '');
         setCostoEnvio(String(p.costo_envio ?? ''));
         setIdUsuario(String(p.id_usuario ?? ''));
         setEstado(p.estado ?? 'Por Entregar');
@@ -118,6 +120,10 @@ export default function EditarPedidos() {
       return; 
     }
     if (!fechaEntrega.trim())     { mostrarAlerta('Campo requerido', 'Ingresa la Fecha de Entrega.'); return; }
+    if (fechaPedido && fechaEntrega < fechaPedido) {
+      mostrarAlerta('Fecha inválida', `La fecha de entrega no puede ser anterior a la fecha del pedido (${fechaPedido}).`);
+      return;
+    }
 
     const body = {
       metodo_pago:       metodoPago,
@@ -257,11 +263,22 @@ export default function EditarPedidos() {
 
               <View style={s.inputGroup}>
                 <Text style={s.label}>Fecha de Entrega</Text>
+                {fechaPedido ? (
+                  <Text style={s.nota}>Pedido registrado el {fechaPedido}. La entrega no puede ser antes.</Text>
+                ) : null}
                 {Platform.OS === 'web' ? (
                   <input
                     type="date"
                     value={fechaEntrega}
-                    onChange={(e) => setFechaEntrega(e.target.value)}
+                    min={fechaPedido || undefined}
+                    onChange={(e) => {
+                      const nueva = e.target.value;
+                      if (fechaPedido && nueva < fechaPedido) {
+                        mostrarAlerta('Fecha inválida', `La fecha de entrega no puede ser anterior a la fecha del pedido (${fechaPedido}).`);
+                        return;
+                      }
+                      setFechaEntrega(nueva);
+                    }}
                     style={{
                       width: '100%',
                       border: 'none',
@@ -364,10 +381,16 @@ export default function EditarPedidos() {
           value={fechaEntrega ? new Date(fechaEntrega + 'T12:00:00') : new Date()}
           mode="date"
           display="default"
+          minimumDate={fechaPedido ? new Date(fechaPedido + 'T12:00:00') : undefined}
           onChange={(event, date) => {
             setMostrarDatePicker(false);
             if (date) {
-              setFechaEntrega(date.toISOString().split('T')[0]);
+              const nueva = date.toISOString().split('T')[0];
+              if (fechaPedido && nueva < fechaPedido) {
+                mostrarAlerta('Fecha inválida', `La fecha de entrega no puede ser anterior a la fecha del pedido (${fechaPedido}).`);
+                return;
+              }
+              setFechaEntrega(nueva);
             }
           }}
         />

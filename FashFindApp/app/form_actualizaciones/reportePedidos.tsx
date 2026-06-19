@@ -17,59 +17,87 @@ const GREEN  = '#27ae60';
 
 const API_BASE = Platform.OS === 'web'
   ? 'http://localhost/FashFind/api'
-  : 'http://192.168.1.7/FashFind/api';
+  : 'http://172.30.4.210/FashFind/api';
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
-interface ItemInventario {
-  id_inventario: number;
-  id_producto: number;
+interface DetallePedido {
+  id_detalle_pedido: number;
   nombre_producto: string;
-  categoria: string;
-  talla: string;
-  color: string;
-  stock_disponible: number;
-  stock_minimo: number;
-  estado: string;
+  cantidad: number;
+  precio: number;
+  sub_total: number;
 }
 
-interface DatosInventario {
+interface ItemPedido {
+  id_pedido: number;
+  fecha_pedido: string;
+  hora_pedido: string;
+  metodo_pago: string;
+  total_pedido: number;
+  costo_envio: number;
+  tipo_entrega: string;
+  direccion_entrega: string;
+  ciudad_entrega: string;
+  telefono_contacto: number;
+  fecha_entrega: string;
+  estado: string;
+  id_usuario: number;
+  detalles: DetallePedido[];
+}
+
+interface DatosPedidos {
   fecha_generacion: string;
-  total_inventarios: number;
-  stock_total: number;
-  inventarios: ItemInventario[];
+  total_pedidos: number;
+  monto_total: number;
+  pedidos: ItemPedido[];
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
-async function obtenerDatos(): Promise<DatosInventario> {
-  const res = await fetch(`${API_BASE}/reporteInventario.php?formato=json`);
+async function obtenerDatos(): Promise<DatosPedidos> {
+  const res = await fetch(`${API_BASE}/reportePedidos.php?formato=json`);
   if (!res.ok) throw new Error(`Error HTTP ${res.status}`);
   return res.json();
 }
 
-function generarHTML(datos: DatosInventario): string {
-  const { inventarios, total_inventarios, stock_total, fecha_generacion } = datos;
+function generarHTML(datos: DatosPedidos): string {
+  const { pedidos, total_pedidos, monto_total, fecha_generacion } = datos;
 
-  const bloques = inventarios.map(inv => {
-    const estadoColor = inv.estado === 'Activo' ? '#27ae60' : '#e74c3c';
+  const bloques = pedidos.map(ped => {
+    const estadoColor = ped.estado === 'Entregado' ? '#27ae60' : ped.estado === 'Cancelado' ? '#e74c3c' : '#f39c12';
+    const detallesHTML = ped.detalles.map(det => `
+      <tr>
+        <td style="padding:6px">${det.nombre_producto}</td>
+        <td style="text-align:center">${det.cantidad}</td>
+        <td style="text-align:right">$${det.precio.toLocaleString()}</td>
+        <td style="text-align:right">$${det.sub_total.toLocaleString()}</td>
+      </tr>`).join('');
+
     return `
-    <div class="inventario-bloque">
-      <div class="inventario-header">
-        <span>Inventario #${inv.id_inventario}</span>
-        <span style="background:${estadoColor};color:white;padding:2px 8px;border-radius:3px;font-size:10px">${inv.estado}</span>
+    <div class="pedido-bloque">
+      <div class="pedido-header">
+        <span>Pedido #${ped.id_pedido}</span>
+        <span style="background:${estadoColor};color:white;padding:2px 8px;border-radius:3px;font-size:10px">${ped.estado}</span>
       </div>
-      <div class="inventario-info">
-        <p><strong>Producto:</strong> ${inv.nombre_producto} &nbsp;|&nbsp; <strong>ID Producto:</strong> ${inv.id_producto}</p>
-        <p><strong>Categoría:</strong> ${inv.categoria} &nbsp;|&nbsp; <strong>Talla:</strong> ${inv.talla} &nbsp;|&nbsp; <strong>Color:</strong> ${inv.color}</p>
+      <div class="pedido-info">
+        <p><strong>Fecha:</strong> ${ped.fecha_pedido} | <strong>Hora:</strong> ${ped.hora_pedido} | <strong>Usuario ID:</strong> ${ped.id_usuario}</p>
+        <p><strong>Pago:</strong> ${ped.metodo_pago} | <strong>Entrega:</strong> ${ped.tipo_entrega} | <strong>Fecha Entrega:</strong> ${ped.fecha_entrega}</p>
+        <p><strong>Destino:</strong> ${ped.direccion_entrega}, ${ped.ciudad_entrega} | <strong>Teléfono:</strong> ${ped.telefono_contacto}</p>
       </div>
-      <div class="inventario-stock">
-        <div class="stock-item">
-          <label>Stock Disponible</label>
-          <span class="stock-valor">${inv.stock_disponible}</span> unidades
-        </div>
-        <div class="stock-item">
-          <label>Stock Mínimo</label>
-          <span class="stock-valor">${inv.stock_minimo}</span> unidades
-        </div>
+      <div class="pedido-detalles">
+        <table style="width:100%;border-collapse:collapse">
+          <tr style="background:#e91e8c;color:white;font-weight:bold;font-size:10px">
+            <td style="padding:6px">Producto</td>
+            <td style="text-align:center">Cantidad</td>
+            <td style="text-align:right">Precio</td>
+            <td style="text-align:right">Subtotal</td>
+          </tr>
+          ${detallesHTML}
+        </table>
+      </div>
+      <div class="pedido-totales">
+        <p><strong>Subtotal:</strong> $${(ped.total_pedido - ped.costo_envio).toLocaleString()}</p>
+        <p><strong>Envío:</strong> $${ped.costo_envio.toLocaleString()}</p>
+        <p style="font-size:13px;color:#e91e8c"><strong>Total Pedido:</strong> $${ped.total_pedido.toLocaleString()}</p>
       </div>
     </div>`;
   }).join('');
@@ -78,7 +106,7 @@ function generarHTML(datos: DatosInventario): string {
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Reporte de Inventario</title>
+<title>Reporte Quincenal de Pedidos</title>
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
   body{font-family:Arial,sans-serif;font-size:12px;color:#333}
@@ -89,14 +117,15 @@ function generarHTML(datos: DatosInventario): string {
   .resumen{background:#f5f5f5;margin:16px;padding:14px;border-radius:4px;display:flex;gap:40px}
   .resumen-item label{font-weight:bold;font-size:10px;color:#6b2d8b;display:block}
   .resumen-item span{font-size:11px;color:#555}
-  .inventario-bloque{margin:0 16px 18px 16px;border:1px solid #eee;border-radius:4px;overflow:hidden;page-break-inside:avoid}
-  .inventario-header{background:#e91e8c;color:white;padding:8px 12px;display:flex;justify-content:space-between;align-items:center;font-weight:bold;font-size:11px}
-  .inventario-info{background:#fcfcfc;padding:8px 12px;border-bottom:1px solid #eee}
-  .inventario-info p{font-size:10px;color:#555;margin-bottom:3px}
-  .inventario-stock{background:#f9f9f9;padding:12px;display:flex;gap:30px;border-top:1px solid #eee}
-  .stock-item{display:flex;flex-direction:column;gap:4px}
-  .stock-item label{font-size:9px;color:#777;font-weight:bold}
-  .stock-valor{font-size:16px;color:#e91e8c;font-weight:bold}
+  .pedido-bloque{margin:0 16px 18px 16px;border:1px solid #eee;border-radius:4px;overflow:hidden;page-break-inside:avoid}
+  .pedido-header{background:#e91e8c;color:white;padding:8px 12px;display:flex;justify-content:space-between;align-items:center;font-weight:bold;font-size:11px}
+  .pedido-info{background:#fcfcfc;padding:8px 12px;border-bottom:1px solid #eee}
+  .pedido-info p{font-size:10px;color:#555;margin-bottom:3px}
+  .pedido-detalles{background:#f9f9f9;padding:8px 12px;border-bottom:1px solid #eee}
+  .pedido-detalles table{font-size:10px}
+  .pedido-detalles td{border-bottom:1px solid #eee}
+  .pedido-totales{background:#fcfcfc;padding:8px 12px;text-align:right}
+  .pedido-totales p{font-size:10px;color:#555;margin-bottom:2px}
   .footer{background:#6b2d8b;color:#aaa;text-align:center;padding:10px;font-size:9px;margin-top:20px}
 </style>
 </head>
@@ -104,22 +133,22 @@ function generarHTML(datos: DatosInventario): string {
 <div class="header">
   <div>
     <div class="header-titulo">FashFind</div>
-    <div class="header-sub">Reporte de Inventario Completo</div>
+    <div class="header-sub">Reporte Quincenal de Pedidos</div>
   </div>
   <div class="header-fecha">Generado: ${fecha_generacion}</div>
 </div>
 <div class="resumen">
-  <div class="resumen-item"><label>Total Inventarios</label><span>${total_inventarios}</span></div>
-  <div class="resumen-item"><label>Stock Total</label><span>${stock_total} unidades</span></div>
+  <div class="resumen-item"><label>Total Pedidos</label><span>${total_pedidos}</span></div>
+  <div class="resumen-item"><label>Monto Total</label><span>$${monto_total.toLocaleString()}</span></div>
 </div>
 ${bloques}
 <div class="footer">FashFind — Reporte generado automáticamente</div>
 </body></html>`;
 }
 
-async function descargarPDF(datos: DatosInventario) {
+async function descargarPDF(datos: DatosPedidos) {
   const html    = generarHTML(datos);
-  const nombre  = `Reporte_Inventario_${datos.fecha_generacion.replace(/\//g, '-')}`;
+  const nombre  = `Reporte_Pedidos_Quincenal_${datos.fecha_generacion.replace(/\//g, '-')}`;
 
   if (Platform.OS === 'web') {
     const win = window.open('', '_blank');
@@ -140,31 +169,35 @@ async function descargarPDF(datos: DatosInventario) {
   }
 }
 
-async function descargarExcel(datos: DatosInventario) {
-  const { inventarios, total_inventarios, stock_total, fecha_generacion } = datos;
-  const nombre = `Reporte_Inventario_${fecha_generacion.replace(/\//g, '-')}`;
+async function descargarExcel(datos: DatosPedidos) {
+  const { pedidos, total_pedidos, monto_total, fecha_generacion } = datos;
+  const nombre = `Reporte_Pedidos_Quincenal_${fecha_generacion.replace(/\//g, '-')}`;
 
   const filas: (string | number)[][] = [];
-  filas.push(['FashFind — Reporte de Inventario Completo']);
-  filas.push([`Generado: ${fecha_generacion}`, '', `Total inventarios: ${total_inventarios}`, '', `Stock total: ${stock_total} unidades`]);
+  filas.push(['FashFind — Reporte Quincenal de Pedidos']);
+  filas.push([`Generado: ${fecha_generacion}`, '', `Total pedidos: ${total_pedidos}`, '', `Monto total: $${monto_total}`]);
   filas.push([]);
-  filas.push(['ID Inv.', 'Producto', 'ID Prod.', 'Categoría', 'Talla', 'Color', 'Stock Disp.', 'Stock Mín.', 'Estado']);
 
-  for (const inv of inventarios) {
-    filas.push([
-      inv.id_inventario, inv.nombre_producto, inv.id_producto,
-      inv.categoria, inv.talla, inv.color,
-      inv.stock_disponible, inv.stock_minimo, inv.estado,
-    ]);
+  for (const ped of pedidos) {
+    filas.push([`PEDIDO #${ped.id_pedido}`, ped.estado, `Fecha: ${ped.fecha_pedido}`, `Usuario ID: ${ped.id_usuario}`]);
+    filas.push(['Producto', 'Cantidad', 'Precio', 'Subtotal']);
+    
+    for (const det of ped.detalles) {
+      filas.push([det.nombre_producto, det.cantidad, det.precio, det.sub_total]);
+    }
+    
+    filas.push(['', '', 'Subtotal:', ped.total_pedido - ped.costo_envio]);
+    filas.push(['', '', 'Envío:', ped.costo_envio]);
+    filas.push(['', '', 'TOTAL:', ped.total_pedido]);
+    filas.push([]);
   }
 
   const wb = XLSX.utils.book_new();
   const ws = XLSX.utils.aoa_to_sheet(filas);
   ws['!cols'] = [
-    { wch: 8 }, { wch: 30 }, { wch: 10 }, { wch: 16 },
-    { wch: 8 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 10 },
+    { wch: 30 }, { wch: 12 }, { wch: 12 }, { wch: 12 },
   ];
-  XLSX.utils.book_append_sheet(wb, ws, 'Inventario');
+  XLSX.utils.book_append_sheet(wb, ws, 'Pedidos');
 
   if (Platform.OS === 'web') {
     XLSX.writeFile(wb, `${nombre}.xlsx`);
@@ -186,8 +219,8 @@ async function descargarExcel(datos: DatosInventario) {
   }
 }
 
-// ─── Pantalla ────────────────────────────────────────────────────────────────
-export default function ReporteInventario() {
+// ─── Pantalla ────────────────────────────────────────────────────────────
+export default function ReportePedidos() {
   const router = useRouter();
   const [cargando, setCargando] = useState(false);
 
@@ -216,16 +249,16 @@ export default function ReporteInventario() {
             <TouchableOpacity onPress={() => router.back()} style={styles.btnVolver} disabled={cargando}>
               <Ionicons name="arrow-back" size={22} color="#fff" />
             </TouchableOpacity>
-            <Text style={styles.barraTitulo}>Reporte de Inventario</Text>
+            <Text style={styles.barraTitulo}>Reporte de Pedidos</Text>
           </View>
 
           <ScrollView contentContainerStyle={styles.contenido}>
             <View style={styles.tarjeta}>
-              <Ionicons name="layers-outline" size={48} color={ACCENT} style={{ marginBottom: 16 }} />
-              <Text style={styles.titulo}>Reporte Completo de Inventario</Text>
+              <Ionicons name="bag-check-outline" size={48} color={ACCENT} style={{ marginBottom: 16 }} />
+              <Text style={styles.titulo}>Reporte Quincenal de Pedidos</Text>
               <Text style={styles.descripcion}>
-                Genera un reporte con todos los registros de inventario activos, incluyendo
-                detalle de productos, stock disponible, stock mínimo y estado del inventario.
+                Genera un reporte de los pedidos de los últimos 15 días, incluyendo detalles de productos,
+                montos, métodos de pago, información de entrega y estado actual de cada pedido.
               </Text>
 
               <View style={styles.botonesGroup}>

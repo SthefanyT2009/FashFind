@@ -17,14 +17,13 @@ const GREEN  = '#27ae60';
 
 const API_BASE = Platform.OS === 'web'
   ? 'http://localhost/FashFind/api'
-  : 'http://192.168.1.7/FashFind/api';
+  : 'http://172.30.4.210/FashFind/api';
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 interface ItemInventario {
   id_inventario: number;
   id_producto: number;
   nombre_producto: string;
-  categoria: string;
   talla: string;
   color: string;
   stock_disponible: number;
@@ -59,7 +58,7 @@ function generarHTML(datos: DatosInventario): string {
       </div>
       <div class="inventario-info">
         <p><strong>Producto:</strong> ${inv.nombre_producto} &nbsp;|&nbsp; <strong>ID Producto:</strong> ${inv.id_producto}</p>
-        <p><strong>Categoría:</strong> ${inv.categoria} &nbsp;|&nbsp; <strong>Talla:</strong> ${inv.talla} &nbsp;|&nbsp; <strong>Color:</strong> ${inv.color}</p>
+        <p><strong>Talla:</strong> ${inv.talla} &nbsp;|&nbsp; <strong>Color:</strong> ${inv.color}</p>
       </div>
       <div class="inventario-stock">
         <div class="stock-item">
@@ -148,12 +147,12 @@ async function descargarExcel(datos: DatosInventario) {
   filas.push(['FashFind — Reporte de Inventario Completo']);
   filas.push([`Generado: ${fecha_generacion}`, '', `Total inventarios: ${total_inventarios}`, '', `Stock total: ${stock_total} unidades`]);
   filas.push([]);
-  filas.push(['ID Inv.', 'Producto', 'ID Prod.', 'Categoría', 'Talla', 'Color', 'Stock Disp.', 'Stock Mín.', 'Estado']);
+  filas.push(['ID Inv.', 'Producto', 'ID Prod.', 'Talla', 'Color', 'Stock Disp.', 'Stock Mín.', 'Estado']);
 
   for (const inv of inventarios) {
     filas.push([
       inv.id_inventario, inv.nombre_producto, inv.id_producto,
-      inv.categoria, inv.talla, inv.color,
+      inv.talla, inv.color,
       inv.stock_disponible, inv.stock_minimo, inv.estado,
     ]);
   }
@@ -161,7 +160,7 @@ async function descargarExcel(datos: DatosInventario) {
   const wb = XLSX.utils.book_new();
   const ws = XLSX.utils.aoa_to_sheet(filas);
   ws['!cols'] = [
-    { wch: 8 }, { wch: 30 }, { wch: 10 }, { wch: 16 },
+    { wch: 8 }, { wch: 30 }, { wch: 10 },
     { wch: 8 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 10 },
   ];
   XLSX.utils.book_append_sheet(wb, ws, 'Inventario');

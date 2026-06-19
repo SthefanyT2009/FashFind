@@ -23,9 +23,9 @@ const ERROR  = '#e74c3c';
 
 const API_BASE = Platform.OS === 'web'
   ? 'http://localhost/FashFind/api'
-  : 'http://192.168.1.7/FashFind/api';
+  : 'http://172.30.4.210/FashFind/api';
 
-// ── Reglas de validación ───────────────────────────────────────────────────
+// Reglas de validación 
 const SOLO_LETRAS      = /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/;
 const SOLO_ALFANUM     = /^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ\s]+$/;
 const SOLO_NUMEROS     = /^\d+$/;
@@ -33,7 +33,6 @@ const SOLO_NUMEROS     = /^\d+$/;
 interface Errores {
   nombreProducto?: string;
   descripcion?:    string;
-  categoria?:      string;
   talla?:          string;
   color?:          string;
   precio?:         string;
@@ -42,7 +41,6 @@ interface Errores {
 function validarCampos(
   nombreProducto: string,
   descripcion:    string,
-  categoria:      string,
   talla:          string,
   color:          string,
   precio:         string,
@@ -65,16 +63,6 @@ function validarCampos(
     } else if (descripcion.trim().length > 200) {
       e.descripcion = 'Máximo 200 caracteres.';
     }
-  }
-
-  if (!categoria.trim()) {
-    e.categoria = 'La categoría es obligatoria.';
-  } else if (!SOLO_LETRAS.test(categoria.trim())) {
-    e.categoria = 'Solo se permiten letras y espacios.';
-  } else if (categoria.trim().length < 3) {
-    e.categoria = 'Mínimo 3 caracteres.';
-  } else if (categoria.trim().length > 50) {
-    e.categoria = 'Máximo 50 caracteres.';
   }
 
   if (!talla.trim()) {
@@ -115,7 +103,6 @@ export default function RegistroProductos() {
 
   const [nombreProducto,  setNombreProducto]  = useState('');
   const [descripcion,     setDescripcion]     = useState('');
-  const [categoria,       setCategoria]       = useState('');
   const [talla,           setTalla]           = useState('');
   const [color,           setColor]           = useState('');
   const [precio,          setPrecio]          = useState('');
@@ -152,7 +139,7 @@ export default function RegistroProductos() {
 
   const registrarProducto = async () => {
     const errs = validarCampos(
-      nombreProducto, descripcion, categoria,
+      nombreProducto, descripcion,
       talla, color, precio,
     );
     if (Object.keys(errs).length > 0) {
@@ -166,7 +153,6 @@ export default function RegistroProductos() {
       const body = new FormData();
       body.append('nombre_producto', nombreProducto.trim());
       body.append('descripcion', descripcion.trim());
-      body.append('categoria', categoria.trim());
       body.append('talla', talla.trim());
       body.append('color', color.trim());
       body.append('precio', precio.trim());
@@ -231,20 +217,6 @@ export default function RegistroProductos() {
                 />
                 <Text style={s.counter}>{descripcion.length}/200</Text>
                 {errores.descripcion && <Text style={s.errorText}>{errores.descripcion}</Text>}
-              </View>
-
-              {/* Categoría */}
-              <View style={s.inputGroup}>
-                <Text style={s.label}>Categoría *</Text>
-                <TextInput
-                  style={[s.inputLine, errores.categoria && s.inputError]}
-                  value={categoria}
-                  onChangeText={handleLetras(setCategoria, 'categoria')}
-                  placeholder=""
-                  placeholderTextColor="#bbb"
-                  maxLength={50}
-                />
-                {errores.categoria && <Text style={s.errorText}>{errores.categoria}</Text>}
               </View>
 
               {/* Talla */}
