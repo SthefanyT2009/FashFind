@@ -64,58 +64,71 @@ try {
 
     // ── EXCEL ────────────────────────────────────────────────────
     if ($formato === 'excel') {
-        header('Content-Type: application/vnd.ms-excel; charset=utf-8');
-        header('Content-Disposition: attachment; filename="' . $nombreArchivo . '.xls"');
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment; filename="' . $nombreArchivo . '.xlsx"');
         header('Cache-Control: max-age=0');
 
-        echo "\xEF\xBB\xBF"; // BOM UTF-8
+        $html = "
+<html xmlns:x='urn:schemas-microsoft-com:office:excel' xmlns:ss='urn:schemas-microsoft-com:office:spreadsheet'>
+<head>
+<meta charset='UTF-8'>
+<style>
+  table { border-collapse: collapse; }
+  td { border: 1px solid #e91e8c; padding: 6px; font-family: Arial; font-size: 10px; }
+</style>
+</head>
+<body>
+<table border='1' cellpadding='6' cellspacing='0'>
+<tr><td colspan='4' bgcolor='#e91e8c' style='color:white;font-weight:bold;font-size:14px;'>FashFind — Reporte Quincenal de Pedidos</td></tr>
+<tr><td colspan='4' bgcolor='#fff0f7' style='color:#555;font-size:11px;'>Generado: {$fechaHoy} | Últimos 15 días &nbsp;|&nbsp; Total pedidos: {$total_pedidos} &nbsp;|&nbsp; Monto total: \$" . number_format($monto_total) . "</td></tr>
+<tr><td colspan='4'>&nbsp;</td></tr>";
 
-        $out  = "<table border='1' style='border-collapse:collapse;font-family:Arial;font-size:11px'>";
-
-        // Encabezado
-        $out .= "<tr><td colspan='8' style='background:#6b2d8b;color:#e91e8c;font-size:14px;font-weight:bold;padding:8px'>FashFind — Reporte Quincenal de Pedidos</td></tr>";
-        $out .= "<tr><td colspan='8' style='padding:4px'>Generado: {$fechaHoy} | Últimos 15 días &nbsp;|&nbsp; Total pedidos: {$total_pedidos} &nbsp;|&nbsp; Monto total: $" . number_format($monto_total) . "</td></tr>";
-        $out .= "<tr><td colspan='8'></td></tr>";
-
-        // Detalles
         foreach ($pedidos as $ped) {
-            $estadoColor = $ped['estado'] === 'Entregado' ? '#27ae60' : ($ped['estado'] === 'Cancelado' ? '#e74c3c' : '#f39c12');
+            $subtotal = $ped['total_pedido'] - $ped['costo_envio'];
             
-            $out .= "<tr style='background:#e91e8c;color:white;font-weight:bold'>"
-                  . "<td colspan='8' style='padding:4px'>Pedido #" . htmlspecialchars($ped['id_pedido']) . " | " . htmlspecialchars($ped['fecha_pedido']) . " | Usuario: " . htmlspecialchars($ped['id_usuario']) . " | <span style='background:{$estadoColor};padding:2px 6px;border-radius:2px'>" . htmlspecialchars($ped['estado']) . "</span></td>"
-                  . "</tr>";
-            
-            $out .= "<tr style='background:#dcdcdc;font-weight:bold;font-size:10px'>"
-                  . "<td style='padding:4px'>Producto</td><td style='text-align:center'>Cantidad</td><td style='text-align:right'>Precio</td>"
-                  . "<td style='text-align:right'>Subtotal</td><td colspan='4'></td>"
-                  . "</tr>";
+            $html .= "
+<tr><td colspan='4' bgcolor='#e91e8c' style='color:white;font-weight:bold;'>Pedido #{$ped['id_pedido']} | " . htmlspecialchars($ped['fecha_pedido']) . " | Usuario: {$ped['id_usuario']}</td></tr>
+<tr>
+  <td bgcolor='#fde8f3' style='color:#c0166e;font-weight:bold;'>Producto</td>
+  <td bgcolor='#fde8f3' style='color:#c0166e;font-weight:bold;text-align:center;'>Cantidad</td>
+  <td bgcolor='#fde8f3' style='color:#c0166e;font-weight:bold;text-align:right;'>Precio</td>
+  <td bgcolor='#fde8f3' style='color:#c0166e;font-weight:bold;text-align:right;'>Subtotal</td>
+</tr>";
 
-            foreach ($ped['detalles'] as $det) {
-                $out .= "<tr>"
-                      . "<td style='padding:4px'>" . htmlspecialchars($det['nombre_producto']) . "</td>"
-                      . "<td style='text-align:center'>" . htmlspecialchars($det['cantidad']) . "</td>"
-                      . "<td style='text-align:right'>" . htmlspecialchars($det['precio']) . "</td>"
-                      . "<td style='text-align:right'>" . htmlspecialchars($det['sub_total']) . "</td>"
-                      . "<td colspan='4'></td>"
-                      . "</tr>";
+            foreach ($ped['detalles'] as $i => $det) {
+                $bg = $i % 2 === 0 ? '#ffffff' : '#fff7fb';
+                $html .= "
+<tr bgcolor='{$bg}'>
+  <td>" . htmlspecialchars($det['nombre_producto']) . "</td>
+  <td align='center'>" . htmlspecialchars($det['cantidad']) . "</td>
+  <td align='right'>\$" . number_format($det['precio']) . "</td>
+  <td align='right'>\$" . number_format($det['sub_total']) . "</td>
+</tr>";
             }
 
-            $subtotal = $ped['total_pedido'] - $ped['costo_envio'];
-            $out .= "<tr style='background:#f5f5f5;font-weight:bold;font-size:10px'>"
-                  . "<td colspan='3' style='text-align:right;padding:4px'>Subtotal:</td><td style='text-align:right'>$" . number_format($subtotal) . "</td><td colspan='4'></td>"
-                  . "</tr>";
-            $out .= "<tr style='background:#f5f5f5;font-weight:bold;font-size:10px'>"
-                  . "<td colspan='3' style='text-align:right;padding:4px'>Envío:</td><td style='text-align:right'>$" . number_format($ped['costo_envio']) . "</td><td colspan='4'></td>"
-                  . "</tr>";
-            $out .= "<tr style='background:#e91e8c;color:white;font-weight:bold'>"
-                  . "<td colspan='3' style='text-align:right;padding:4px'>TOTAL:</td><td style='text-align:right'>$" . number_format($ped['total_pedido']) . "</td><td colspan='4'></td>"
-                  . "</tr>";
-            
-            $out .= "<tr style='height:12px'><td colspan='8'></td></tr>";
+            $html .= "
+<tr bgcolor='#f9c0dd'>
+  <td colspan='3' align='right' style='color:#c0166e;font-weight:bold;'>Subtotal:</td>
+  <td align='right' style='color:#c0166e;font-weight:bold;'>\$" . number_format($subtotal) . "</td>
+</tr>
+<tr bgcolor='#f9c0dd'>
+  <td colspan='3' align='right' style='color:#c0166e;font-weight:bold;'>Envío:</td>
+  <td align='right' style='color:#c0166e;font-weight:bold;'>\$" . number_format($ped['costo_envio']) . "</td>
+</tr>
+<tr bgcolor='#e91e8c'>
+  <td colspan='3' align='right' style='color:white;font-weight:bold;'>TOTAL:</td>
+  <td align='right' style='color:white;font-weight:bold;'>\$" . number_format($ped['total_pedido']) . "</td>
+</tr>
+<tr><td colspan='4'>&nbsp;</td></tr>";
         }
 
-        $out .= "</table>";
-        echo $out;
+        $html .= "
+<tr><td colspan='4' bgcolor='#e91e8c' style='color:#ffd6ec;text-align:center;font-size:9px;padding:10px;'>FashFind — Reporte generado automáticamente</td></tr>
+</table>
+</body>
+</html>";
+
+        echo $html;
         exit;
     }
 
@@ -135,10 +148,11 @@ try {
         $subtotal     = $ped['total_pedido'] - $ped['costo_envio'];
 
         $detalles_html = '';
-        foreach ($ped['detalles'] as $det) {
+        foreach ($ped['detalles'] as $i => $det) {
+            $bg = $i % 2 === 0 ? '#ffffff' : '#f8f8f8';
             $nombre_prod = htmlspecialchars($det['nombre_producto']);
             $detalles_html .= "
-            <tr>
+            <tr style='background:{$bg}'>
               <td style='padding:6px'>{$nombre_prod}</td>
               <td style='text-align:center'>" . htmlspecialchars($det['cantidad']) . "</td>
               <td style='text-align:right'>\$" . number_format($det['precio']) . "</td>
@@ -150,24 +164,19 @@ try {
         <div class='pedido-bloque'>
             <div class='pedido-header'>
                 <span>Pedido #{$ped['id_pedido']}</span>
-                <span style='background:{$estado_color};color:white;padding:2px 8px;border-radius:3px;font-size:10px'>{$estado}</span>
+                <span>{$fecha} &nbsp; {$hora}</span>
             </div>
             <div class='pedido-info'>
-                <p><strong>Fecha:</strong> {$fecha} | <strong>Hora:</strong> {$hora} | <strong>Usuario ID:</strong> {$ped['id_usuario']}</p>
-                <p><strong>Pago:</strong> {$metodo_pago} | <strong>Entrega:</strong> {$tipo_entrega} | <strong>Fecha Entrega:</strong> {$fecha_entrega}</p>
-                <p><strong>Destino:</strong> {$direccion}, {$ciudad} | <strong>Teléfono:</strong> {$telefono}</p>
+                <p><strong>Usuario ID:</strong> {$ped['id_usuario']} &nbsp;|&nbsp; <strong>Método:</strong> {$metodo_pago}</p>
+                <p><strong>Tipo Entrega:</strong> {$tipo_entrega} &nbsp;|&nbsp; <strong>Destino:</strong> {$direccion}, {$ciudad}</p>
+                <p><strong>Teléfono:</strong> {$telefono} &nbsp;|&nbsp; <strong>Fecha Entrega:</strong> {$fecha_entrega} &nbsp;|&nbsp; <strong>Estado:</strong> {$estado}</p>
             </div>
-            <div class='pedido-detalles'>
-                <table style='width:100%;border-collapse:collapse'>
-                    <tr style='background:#e91e8c;color:white;font-weight:bold;font-size:10px'>
-                        <td style='padding:6px'>Producto</td>
-                        <td style='text-align:center'>Cantidad</td>
-                        <td style='text-align:right'>Precio</td>
-                        <td style='text-align:right'>Subtotal</td>
-                    </tr>
-                    {$detalles_html}
-                </table>
-            </div>
+            <table class='tabla-productos'>
+                <thead>
+                    <tr><th>Producto</th><th>Cantidad</th><th>Precio</th><th>Subtotal</th></tr>
+                </thead>
+                <tbody>{$detalles_html}</tbody>
+            </table>
             <div class='pedido-totales'>
                 <p><strong>Subtotal:</strong> \$" . number_format($subtotal) . "</p>
                 <p><strong>Envío:</strong> \$" . number_format($ped['costo_envio']) . "</p>
@@ -181,31 +190,35 @@ try {
 <html lang='es'>
 <head>
 <meta charset='UTF-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'>
 <title>Reporte Quincenal de Pedidos</title>
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
-  body{font-family:Arial,sans-serif;font-size:12px;color:#333}
-  .header{background:#6b2d8b;color:white;padding:20px 24px;display:flex;justify-content:space-between;align-items:center}
-  .header-titulo{color:#e91e8c;font-size:22px;font-weight:bold}
-  .header-sub{color:#ccc;font-size:11px;margin-top:4px}
-  .header-fecha{color:#aaa;font-size:10px}
-  .resumen{background:#f5f5f5;margin:16px;padding:14px;border-radius:4px;display:flex;gap:40px}
-  .resumen-item label{font-weight:bold;font-size:10px;color:#6b2d8b;display:block}
+  body{font-family:Arial,sans-serif;font-size:12px;color:#333;background:#f0f0f0}
+  .pagina{max-width:700px;margin:0 auto;background:#fff;padding:0 0 20px 0}
+  .header{background:#e91e8c;color:white;padding:18px 24px;display:flex;justify-content:space-between;align-items:center}
+  .header-titulo{color:#fff;font-size:22px;font-weight:bold;letter-spacing:1px}
+  .header-sub{color:#ffd6ec;font-size:11px;margin-top:4px}
+  .header-fecha{color:#ffd6ec;font-size:10px}
+  .resumen{background:#fff0f7;margin:16px;padding:12px 16px;border-radius:6px;display:flex;gap:32px;border-left:4px solid #e91e8c}
+  .resumen-item label{font-weight:bold;font-size:10px;color:#e91e8c;display:block;margin-bottom:2px}
   .resumen-item span{font-size:11px;color:#555}
-  .pedido-bloque{margin:0 16px 18px 16px;border:1px solid #eee;border-radius:4px;overflow:hidden;page-break-inside:avoid}
-  .pedido-header{background:#e91e8c;color:white;padding:8px 12px;display:flex;justify-content:space-between;align-items:center;font-weight:bold;font-size:11px}
-  .pedido-info{background:#fcfcfc;padding:8px 12px;border-bottom:1px solid #eee}
+  .pedido-bloque{margin:0 16px 16px 16px;border:1px solid #f9c0dd;border-radius:6px;overflow:hidden;page-break-inside:avoid}
+  .pedido-header{background:#e91e8c;color:white;padding:7px 12px;display:flex;justify-content:space-between;font-weight:bold;font-size:11px}
+  .pedido-info{background:#fff7fb;padding:8px 12px;border-bottom:1px solid #f9c0dd}
   .pedido-info p{font-size:10px;color:#555;margin-bottom:3px}
-  .pedido-detalles{background:#f9f9f9;padding:8px 12px;border-bottom:1px solid #eee}
-  .pedido-detalles table{font-size:10px;width:100%}
-  .pedido-detalles td{border-bottom:1px solid #eee}
-  .pedido-totales{background:#fcfcfc;padding:8px 12px;text-align:right}
+  .tabla-productos{width:100%;border-collapse:collapse;font-size:10px}
+  .tabla-productos thead tr{background:#fde8f3}
+  .tabla-productos th{padding:5px 8px;text-align:left;font-size:9px;color:#c0166e;border-bottom:2px solid #e91e8c}
+  .tabla-productos td{padding:5px 8px;border-bottom:1px solid #fde8f3}
+  .pedido-totales{background:#fff7fb;padding:8px 12px;text-align:right;border-top:1px solid #f9c0dd}
   .pedido-totales p{font-size:10px;color:#555;margin-bottom:2px}
-  .footer{background:#6b2d8b;color:#aaa;text-align:center;padding:10px;font-size:9px;margin-top:20px}
-  @media print{.pedido-bloque{page-break-inside:avoid}}
+  .footer{background:#e91e8c;color:#ffd6ec;text-align:center;padding:10px;font-size:9px;margin-top:20px}
+  @media print{body{background:#fff}.pagina{max-width:100%}.pedido-bloque{page-break-inside:avoid}}
 </style>
 </head>
 <body>
+<div class='pagina'>
 <div class='header'>
   <div>
     <div class='header-titulo'>FashFind</div>
@@ -219,6 +232,7 @@ try {
 </div>
 {$filas_pedidos}
 <div class='footer'>FashFind &mdash; Reporte generado automáticamente</div>
+</div>
 <script>window.onload=function(){window.print();}</script>
 </body></html>";
 

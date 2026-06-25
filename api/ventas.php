@@ -122,7 +122,6 @@ switch ($method) {
         }
         break;
 
-    // PUT: actualizar / eliminar (Inactivo) / reactivar (Activo) 
     case 'PUT':
 
         if (!$id) {

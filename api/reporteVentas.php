@@ -6,7 +6,7 @@ $db   = "Fash_Find";
 $user = "root";
 $pass = "";
 
-$formato = $_GET['formato'] ?? 'pdf'; // pdf | excel | json
+$formato = $_GET['formato'] ?? 'pdf'; // pdf | json
 
 try {
     $pdo = new PDO("mysql:host=$host;dbname=$db;charset=utf8", $user, $pass);
@@ -73,7 +73,7 @@ try {
     $fechaHoy       = (new DateTime())->format('d/m/Y');
     $nombreArchivo  = 'reporte_ventas_' . str_replace('-', '', $inicio_quincena);
 
-    // ── JSON (para la app móvil) ─────────────────────────────────
+    // JSON (para la app móvil)
     if ($formato === 'json') {
         header('Content-Type: application/json; charset=utf-8');
         echo json_encode([
@@ -86,56 +86,7 @@ try {
         exit;
     }
 
-    // ── EXCEL ────────────────────────────────────────────────────
-    if ($formato === 'excel') {
-        header('Content-Type: application/vnd.ms-excel; charset=utf-8');
-        header('Content-Disposition: attachment; filename="' . $nombreArchivo . '.xls"');
-        header('Cache-Control: max-age=0');
-
-        echo "\xEF\xBB\xBF"; // BOM UTF-8
-
-        $out  = "<table border='1' style='border-collapse:collapse;font-family:Arial;font-size:11px'>";
-
-        // Encabezado
-        $out .= "<tr><td colspan='9' style='background:#6b2d8b;color:#e91e8c;font-size:14px;font-weight:bold;padding:8px'>FashFind — Reporte de Ventas Quincenales</td></tr>";
-        $out .= "<tr><td colspan='9' style='padding:4px'>Período: {$inicio_quincena} al {$fin_quincena} &nbsp;|&nbsp; Total ventas: {$total_ventas} &nbsp;|&nbsp; Total ingresos: $" . number_format($total_ingresos, 0, ',', '.') . "</td></tr>";
-        $out .= "<tr><td colspan='9'></td></tr>";
-
-        foreach ($ventas as $v) {
-            $cliente = $v['nombres'] . ' ' . $v['apellidos'];
-            // Fila cabecera venta
-            $out .= "<tr style='background:#e91e8c;color:white;font-weight:bold'>"
-                  . "<td colspan='9' style='padding:5px'>Venta #{$v['id_venta']} — {$v['fecha_venta']} {$v['hora']} — Cliente: {$cliente} (CC: {$v['cc']}) — Método: {$v['metodo_pago']} — Recibido: $" . number_format($v['pago_recibido'],0,',','.') . " — Cambio: $" . number_format($v['cambio'],0,',','.') . "</td>"
-                  . "</tr>";
-            // Cabecera columnas
-            $out .= "<tr style='background:#dcdcdc;font-weight:bold'>"
-                  . "<td style='padding:4px'>Producto</td><td>Talla</td><td>Color</td>"
-                  . "<td style='text-align:center'>Cant.</td><td style='text-align:right'>Precio Unit.</td>"
-                  . "<td style='text-align:right'>Subtotal</td><td colspan='3'></td></tr>";
-            // Detalles
-            foreach ($v['detalles'] as $d) {
-                $out .= "<tr><td style='padding:4px'>" . htmlspecialchars($d['nombre_producto']) . "</td>"
-                      . "<td>" . htmlspecialchars($d['talla']) . "</td>"
-                      . "<td>" . htmlspecialchars($d['color']) . "</td>"
-                      . "<td style='text-align:center'>{$d['cantidad']}</td>"
-                      . "<td style='text-align:right'>$" . number_format($d['precio'],0,',','.') . "</td>"
-                      . "<td style='text-align:right'>$" . number_format($d['sub_total'],0,',','.') . "</td>"
-                      . "<td colspan='3'></td></tr>";
-            }
-            // Total venta
-            $out .= "<tr style='background:#6b2d8b;color:#e91e8c;font-weight:bold'>"
-                  . "<td colspan='5' style='text-align:right;padding:4px'>TOTAL VENTA:</td>"
-                  . "<td style='text-align:right'>$" . number_format($v['costo_total'],0,',','.') . "</td>"
-                  . "<td colspan='3'></td></tr>";
-            $out .= "<tr><td colspan='9'></td></tr>";
-        }
-
-        $out .= "</table>";
-        echo $out;
-        exit;
-    }
-
-    // ── PDF (HTML + window.print) ────────────────────────────────
+    // PDF (HTML + window.print) 
     $autoprint = ($formato === 'pdf') ? "window.onload=function(){window.print();}" : "";
 
     $filas_ventas = '';
@@ -191,29 +142,31 @@ try {
 <title>Reporte de Ventas</title>
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
-  body{font-family:Arial,sans-serif;font-size:12px;color:#333}
-  .header{background:#6b2d8b;color:white;padding:20px 24px;display:flex;justify-content:space-between;align-items:center}
-  .header-titulo{color:#e91e8c;font-size:22px;font-weight:bold}
-  .header-sub{color:#ccc;font-size:11px;margin-top:4px}
-  .header-fecha{color:#aaa;font-size:10px}
-  .resumen{background:#f5f5f5;margin:16px;padding:14px;border-radius:4px;display:flex;gap:40px}
-  .resumen-item label{font-weight:bold;font-size:10px;color:#6b2d8b;display:block}
+  body{font-family:Arial,sans-serif;font-size:12px;color:#333;background:#f0f0f0}
+  .pagina{max-width:700px;margin:0 auto;background:#fff;padding:0 0 20px 0}
+  .header{background:#e91e8c;color:white;padding:18px 24px;display:flex;justify-content:space-between;align-items:center}
+  .header-titulo{color:#fff;font-size:22px;font-weight:bold;letter-spacing:1px}
+  .header-sub{color:#ffd6ec;font-size:11px;margin-top:4px}
+  .header-fecha{color:#ffd6ec;font-size:10px}
+  .resumen{background:#fff0f7;margin:16px;padding:12px 16px;border-radius:6px;display:flex;gap:32px;border-left:4px solid #e91e8c}
+  .resumen-item label{font-weight:bold;font-size:10px;color:#e91e8c;display:block;margin-bottom:2px}
   .resumen-item span{font-size:11px;color:#555}
-  .venta-bloque{margin:0 16px 18px 16px;border:1px solid #eee;border-radius:4px;overflow:hidden}
+  .venta-bloque{margin:0 16px 16px 16px;border:1px solid #f9c0dd;border-radius:6px;overflow:hidden}
   .venta-header{background:#e91e8c;color:white;padding:7px 12px;display:flex;justify-content:space-between;font-weight:bold;font-size:11px}
-  .venta-info{background:#fcfcfc;padding:8px 12px;border-bottom:1px solid #eee}
+  .venta-info{background:#fff7fb;padding:8px 12px;border-bottom:1px solid #f9c0dd}
   .venta-info p{font-size:10px;color:#555;margin-bottom:3px}
   .tabla-productos{width:100%;border-collapse:collapse;font-size:10px}
-  .tabla-productos thead tr{background:#dcdcdc}
-  .tabla-productos th{padding:5px 8px;text-align:left;font-size:9px;color:#282828}
-  .tabla-productos td{padding:5px 8px;border-bottom:1px solid #f0f0f0}
-  .venta-total{background:#6b2d8b;color:white;padding:6px 12px;text-align:right;font-size:11px}
+  .tabla-productos thead tr{background:#fde8f3}
+  .tabla-productos th{padding:5px 8px;text-align:left;font-size:9px;color:#c0166e;border-bottom:2px solid #e91e8c}
+  .tabla-productos td{padding:5px 8px;border-bottom:1px solid #fde8f3}
+  .venta-total{background:#fde8f3;color:#c0166e;padding:6px 12px;text-align:right;font-size:11px;font-weight:bold;border-top:2px solid #e91e8c}
   .venta-total strong{color:#e91e8c}
-  .footer{background:#6b2d8b;color:#aaa;text-align:center;padding:10px;font-size:9px;margin-top:20px}
-  @media print{.venta-bloque{page-break-inside:avoid}}
+  .footer{background:#e91e8c;color:#ffd6ec;text-align:center;padding:10px;font-size:9px;margin-top:20px}
+  @media print{body{background:#fff}.pagina{max-width:100%}.venta-bloque{page-break-inside:avoid}}
 </style>
 </head>
 <body>
+<div class='pagina'>
 <div class='header'>
   <div>
     <div class='header-titulo'>FashFind</div>
@@ -228,6 +181,7 @@ try {
 </div>
 {$filas_ventas}
 <div class='footer'>FashFind &mdash; Reporte generado automáticamente</div>
+</div>
 <script>{$autoprint}</script>
 </body></html>";
 
