@@ -23,7 +23,7 @@ const ERROR  = '#e74c3c';
 
 const API_BASE = Platform.OS === 'web'
   ? 'http://localhost/FashFind/api'
-  : 'http://192.168.0.7/FashFind/api';
+  : 'http://192.168.137.102/FashFind/api';
 
 interface Producto {
   id_producto: number;

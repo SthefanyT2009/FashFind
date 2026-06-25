@@ -14,7 +14,7 @@ const DARK   = '#3A3A3A';
 const BORDER = '#000';
 const ERROR_COLOR = '#DC2626';
 
-const API_BASE = 'http://192.168.0.7/FashFind/api';
+const API_BASE = 'http://192.168.137.102/FashFind/api';
 
 const mostrarAlerta = (titulo: string, mensaje: string, onOk?: () => void) => {
   if (Platform.OS === 'web') {
@@ -450,45 +450,63 @@ export default function RegistroPedidos() {
 
               <Text style={s.subTitle}>Productos del Pedido</Text>
 
-              <View style={s.tabla}>
-                <View style={s.thRow}>
-                  <Text style={[s.th, { width: 100 }]}>Producto</Text>
-                  <Text style={[s.th, { width: 60 }]}>Cant.</Text>
-                  <Text style={[s.th, { width: 90 }]}>Precio</Text>
-                  <Text style={[s.th, { width: 80 }]}>Subtotal</Text>
-                  <Text style={[s.th, { width: 32, borderRightWidth: 0 }]}> </Text>
-                </View>
-
-                {detalles.length === 0 && (
+              {/* Lista de productos en formato tarjeta (mobile-friendly) */}
+              <View style={s.listaProductos}>
+                {detalles.length === 0 ? (
                   <View style={s.trVacio}>
                     <Text style={s.trVacioText}>Sin productos agregados</Text>
                   </View>
-                )}
+                ) : (
+                  detalles.map((d, i) => (
+                    <View key={d.id} style={[s.cardProducto, i % 2 === 0 ? s.trPar : s.trImpar]}>
 
-                {detalles.map((d, i) => (
-                  <View key={d.id} style={[s.tr, i % 2 === 0 ? s.trPar : s.trImpar]}>
-                    <TouchableOpacity 
-                      style={[s.td, { width: 100 }]} 
-                      onPress={() => setModalProducto({ visible: true, filaId: d.id })}
-                    >
-                      <Text numberOfLines={1} style={{ fontSize: 11 }}>{d.nombre_producto}</Text>
-                    </TouchableOpacity>
-                    <TextInput
-                      style={[s.td, { width: 60 }]}
-                      keyboardType="numeric" 
-                      placeholder="0" 
-                      placeholderTextColor="#bbb"
-                      value={d.cantidad} 
-                      onChangeText={v => actualizarCantidad(d.id, v)}
-                      maxLength={5}
-                    />
-                    <Text style={[s.tdText, { width: 90 }]}>${parseFloat(d.precio || '0').toLocaleString('es-CO')}</Text>
-                    <Text style={[s.tdText, { width: 80 }]}>${d.sub_total.toLocaleString('es-CO')}</Text>
-                    <TouchableOpacity style={s.btnEliminar} onPress={() => eliminarFila(d.id)}>
-                      <Ionicons name="close-circle" size={20} color="#e91e8c" />
-                    </TouchableOpacity>
-                  </View>
-                ))}
+                      {/* Fila superior: Producto + botón eliminar */}
+                      <View style={s.cardHeader}>
+                        <TouchableOpacity
+                          style={s.cardProductoBtn}
+                          onPress={() => setModalProducto({ visible: true, filaId: d.id })}
+                        >
+                          <Text style={s.cardLabel}>Producto</Text>
+                          <Text style={s.cardValorProducto} numberOfLines={2}>
+                            {d.nombre_producto}
+                          </Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity onPress={() => eliminarFila(d.id)} style={s.cardBtnEliminar}>
+                          <Ionicons name="close-circle" size={24} color="#e91e8c" />
+                        </TouchableOpacity>
+                      </View>
+
+                      {/* Fila inferior: Cant. | Precio | Subtotal */}
+                      <View style={s.cardFooter}>
+                        <View style={s.cardCelda}>
+                          <Text style={s.cardLabel}>Cant.</Text>
+                          <TextInput
+                            style={s.cardInput}
+                            value={d.cantidad}
+                            keyboardType="numeric"
+                            onChangeText={v => actualizarCantidad(d.id, v)}
+                            placeholder="0"
+                            placeholderTextColor="#bbb"
+                            maxLength={5}
+                          />
+                        </View>
+                        <View style={[s.cardCelda, s.cardCeldaBorde]}>
+                          <Text style={s.cardLabel}>Precio</Text>
+                          <Text style={s.cardValor}>
+                            ${parseFloat(d.precio || '0').toLocaleString('es-CO')}
+                          </Text>
+                        </View>
+                        <View style={s.cardCelda}>
+                          <Text style={s.cardLabel}>Subtotal</Text>
+                          <Text style={[s.cardValor, { color: ACCENT }]}>
+                            ${d.sub_total.toLocaleString('es-CO')}
+                          </Text>
+                        </View>
+                      </View>
+
+                    </View>
+                  ))
+                )}
               </View>
 
               <TouchableOpacity style={[s.btnRosa, { marginBottom: 30 }]} onPress={agregarFila}>
@@ -606,15 +624,8 @@ const s = StyleSheet.create({
   chipActivo:     { backgroundColor: ACCENT, borderColor: ACCENT },
   chipText:       { fontSize: 12, color: DARK },
   chipTextActivo: { color: '#fff' },
-  tabla: { borderWidth: 1, borderColor: '#e0c0d8', marginBottom: 15, borderRadius: 8, overflow: 'hidden' },
-  thRow: { flexDirection: 'row', backgroundColor: '#f3d6ec', borderBottomWidth: 2, borderBottomColor: '#e91e8c' },
-  th: { fontSize: 11, fontWeight: 'bold', paddingVertical: 10, paddingHorizontal: 3, textAlign: 'center', borderRightWidth: 1, borderRightColor: '#d9a8cc', color: DARK },
-  tr: { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: '#f0e0eb', alignItems: 'center', minHeight: 44 },
-  trPar: { backgroundColor: '#fff' },
+  trPar:   { backgroundColor: '#fff' },
   trImpar: { backgroundColor: '#fdf5fb' },
-  td: { fontSize: 11, paddingVertical: 6, paddingHorizontal: 3, textAlign: 'center', borderRightWidth: 1, borderRightColor: '#f0e0eb', color: DARK },
-  tdText: { fontSize: 11, paddingVertical: 6, textAlign: 'center', borderRightWidth: 1, borderRightColor: '#f0e0eb', color: DARK, fontWeight: '600' },
-  btnEliminar: { width: 28, alignItems: 'center', justifyContent: 'center' },
   trVacio: { paddingVertical: 16, alignItems: 'center' },
   trVacioText: { fontSize: 12, color: '#bbb', fontStyle: 'italic' },
   btnRosa: { backgroundColor: ACCENT, paddingVertical: 12, borderRadius: 5, alignItems: 'center' },
@@ -625,5 +636,73 @@ const s = StyleSheet.create({
   modalContent: { backgroundColor: '#fff', width: '85%', maxHeight: '70%', borderRadius: 10, padding: 20 },
   modalTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 15, color: ACCENT },
   modalItem: { paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#eee' },
-  btnCerrar: { backgroundColor: DARK, padding: 10, borderRadius: 5, marginTop: 15, alignItems: 'center' }
+  btnCerrar: { backgroundColor: DARK, padding: 10, borderRadius: 5, marginTop: 15, alignItems: 'center' },
+
+  // --- Estilos tarjetas de productos (mobile-friendly) ---
+  listaProductos: {
+    marginBottom: 15,
+    borderWidth: 1,
+    borderColor: '#e0c0d8',
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  cardProducto: {
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0e0eb',
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  cardProductoBtn: {
+    flex: 1,
+    marginRight: 8,
+  },
+  cardBtnEliminar: {
+    paddingTop: 2,
+  },
+  cardFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  cardCelda: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  cardCeldaBorde: {
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
+    borderColor: '#f0e0eb',
+  },
+  cardLabel: {
+    fontSize: 10,
+    color: '#999',
+    marginBottom: 3,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  cardValorProducto: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: ACCENT,
+  },
+  cardValor: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: DARK,
+  },
+  cardInput: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: DARK,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e91e8c',
+    textAlign: 'center',
+    minWidth: 50,
+    paddingVertical: 2,
+  },
 });

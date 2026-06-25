@@ -17,7 +17,7 @@ const GREEN  = '#27ae60';
 
 const API_BASE = Platform.OS === 'web'
   ? 'http://localhost/FashFind/api'
-  : 'http://192.168.0.7/FashFind/api';
+  : 'http://192.168.137.102/FashFind/api';
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 interface DetallePedido {
@@ -63,39 +63,38 @@ function generarHTML(datos: DatosPedidos): string {
   const { pedidos, total_pedidos, monto_total, fecha_generacion } = datos;
 
   const bloques = pedidos.map(ped => {
-    const estadoColor = ped.estado === 'Entregado' ? '#27ae60' : ped.estado === 'Cancelado' ? '#e74c3c' : '#f39c12';
-    const detallesHTML = ped.detalles.map(det => `
-      <tr>
+    const detallesHTML = ped.detalles.map((det, i) => {
+      const bg = i % 2 === 0 ? '#ffffff' : '#f8f8f8';
+      return `
+      <tr style="background:${bg}">
         <td style="padding:6px">${det.nombre_producto}</td>
         <td style="text-align:center">${det.cantidad}</td>
         <td style="text-align:right">$${det.precio.toLocaleString()}</td>
         <td style="text-align:right">$${det.sub_total.toLocaleString()}</td>
-      </tr>`).join('');
+      </tr>`;
+    }).join('');
+
+    const subtotal = ped.total_pedido - ped.costo_envio;
 
     return `
     <div class="pedido-bloque">
       <div class="pedido-header">
         <span>Pedido #${ped.id_pedido}</span>
-        <span style="background:${estadoColor};color:white;padding:2px 8px;border-radius:3px;font-size:10px">${ped.estado}</span>
+        <span>${ped.fecha_pedido} &nbsp; ${ped.hora_pedido}</span>
       </div>
       <div class="pedido-info">
-        <p><strong>Fecha:</strong> ${ped.fecha_pedido} | <strong>Hora:</strong> ${ped.hora_pedido} | <strong>Usuario ID:</strong> ${ped.id_usuario}</p>
-        <p><strong>Pago:</strong> ${ped.metodo_pago} | <strong>Entrega:</strong> ${ped.tipo_entrega} | <strong>Fecha Entrega:</strong> ${ped.fecha_entrega}</p>
-        <p><strong>Destino:</strong> ${ped.direccion_entrega}, ${ped.ciudad_entrega} | <strong>Teléfono:</strong> ${ped.telefono_contacto}</p>
+        <p><strong>Usuario ID:</strong> ${ped.id_usuario} &nbsp;|&nbsp; <strong>Método:</strong> ${ped.metodo_pago}</p>
+        <p><strong>Tipo Entrega:</strong> ${ped.tipo_entrega} &nbsp;|&nbsp; <strong>Destino:</strong> ${ped.direccion_entrega}, ${ped.ciudad_entrega}</p>
+        <p><strong>Teléfono:</strong> ${ped.telefono_contacto} &nbsp;|&nbsp; <strong>Fecha Entrega:</strong> ${ped.fecha_entrega} &nbsp;|&nbsp; <strong>Estado:</strong> ${ped.estado}</p>
       </div>
-      <div class="pedido-detalles">
-        <table style="width:100%;border-collapse:collapse">
-          <tr style="background:#e91e8c;color:white;font-weight:bold;font-size:10px">
-            <td style="padding:6px">Producto</td>
-            <td style="text-align:center">Cantidad</td>
-            <td style="text-align:right">Precio</td>
-            <td style="text-align:right">Subtotal</td>
-          </tr>
-          ${detallesHTML}
-        </table>
-      </div>
+      <table class="tabla-productos">
+        <thead>
+          <tr><th>Producto</th><th>Cantidad</th><th>Precio</th><th>Subtotal</th></tr>
+        </thead>
+        <tbody>${detallesHTML}</tbody>
+      </table>
       <div class="pedido-totales">
-        <p><strong>Subtotal:</strong> $${(ped.total_pedido - ped.costo_envio).toLocaleString()}</p>
+        <p><strong>Subtotal:</strong> $${subtotal.toLocaleString()}</p>
         <p><strong>Envío:</strong> $${ped.costo_envio.toLocaleString()}</p>
         <p style="font-size:13px;color:#e91e8c"><strong>Total Pedido:</strong> $${ped.total_pedido.toLocaleString()}</p>
       </div>
@@ -106,30 +105,35 @@ function generarHTML(datos: DatosPedidos): string {
 <html lang="es">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Reporte Quincenal de Pedidos</title>
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
-  body{font-family:Arial,sans-serif;font-size:12px;color:#333}
-  .header{background:#6b2d8b;color:white;padding:20px 24px;display:flex;justify-content:space-between;align-items:center}
-  .header-titulo{color:#e91e8c;font-size:22px;font-weight:bold}
-  .header-sub{color:#ccc;font-size:11px;margin-top:4px}
-  .header-fecha{color:#aaa;font-size:10px}
-  .resumen{background:#f5f5f5;margin:16px;padding:14px;border-radius:4px;display:flex;gap:40px}
-  .resumen-item label{font-weight:bold;font-size:10px;color:#6b2d8b;display:block}
+  body{font-family:Arial,sans-serif;font-size:12px;color:#333;background:#f0f0f0}
+  .pagina{max-width:700px;margin:0 auto;background:#fff;padding:0 0 20px 0}
+  .header{background:#e91e8c;color:white;padding:18px 24px;display:flex;justify-content:space-between;align-items:center}
+  .header-titulo{color:#fff;font-size:22px;font-weight:bold;letter-spacing:1px}
+  .header-sub{color:#ffd6ec;font-size:11px;margin-top:4px}
+  .header-fecha{color:#ffd6ec;font-size:10px}
+  .resumen{background:#fff0f7;margin:16px;padding:12px 16px;border-radius:6px;display:flex;gap:32px;border-left:4px solid #e91e8c}
+  .resumen-item label{font-weight:bold;font-size:10px;color:#e91e8c;display:block;margin-bottom:2px}
   .resumen-item span{font-size:11px;color:#555}
-  .pedido-bloque{margin:0 16px 18px 16px;border:1px solid #eee;border-radius:4px;overflow:hidden;page-break-inside:avoid}
-  .pedido-header{background:#e91e8c;color:white;padding:8px 12px;display:flex;justify-content:space-between;align-items:center;font-weight:bold;font-size:11px}
-  .pedido-info{background:#fcfcfc;padding:8px 12px;border-bottom:1px solid #eee}
+  .pedido-bloque{margin:0 16px 16px 16px;border:1px solid #f9c0dd;border-radius:6px;overflow:hidden;page-break-inside:avoid}
+  .pedido-header{background:#e91e8c;color:white;padding:7px 12px;display:flex;justify-content:space-between;font-weight:bold;font-size:11px}
+  .pedido-info{background:#fff7fb;padding:8px 12px;border-bottom:1px solid #f9c0dd}
   .pedido-info p{font-size:10px;color:#555;margin-bottom:3px}
-  .pedido-detalles{background:#f9f9f9;padding:8px 12px;border-bottom:1px solid #eee}
-  .pedido-detalles table{font-size:10px}
-  .pedido-detalles td{border-bottom:1px solid #eee}
-  .pedido-totales{background:#fcfcfc;padding:8px 12px;text-align:right}
+  .tabla-productos{width:100%;border-collapse:collapse;font-size:10px}
+  .tabla-productos thead tr{background:#fde8f3}
+  .tabla-productos th{padding:5px 8px;text-align:left;font-size:9px;color:#c0166e;border-bottom:2px solid #e91e8c}
+  .tabla-productos td{padding:5px 8px;border-bottom:1px solid #fde8f3}
+  .pedido-totales{background:#fff7fb;padding:8px 12px;text-align:right;border-top:1px solid #f9c0dd}
   .pedido-totales p{font-size:10px;color:#555;margin-bottom:2px}
-  .footer{background:#6b2d8b;color:#aaa;text-align:center;padding:10px;font-size:9px;margin-top:20px}
+  .footer{background:#e91e8c;color:#ffd6ec;text-align:center;padding:10px;font-size:9px;margin-top:20px}
+  @media print{body{background:#fff}.pagina{max-width:100%}.pedido-bloque{page-break-inside:avoid}}
 </style>
 </head>
 <body>
+<div class="pagina">
 <div class="header">
   <div>
     <div class="header-titulo">FashFind</div>
@@ -143,6 +147,7 @@ function generarHTML(datos: DatosPedidos): string {
 </div>
 ${bloques}
 <div class="footer">FashFind — Reporte generado automáticamente</div>
+</div>
 </body></html>`;
 }
 
@@ -219,7 +224,7 @@ async function descargarExcel(datos: DatosPedidos) {
   }
 }
 
-// ─── Pantalla ────────────────────────────────────────────────────────────
+// ─── Pantalla ────────────────────────────────────────────────────────
 export default function ReportePedidos() {
   const router = useRouter();
   const [cargando, setCargando] = useState(false);

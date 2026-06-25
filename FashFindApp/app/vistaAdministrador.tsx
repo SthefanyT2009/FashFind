@@ -27,7 +27,7 @@ const SIDEBAR_WIDTH = 220;
 
 const ES_WEB_ESCRITORIO = Platform.OS === 'web' && width >= 768;
 
-const API_BASE = Platform.OS === 'web' ? 'http://localhost/FashFind/api' : 'http://192.168.0.7/FashFind/api';
+const API_BASE = Platform.OS === 'web' ? 'http://localhost/FashFind/api' : 'http://192.168.137.102/FashFind/api';
 
 const mostrarAlerta = (titulo: string, mensaje: string, onOk?: () => void) => {
   if (Platform.OS === 'web') {
@@ -71,10 +71,10 @@ const accionesPorSeccion: Record<Seccion, { label: string; ruta: string }[]> = {
 
 const botonesFilaPorSeccion: Record<Seccion, string[]> = {
   pagina_principal: [],
-  usuario: ['Actualizar', 'Eliminar', 'Reactivar'],
-  venta: ['Actualizar', 'Eliminar', 'Reactivar'],
+  usuario: ['Actualizar', 'Inactivar', 'Reactivar'],
+  venta: ['Actualizar', 'Inactivar', 'Reactivar'],
   pedido: ['Actualizar', 'Cancelar', 'Reactivar'],
-  producto: ['Actualizar', 'Eliminar', 'Reactivar'],
+  producto: ['Actualizar', 'Inactivar', 'Reactivar'],
   inventario: ['Actualizar'],
 };
 
@@ -1017,7 +1017,7 @@ export default function VistaAdministrador() {
                         </TouchableOpacity>
                         {u.estado === 'Activo' && (
                           <TouchableOpacity style={[styles.ventaBtn, { backgroundColor: '#e74c3c' }]} onPress={() => accionFilaUsuario('Eliminar', u)}>
-                            <Text style={styles.ventaBtnTxt}>Eliminar</Text>
+                            <Text style={styles.ventaBtnTxt}>Inactivar</Text>
                           </TouchableOpacity>
                         )}
                         {u.estado === 'Inactivo' && (
@@ -1067,7 +1067,7 @@ export default function VistaAdministrador() {
                         </TouchableOpacity>
                         {v.estado === 'Activo' && (
                           <TouchableOpacity style={[styles.ventaBtn, { backgroundColor: '#e74c3c' }]} onPress={() => accionFila('Eliminar', v)}>
-                            <Text style={styles.ventaBtnTxt}>Eliminar</Text>
+                            <Text style={styles.ventaBtnTxt}>Inactivar</Text>
                           </TouchableOpacity>
                         )}
                         {v.estado === 'Inactivo' && (
@@ -1168,7 +1168,7 @@ export default function VistaAdministrador() {
                         </TouchableOpacity>
                         {prod.estado === 'Activo' && (
                           <TouchableOpacity style={[styles.ventaBtn, { backgroundColor: '#e74c3c' }]} onPress={() => accionFilaProducto('Eliminar', prod)}>
-                            <Text style={styles.ventaBtnTxt}>Eliminar</Text>
+                            <Text style={styles.ventaBtnTxt}>Inactivar</Text>
                           </TouchableOpacity>
                         )}
                         {prod.estado === 'Inactivo' && (

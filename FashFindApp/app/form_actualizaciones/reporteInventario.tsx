@@ -17,7 +17,7 @@ const GREEN  = '#27ae60';
 
 const API_BASE = Platform.OS === 'web'
   ? 'http://localhost/FashFind/api'
-  : 'http://192.168.0.7/FashFind/api';
+  : 'http://192.168.137.102/FashFind/api';
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 interface ItemInventario {
@@ -49,15 +49,14 @@ function generarHTML(datos: DatosInventario): string {
   const { inventarios, total_inventarios, stock_total, fecha_generacion } = datos;
 
   const bloques = inventarios.map(inv => {
-    const estadoColor = inv.estado === 'Activo' ? '#27ae60' : '#e74c3c';
     return `
     <div class="inventario-bloque">
       <div class="inventario-header">
         <span>Inventario #${inv.id_inventario}</span>
-        <span style="background:${estadoColor};color:white;padding:2px 8px;border-radius:3px;font-size:10px">${inv.estado}</span>
+        <span>${inv.estado}</span>
       </div>
       <div class="inventario-info">
-        <p><strong>Producto:</strong> ${inv.nombre_producto} &nbsp;|&nbsp; <strong>ID Producto:</strong> ${inv.id_producto}</p>
+        <p><strong>Producto:</strong> ${inv.nombre_producto} &nbsp;|&nbsp; <strong>ID:</strong> ${inv.id_producto}</p>
         <p><strong>Talla:</strong> ${inv.talla} &nbsp;|&nbsp; <strong>Color:</strong> ${inv.color}</p>
       </div>
       <div class="inventario-stock">
@@ -77,29 +76,33 @@ function generarHTML(datos: DatosInventario): string {
 <html lang="es">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Reporte de Inventario</title>
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
-  body{font-family:Arial,sans-serif;font-size:12px;color:#333}
-  .header{background:#6b2d8b;color:white;padding:20px 24px;display:flex;justify-content:space-between;align-items:center}
-  .header-titulo{color:#e91e8c;font-size:22px;font-weight:bold}
-  .header-sub{color:#ccc;font-size:11px;margin-top:4px}
-  .header-fecha{color:#aaa;font-size:10px}
-  .resumen{background:#f5f5f5;margin:16px;padding:14px;border-radius:4px;display:flex;gap:40px}
-  .resumen-item label{font-weight:bold;font-size:10px;color:#6b2d8b;display:block}
+  body{font-family:Arial,sans-serif;font-size:12px;color:#333;background:#f0f0f0}
+  .pagina{max-width:700px;margin:0 auto;background:#fff;padding:0 0 20px 0}
+  .header{background:#e91e8c;color:white;padding:18px 24px;display:flex;justify-content:space-between;align-items:center}
+  .header-titulo{color:#fff;font-size:22px;font-weight:bold;letter-spacing:1px}
+  .header-sub{color:#ffd6ec;font-size:11px;margin-top:4px}
+  .header-fecha{color:#ffd6ec;font-size:10px}
+  .resumen{background:#fff0f7;margin:16px;padding:12px 16px;border-radius:6px;display:flex;gap:32px;border-left:4px solid #e91e8c}
+  .resumen-item label{font-weight:bold;font-size:10px;color:#e91e8c;display:block;margin-bottom:2px}
   .resumen-item span{font-size:11px;color:#555}
-  .inventario-bloque{margin:0 16px 18px 16px;border:1px solid #eee;border-radius:4px;overflow:hidden;page-break-inside:avoid}
-  .inventario-header{background:#e91e8c;color:white;padding:8px 12px;display:flex;justify-content:space-between;align-items:center;font-weight:bold;font-size:11px}
-  .inventario-info{background:#fcfcfc;padding:8px 12px;border-bottom:1px solid #eee}
+  .inventario-bloque{margin:0 16px 16px 16px;border:1px solid #f9c0dd;border-radius:6px;overflow:hidden;page-break-inside:avoid}
+  .inventario-header{background:#e91e8c;color:white;padding:7px 12px;display:flex;justify-content:space-between;font-weight:bold;font-size:11px}
+  .inventario-info{background:#fff7fb;padding:8px 12px;border-bottom:1px solid #f9c0dd}
   .inventario-info p{font-size:10px;color:#555;margin-bottom:3px}
-  .inventario-stock{background:#f9f9f9;padding:12px;display:flex;gap:30px;border-top:1px solid #eee}
+  .inventario-stock{background:#fff7fb;padding:8px 12px;display:flex;gap:30px;border-top:1px solid #f9c0dd}
   .stock-item{display:flex;flex-direction:column;gap:4px}
-  .stock-item label{font-size:9px;color:#777;font-weight:bold}
+  .stock-item label{font-size:9px;color:#c0166e;font-weight:bold}
   .stock-valor{font-size:16px;color:#e91e8c;font-weight:bold}
-  .footer{background:#6b2d8b;color:#aaa;text-align:center;padding:10px;font-size:9px;margin-top:20px}
+  .footer{background:#e91e8c;color:#ffd6ec;text-align:center;padding:10px;font-size:9px;margin-top:20px}
+  @media print{body{background:#fff}.pagina{max-width:100%}.inventario-bloque{page-break-inside:avoid}}
 </style>
 </head>
 <body>
+<div class="pagina">
 <div class="header">
   <div>
     <div class="header-titulo">FashFind</div>
@@ -113,6 +116,7 @@ function generarHTML(datos: DatosInventario): string {
 </div>
 ${bloques}
 <div class="footer">FashFind — Reporte generado automáticamente</div>
+</div>
 </body></html>`;
 }
 
