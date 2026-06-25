@@ -17,7 +17,7 @@ const GREEN  = '#27ae60';
 
 const API_BASE = Platform.OS === 'web'
   ? 'http://localhost/FashFind/api'
-  : 'http://172.30.4.210/FashFind/api';
+  : 'http://192.168.0.7/FashFind/api';
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 interface DetallePedido {

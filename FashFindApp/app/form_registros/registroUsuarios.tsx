@@ -15,7 +15,7 @@ const ERROR_COLOR = '#DC2626';
 
 const API_BASE = Platform.OS === 'web'
   ? 'http://localhost/FashFind/api'
-  : 'http://172.30.4.210/FashFind/api';
+  : 'http://192.168.0.7/FashFind/api';
 
 const mostrarAlerta = (titulo: string, mensaje: string, onOk?: () => void) => {
   if (Platform.OS === 'web') {

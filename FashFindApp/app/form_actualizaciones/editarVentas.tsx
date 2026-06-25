@@ -12,7 +12,7 @@ const ACCENT = '#e91e8c';
 const DARK   = '#3A3A3A';
 const BORDER = '#000';
 
-const API_BASE = 'http://172.30.4.210/FashFind/api';
+const API_BASE = 'http://192.168.0.7/FashFind/api';
 
 const mostrarAlerta = (titulo: string, mensaje: string, onOk?: () => void) => {
   if (Platform.OS === 'web') {
@@ -72,12 +72,19 @@ export default function EditarVentas() {
     setPagoRecibido(val);
     const pago  = parseFloat(val)        || 0;
     const total = parseFloat(costoTotal) || 0;
+    if (pago > 0 && pago < total) {
+      mostrarAlerta('Pago insuficiente', `El pago recibido no puede ser menor al costo total ($${total.toLocaleString('es-CO')}).`);
+    }
     setCambio(String(pago >= total ? pago - total : 0));
   };
 
   const guardarCambios = async () => {
     if (!idVendedor || !pagoRecibido) {
       mostrarAlerta('Campos incompletos', 'Completa todos los campos obligatorios.');
+      return;
+    }
+    if (parseFloat(pagoRecibido) < parseFloat(costoTotal)) {
+      mostrarAlerta('Pago insuficiente', `El pago recibido no puede ser menor al costo total ($${Number(costoTotal).toLocaleString('es-CO')}).`);
       return;
     }
     const body = {

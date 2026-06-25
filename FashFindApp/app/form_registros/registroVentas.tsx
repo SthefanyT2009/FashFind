@@ -22,7 +22,7 @@ const DARK   = '#3A3A3A';
 const BORDER = '#000';
 const ERROR_COLOR = '#DC2626';
 
-const API_BASE = 'http://172.30.4.210/FashFind/api';
+const API_BASE = 'http://192.168.0.7/FashFind/api';
 
 interface DetalleItem {
   id: number;
@@ -151,7 +151,10 @@ export default function RegistroVentas() {
   const handlePagoRecibidoChange = (text: string) => {
     const soloNumeros = text.replace(/[^0-9]/g, '');
     setPagoRecibido(soloNumeros);
-    if (soloNumeros.trim()) {
+    const pago = parseFloat(soloNumeros) || 0;
+    if (soloNumeros.trim() && pago < costoTotal) {
+      setErrores({ ...errores, pagoRecibido: `El pago no puede ser menor al costo total ($${costoTotal.toLocaleString('es-CO')}).` });
+    } else {
       setErrores({ ...errores, pagoRecibido: '' });
     }
   };
@@ -169,6 +172,9 @@ export default function RegistroVentas() {
 
     if (!pagoRecibido.trim()) {
       nuevosErrores.pagoRecibido = 'El pago recibido es obligatorio.';
+      hayErrores = true;
+    } else if (parseFloat(pagoRecibido) < costoTotal) {
+      nuevosErrores.pagoRecibido = `El pago no puede ser menor al costo total ($${costoTotal.toLocaleString('es-CO')}).`;
       hayErrores = true;
     } else {
       nuevosErrores.pagoRecibido = '';
