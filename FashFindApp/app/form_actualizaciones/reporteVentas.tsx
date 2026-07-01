@@ -18,7 +18,7 @@ export default function ReporteVentas() {
   const manejarDescarga = async (formato: 'pdf' | 'excel') => {
     setCargando(true);
     try {
-      await descargarReporte('reporteVentas.php', formato, 'Reporte_Ventas');
+      await descargarReporte('reporteVentas.php', formato, 'ventas');
     } finally {
       setCargando(false);
     }
@@ -42,9 +42,9 @@ export default function ReporteVentas() {
           <ScrollView contentContainerStyle={styles.contenido}>
             <View style={styles.tarjeta}>
               <Ionicons name="document-text-outline" size={48} color={ACCENT} style={{ marginBottom: 16 }} />
-              <Text style={styles.titulo}>Reporte Quincenal de Ventas</Text>
+              <Text style={styles.titulo}>Reporte de Ventas (Últimos 15 días)</Text>
               <Text style={styles.descripcion}>
-                Genera un reporte con todas las ventas activas de la quincena actual, incluyendo
+                Genera un reporte con todas las ventas activas de los últimos 15 días, incluyendo
                 detalle de productos, cliente, método de pago e ingresos totales.
               </Text>
 

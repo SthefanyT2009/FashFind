@@ -23,7 +23,7 @@ const ERROR  = '#e74c3c';
 
 const API_BASE = Platform.OS === 'web'
   ? 'http://localhost/FashFind/api'
-  : 'http://192.168.137.102/FashFind/api';
+  : 'http://192.168.1.7/FashFind/api';
 
 // Reglas de validación 
 const SOLO_LETRAS      = /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/;

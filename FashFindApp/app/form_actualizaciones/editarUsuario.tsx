@@ -9,7 +9,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 
 const ACCENT = '#e91e8c';
 const DARK   = '#3A3A3A';
-const API_BASE = 'http://192.168.137.102/FashFind/api';
+const API_BASE = 'http://192.168.1.7/FashFind/api';
 
 const CARGOS = ['Administrador', 'Vendedor', 'Domiciliario', 'Cliente'];
 const ESTADOS = ['Activo', 'Inactivo'];

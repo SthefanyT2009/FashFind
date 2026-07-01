@@ -6,25 +6,17 @@ $db   = "Fash_Find";
 $user = "root";
 $pass = "";
 
-$formato = $_GET['formato'] ?? 'pdf'; // pdf | json
-
+$formato = $_GET['formato'] ?? 'pdf'; // pdf | excel | json
 try {
     $pdo = new PDO("mysql:host=$host;dbname=$db;charset=utf8", $user, $pass);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-    // Quincena actual
+    // Últimos 15 días (rango rodante, igual criterio que Pedidos)
     $hoy = new DateTime();
-    $dia = (int)$hoy->format('d');
-    if ($dia <= 15) {
-        $inicio_quincena = $hoy->format('Y-m-') . '01';
-        $fin_quincena    = $hoy->format('Y-m-') . '15';
-    } else {
-        $ultimo_dia = $hoy->format('t');
-        $inicio_quincena = $hoy->format('Y-m-') . '16';
-        $fin_quincena    = $hoy->format('Y-m-') . $ultimo_dia;
-    }
+    $inicio_quincena = (clone $hoy)->modify('-15 days')->format('Y-m-d');
+    $fin_quincena    = $hoy->format('Y-m-d');
 
-    // Ventas activas de la quincena
+    // Ventas activas de los últimos 15 días
     $sqlVentas = "
         SELECT DISTINCT v.id_venta, v.fecha_venta, v.hora, v.metodo_pago,
                v.costo_total, v.pago_recibido, v.cambio, v.estado,
@@ -85,7 +77,79 @@ try {
         ], JSON_UNESCAPED_UNICODE);
         exit;
     }
+// ── EXCEL ────────────────────────────────────────────────────
+    if ($formato === 'excel') {
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment; filename="' . $nombreArchivo . '.xlsx"');
+        header('Cache-Control: max-age=0');
 
+        $html = "
+<html xmlns:x='urn:schemas-microsoft-com:office:excel' xmlns:ss='urn:schemas-microsoft-com:office:spreadsheet'>
+<head>
+<meta charset='UTF-8'>
+<style>
+  table { border-collapse: collapse; }
+  td { border: 1px solid #e91e8c; padding: 6px; font-family: Arial; font-size: 10px; }
+</style>
+</head>
+<body>
+<table border='1' cellpadding='6' cellspacing='0'>
+<tr><td colspan='6' bgcolor='#e91e8c' style='color:white;font-weight:bold;font-size:14px;'>FashFind — Reporte de Ventas (Últimos 15 días)</td></tr>
+<tr><td colspan='6' bgcolor='#fff0f7' style='color:#555;font-size:11px;'>Generado: {$fechaHoy} &nbsp;|&nbsp; Período: {$inicio_quincena} al {$fin_quincena} &nbsp;|&nbsp; Total ventas: {$total_ventas} &nbsp;|&nbsp; Total ingresos: \$" . number_format($total_ingresos) . "</td></tr>
+<tr><td colspan='6'>&nbsp;</td></tr>";
+
+        foreach ($ventas as $v) {
+            $cliente = htmlspecialchars($v['nombres'] . ' ' . $v['apellidos']);
+
+            $html .= "
+<tr><td colspan='6' bgcolor='#e91e8c' style='color:white;font-weight:bold;'>Venta #{$v['id_venta']} | " . htmlspecialchars($v['fecha_venta']) . " | Cliente: {$cliente} | CC: " . htmlspecialchars($v['cc']) . " | Método: " . htmlspecialchars($v['metodo_pago']) . "</td></tr>
+<tr>
+  <td bgcolor='#fde8f3' style='color:#c0166e;font-weight:bold;'>Producto</td>
+  <td bgcolor='#fde8f3' style='color:#c0166e;font-weight:bold;text-align:center;'>Talla</td>
+  <td bgcolor='#fde8f3' style='color:#c0166e;font-weight:bold;text-align:center;'>Color</td>
+  <td bgcolor='#fde8f3' style='color:#c0166e;font-weight:bold;text-align:center;'>Cantidad</td>
+  <td bgcolor='#fde8f3' style='color:#c0166e;font-weight:bold;text-align:right;'>Precio Unit.</td>
+  <td bgcolor='#fde8f3' style='color:#c0166e;font-weight:bold;text-align:right;'>Subtotal</td>
+</tr>";
+
+            foreach ($v['detalles'] as $i => $d) {
+                $bg = $i % 2 === 0 ? '#ffffff' : '#fff7fb';
+                $html .= "
+<tr bgcolor='{$bg}'>
+  <td>" . htmlspecialchars($d['nombre_producto']) . "</td>
+  <td align='center'>" . htmlspecialchars($d['talla']) . "</td>
+  <td align='center'>" . htmlspecialchars($d['color']) . "</td>
+  <td align='center'>" . htmlspecialchars($d['cantidad']) . "</td>
+  <td align='right'>\$" . number_format($d['precio']) . "</td>
+  <td align='right'>\$" . number_format($d['sub_total']) . "</td>
+</tr>";
+            }
+
+            $html .= "
+<tr bgcolor='#f9c0dd'>
+  <td colspan='4' align='right' style='color:#c0166e;font-weight:bold;'>Recibido:</td>
+  <td colspan='2' align='right' style='color:#c0166e;font-weight:bold;'>\$" . number_format($v['pago_recibido']) . "</td>
+</tr>
+<tr bgcolor='#f9c0dd'>
+  <td colspan='4' align='right' style='color:#c0166e;font-weight:bold;'>Cambio:</td>
+  <td colspan='2' align='right' style='color:#c0166e;font-weight:bold;'>\$" . number_format($v['cambio']) . "</td>
+</tr>
+<tr bgcolor='#e91e8c'>
+  <td colspan='4' align='right' style='color:white;font-weight:bold;'>TOTAL VENTA:</td>
+  <td colspan='2' align='right' style='color:white;font-weight:bold;'>\$" . number_format($v['costo_total']) . "</td>
+</tr>
+<tr><td colspan='6'>&nbsp;</td></tr>";
+        }
+
+        $html .= "
+<tr><td colspan='6' bgcolor='#e91e8c' style='color:#ffd6ec;text-align:center;font-size:9px;padding:10px;'>FashFind — Reporte generado automáticamente</td></tr>
+</table>
+</body>
+</html>";
+
+        echo $html;
+        exit;
+    }
     // PDF (HTML + window.print) 
     $autoprint = ($formato === 'pdf') ? "window.onload=function(){window.print();}" : "";
 
@@ -170,7 +234,7 @@ try {
 <div class='header'>
   <div>
     <div class='header-titulo'>FashFind</div>
-    <div class='header-sub'>Reporte de Ventas Quincenales</div>
+    <div class='header-sub'>Reporte de Ventas (Últimos 15 días)</div>
   </div>
   <div class='header-fecha'>Generado: {$fechaHoy}</div>
 </div>

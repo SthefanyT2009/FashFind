@@ -22,7 +22,7 @@ const DARK   = '#3A3A3A';
 const BORDER = '#000';
 const ERROR_COLOR = '#DC2626';
 
-const API_BASE = 'http://192.168.137.102/FashFind/api';
+const API_BASE = 'http://192.168.1.7/FashFind/api';
 
 interface DetalleItem {
   id: number;
