@@ -1,0 +1,523 @@
+import React, { useState, useEffect } from 'react';
+import {
+  View, Text, ScrollView, TouchableOpacity, StyleSheet,
+  TextInput, Alert, ActivityIndicator, Platform, ImageBackground,
+  Modal, FlatList
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const mostrarAlerta = (titulo: string, mensaje: string, onOk?: () => void) => {
+  if (Platform.OS === 'web') {
+    window.alert(`${titulo}\n\n${mensaje}`);
+    onOk?.();
+  } else {
+    Alert.alert(titulo, mensaje, onOk ? [{ text: 'OK', onPress: onOk }] : undefined);
+  }
+};
+
+const ACCENT = '#e91e8c';
+const DARK   = '#3A3A3A';
+const BORDER = '#000';
+const ERROR_COLOR = '#DC2626';
+
+const API_BASE = 'http://192.168.1.7/FashFind/api';
+
+interface DetalleItem {
+  id: number;
+  id_producto: string;
+  nombre_producto: string;
+  cantidad: string;
+  precio: string;
+  sub_total: number;
+}
+
+interface Producto {
+  id_producto: number;
+  nombre_producto: string;
+  talla: string;
+  color: string;
+  precio: number;
+  stock_disponible: number;
+  estado: string;
+}
+
+export default function RegistroVentasVendedor() {
+  const router = useRouter();
+
+  const [fechaVenta, setFechaVenta]       = useState('');
+  const [hora, setHora]                   = useState('');
+  const [metodoPago, setMetodoPago]       = useState<'Efectivo' | 'Transferencia'>('Efectivo');
+  const [idVendedor, setIdVendedor]       = useState('');
+  const [nombreVendedor, setNombreVendedor] = useState('Cargando...');
+  const [pagoRecibido, setPagoRecibido]   = useState('');
+  const [costoTotal, setCostoTotal]       = useState(0);
+  const [cambio, setCambio]               = useState(0);
+  const [detalles, setDetalles]           = useState<DetalleItem[]>([]);
+  const [nextId, setNextId]               = useState(1);
+  const [cargando, setCargando]           = useState(false);
+
+  const [productos, setProductos]         = useState<Producto[]>([]);
+  const [modalProducto, setModalProducto] = useState<{ visible: boolean, filaId: number }>({ visible: false, filaId: 0 });
+
+  const [errores, setErrores] = useState({
+    vendedor: '',
+    pagoRecibido: '',
+  });
+
+  useEffect(() => {
+    const ahora = new Date();
+    const yyyy = ahora.getFullYear();
+    const mm = String(ahora.getMonth() + 1).padStart(2, '0');
+    const dd = String(ahora.getDate()).padStart(2, '0');
+    setFechaVenta(`${yyyy}-${mm}-${dd}`);
+    setHora(ahora.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', hour12: false }));
+    
+    cargarUsuarioSesion();
+    cargarProductos();
+  }, []);
+
+  const cargarUsuarioSesion = async () => {
+    try {
+      const data = await AsyncStorage.getItem('usuarioSesion');
+      if (data) {
+        const usuario = JSON.parse(data);
+        setIdVendedor(usuario.id.toString());
+        setNombreVendedor(`${usuario.nombres} ${usuario.apellidos}`);
+      } else {
+        mostrarAlerta('Sesión no encontrada', 'No se pudo identificar al vendedor. Inicia sesión nuevamente.', () => {
+          router.replace('/login');
+        });
+      }
+    } catch (error) {
+      console.error("Error cargando usuario de sesión:", error);
+    }
+  };
+
+  const cargarProductos = async () => {
+    try {
+      const resP = await fetch(`${API_BASE}/productos.php`);
+      const jsonP = await resP.json();
+      if (jsonP.success) setProductos(jsonP.data.filter((p: Producto) => p.estado === 'Activo'));
+    } catch (error) {
+      console.error("Error cargando productos:", error);
+    }
+  };
+
+  useEffect(() => {
+    const total = detalles.reduce((acc, d) => acc + d.sub_total, 0);
+    setCostoTotal(total);
+    const pago = parseFloat(pagoRecibido) || 0;
+    setCambio(pago >= total ? pago - total : 0);
+  }, [detalles, pagoRecibido]);
+
+  const agregarFila = () => {
+    setDetalles(prev => [...prev, { id: nextId, id_producto: '', nombre_producto: 'Seleccionar', cantidad: '', precio: '', sub_total: 0 }]);
+    setNextId(n => n + 1);
+  };
+
+  const eliminarFila = (id: number) => {
+    setDetalles(prev => prev.filter(d => d.id !== id));
+  };
+
+  const seleccionarProducto = (p: Producto) => {
+    const id = modalProducto.filaId;
+    setDetalles(prev => prev.map(d => {
+      if (d.id !== id) return d;
+      return { 
+        ...d, 
+        id_producto: p.id_producto.toString(), 
+        nombre_producto: p.nombre_producto,
+        precio: p.precio.toString(),
+        sub_total: (parseFloat(d.cantidad) || 0) * p.precio
+      };
+    }));
+    setModalProducto({ visible: false, filaId: 0 });
+  };
+
+  const actualizarCantidad = (id: number, cant: string) => {
+    setDetalles(prev => prev.map(d => {
+      if (d.id !== id) return d;
+      const c = parseFloat(cant) || 0;
+      const p = parseFloat(d.precio) || 0;
+      return { ...d, cantidad: cant, sub_total: c * p };
+    }));
+  };
+
+  const handlePagoRecibidoChange = (text: string) => {
+    const soloNumeros = text.replace(/[^0-9]/g, '');
+    setPagoRecibido(soloNumeros);
+    const pago = parseFloat(soloNumeros) || 0;
+    if (soloNumeros.trim() && pago < costoTotal) {
+      setErrores({ ...errores, pagoRecibido: `El pago no puede ser menor al costo total ($${costoTotal.toLocaleString('es-CO')}).` });
+    } else {
+      setErrores({ ...errores, pagoRecibido: '' });
+    }
+  };
+
+  const registrarVenta = async () => {
+    let hayErrores = false;
+    const nuevosErrores = { ...errores };
+
+    if (!idVendedor.trim()) {
+      nuevosErrores.vendedor = 'No se pudo identificar al vendedor. Inicia sesión nuevamente.';
+      hayErrores = true;
+    } else {
+      nuevosErrores.vendedor = '';
+    }
+
+    if (!pagoRecibido.trim()) {
+      nuevosErrores.pagoRecibido = 'El pago recibido es obligatorio.';
+      hayErrores = true;
+    } else if (parseFloat(pagoRecibido) < costoTotal) {
+      nuevosErrores.pagoRecibido = `El pago no puede ser menor al costo total ($${costoTotal.toLocaleString('es-CO')}).`;
+      hayErrores = true;
+    } else {
+      nuevosErrores.pagoRecibido = '';
+    }
+
+    setErrores(nuevosErrores);
+
+    // Si hay errores en los campos principales, detener
+    if (hayErrores) return;
+
+    // Validar productos
+    if (detalles.length === 0) {
+      mostrarAlerta('Error', 'Por favor agrega al menos un producto.');
+      return;
+    }
+
+    setCargando(true);
+    try {
+      const ventaData = {
+        fecha_venta: fechaVenta,
+        hora: hora,
+        metodo_pago: metodoPago,
+        costo_total: costoTotal,
+        pago_recibido: parseFloat(pagoRecibido),
+        cambio: cambio,
+        id_usuario: idVendedor,
+        detalles: detalles.map(d => ({
+          id_producto: d.id_producto,
+          cantidad: parseInt(d.cantidad) || 0,
+          precio: parseFloat(d.precio) || 0,
+        }))
+      };
+
+      const res = await fetch(`${API_BASE}/ventas.php`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(ventaData)
+      });
+
+      const json = await res.json();
+      
+      if (json.success) {
+        mostrarAlerta('Éxito', json.mensaje || 'Venta registrada correctamente.', () => {
+          router.replace('/vistaVendedor');
+        });
+      } else {
+        mostrarAlerta('Error', json.mensaje || 'No se pudo registrar la venta.');
+      }
+    } catch (error) {
+      console.error('Error registrando venta:', error);
+      mostrarAlerta('Error de conexión', 'No se pudo conectar con el servidor.');
+    } finally {
+      setCargando(false);
+    }
+  };
+
+  return (
+    <View style={s.container}>
+      <ImageBackground 
+        source={require('../../assets/images/fondoLogin.jpeg')} 
+        style={s.bg}
+        resizeMode="cover"
+      >
+        <SafeAreaView style={s.safe}>
+          <ScrollView contentContainerStyle={s.scrollContent}>
+            
+            <View style={s.card}>
+              <TouchableOpacity onPress={() => router.back()} style={s.backIcon}>
+                <Ionicons name="arrow-back" size={20} color={DARK} />
+              </TouchableOpacity>
+
+              <Text style={s.mainTitle}>Nueva Venta</Text>
+
+              <View style={s.inputGroup}>
+                <Text style={s.label}>Fecha Venta</Text>
+                <TextInput style={s.inputLine} value={fechaVenta} editable={false} />
+              </View>
+
+              <View style={s.inputGroup}>
+                <Text style={s.label}>Hora</Text>
+                <TextInput style={s.inputLine} value={hora} editable={false} />
+              </View>
+
+              <View style={s.inputGroup}>
+                <Text style={s.label}>Metodo Pago</Text>
+                <View style={s.pickerOverlay}>
+                  <TouchableOpacity style={[s.chip, metodoPago === 'Efectivo' && s.chipActivo]} onPress={() => setMetodoPago('Efectivo')}>
+                    <Text style={[s.chipText, metodoPago === 'Efectivo' && s.chipTextActivo]}>Efectivo</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={[s.chip, metodoPago === 'Transferencia' && s.chipActivo]} onPress={() => setMetodoPago('Transferencia')}>
+                    <Text style={[s.chipText, metodoPago === 'Transferencia' && s.chipTextActivo]}>Transferencia</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              <View style={s.inputGroup}>
+                <Text style={s.label}>Id Vendedor</Text>
+                <TextInput style={s.inputLine} value={idVendedor} editable={false} />
+              </View>
+
+              <View style={s.inputGroup}>
+                <Text style={s.label}>Vendedor</Text>
+                <Text style={s.inputLine}>{nombreVendedor}</Text>
+                {errores.vendedor ? <Text style={s.errorText}>{errores.vendedor}</Text> : null}
+              </View>
+
+              <Text style={s.subTitle}>Productos de la Venta</Text>
+
+              {/* Lista de productos en formato tarjeta (mobile-friendly) */}
+              <View style={s.listaProductos}>
+                {detalles.length === 0 ? (
+                  <View style={s.trVacio}>
+                    <Text style={s.trVacioText}>Sin productos agregados</Text>
+                  </View>
+                ) : (
+                  detalles.map((d, i) => (
+                    <View key={d.id} style={[s.cardProducto, i % 2 === 0 ? s.trPar : s.trImpar]}>
+
+                      {/* Fila superior: Producto + botón eliminar */}
+                      <View style={s.cardHeader}>
+                        <TouchableOpacity
+                          style={s.cardProductoBtn}
+                          onPress={() => setModalProducto({ visible: true, filaId: d.id })}
+                        >
+                          <Text style={s.cardLabel}>Producto</Text>
+                          <Text style={s.cardValorProducto} numberOfLines={2}>
+                            {d.nombre_producto}
+                          </Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity onPress={() => eliminarFila(d.id)} style={s.cardBtnEliminar}>
+                          <Ionicons name="close-circle" size={24} color="#e91e8c" />
+                        </TouchableOpacity>
+                      </View>
+
+                      {/* Fila inferior: Cant. | Precio | Subtotal */}
+                      <View style={s.cardFooter}>
+                        <View style={s.cardCelda}>
+                          <Text style={s.cardLabel}>Cant.</Text>
+                          <TextInput
+                            style={s.cardInput}
+                            value={d.cantidad}
+                            keyboardType="numeric"
+                            onChangeText={v => actualizarCantidad(d.id, v)}
+                            placeholder="0"
+                            placeholderTextColor="#bbb"
+                          />
+                        </View>
+                        <View style={[s.cardCelda, s.cardCeldaBorde]}>
+                          <Text style={s.cardLabel}>Precio</Text>
+                          <Text style={s.cardValor}>
+                            ${parseFloat(d.precio || '0').toLocaleString('es-CO')}
+                          </Text>
+                        </View>
+                        <View style={s.cardCelda}>
+                          <Text style={s.cardLabel}>Subtotal</Text>
+                          <Text style={[s.cardValor, { color: ACCENT }]}>
+                            ${d.sub_total.toLocaleString('es-CO')}
+                          </Text>
+                        </View>
+                      </View>
+
+                    </View>
+                  ))
+                )}
+              </View>
+
+              <TouchableOpacity style={[s.btnRosa, { marginBottom: 30 }]} onPress={agregarFila}>
+                <Text style={s.btnRosaText}>Agregar producto</Text>
+              </TouchableOpacity>
+
+              <View style={s.inputGroup}>
+                <Text style={s.label}>Costo Total</Text>
+                <Text style={s.inputLine}>$ {costoTotal.toLocaleString('es-CO')}</Text>
+              </View>
+
+              <View style={s.inputGroup}>
+                <Text style={s.label}>Pago Recibido *</Text>
+                <TextInput 
+                  style={s.inputLine} 
+                  keyboardType="numeric" 
+                  value={pagoRecibido} 
+                  onChangeText={handlePagoRecibidoChange} 
+                  placeholder="0"
+                  maxLength={10}
+                />
+                {errores.pagoRecibido ? <Text style={s.errorText}>{errores.pagoRecibido}</Text> : null}
+              </View>
+
+              <View style={s.inputGroup}>
+                <Text style={s.label}>Cambio</Text>
+                <Text style={s.inputLine}>$ {cambio.toLocaleString('es-CO')}</Text>
+              </View>
+
+              <TouchableOpacity 
+                style={[s.btnRosa, { marginTop: 20, opacity: cargando ? 0.6 : 1 }]} 
+                onPress={registrarVenta}
+                disabled={cargando}
+              >
+                {cargando ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Text style={s.btnRosaText}>Registrar Venta</Text>
+                )}
+              </TouchableOpacity>
+
+              <TouchableOpacity style={s.btnRegresar} onPress={() => router.back()}>
+                <Text style={s.btnRegresarText}>Regresar</Text>
+              </TouchableOpacity>
+
+            </View>
+          </ScrollView>
+        </SafeAreaView>
+      </ImageBackground>
+
+      {/* Modal Productos */}
+      <Modal visible={modalProducto.visible} animationType="slide" transparent>
+        <View style={s.modalOverlay}>
+          <View style={s.modalContent}>
+            <Text style={s.modalTitle}>Seleccionar Producto</Text>
+            <FlatList
+              data={productos}
+              keyExtractor={item => item.id_producto.toString()}
+              renderItem={({ item }) => (
+                <TouchableOpacity style={s.modalItem} onPress={() => seleccionarProducto(item)}>
+                  <Text>{item.nombre_producto} ({item.talla} - {item.color})</Text>
+                  <Text style={{ fontSize: 12, color: '#666' }}>Stock: {item.stock_disponible} | ${item.precio}</Text>
+                </TouchableOpacity>
+              )}
+            />
+            <TouchableOpacity style={s.btnCerrar} onPress={() => setModalProducto({ visible: false, filaId: 0 })}>
+              <Text style={{ color: '#fff' }}>Cerrar</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+    </View>
+  );
+}
+
+const s = StyleSheet.create({
+  container: { flex: 1 },
+  bg: { flex: 1, width: '100%', height: '100%' },
+  safe: { flex: 1 },
+  scrollContent: { flexGrow: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 50 },
+  card: {
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    width: Platform.OS === 'web' ? 450 : '90%',
+    borderRadius: 15,
+    padding: 30,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    elevation: 10,
+  },
+  backIcon: { position: 'absolute', top: 20, left: 20 },
+  mainTitle: { fontSize: 24, fontWeight: 'bold', color: ACCENT, textAlign: 'center', marginBottom: 25 },
+  subTitle: { fontSize: 22, fontWeight: 'bold', color: ACCENT, textAlign: 'center', marginTop: 30, marginBottom: 20 },
+  inputGroup: { marginBottom: 20 },
+  label: { fontSize: 16, color: DARK, marginBottom: 5 },
+  inputLine: { borderBottomWidth: 1, borderBottomColor: BORDER, paddingVertical: 5, fontSize: 16, color: DARK, minHeight: 35, justifyContent: 'center' },
+  errorText: { color: ERROR_COLOR, fontSize: 12, marginTop: 3 },
+  pickerOverlay: { flexDirection: 'row', gap: 10, marginTop: 5 },
+  chip: { borderWidth: 1, borderColor: '#ccc', borderRadius: 20, paddingHorizontal: 15, paddingVertical: 5 },
+  chipActivo: { backgroundColor: ACCENT, borderColor: ACCENT },
+  chipText: { fontSize: 12, color: DARK },
+  chipTextActivo: { color: '#fff' },
+  trPar: { backgroundColor: '#fff' },
+  trImpar: { backgroundColor: '#fdf5fb' },
+  trVacio: { paddingVertical: 16, alignItems: 'center' },
+  trVacioText: { fontSize: 12, color: '#bbb', fontStyle: 'italic' },
+  btnRosa: { backgroundColor: ACCENT, paddingVertical: 12, borderRadius: 5, alignItems: 'center' },
+  btnRosaText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+  btnRegresar: { marginTop: 15, alignItems: 'center' },
+  btnRegresarText: { color: DARK, fontSize: 14, textDecorationLine: 'underline' },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
+  modalContent: { backgroundColor: '#fff', width: '85%', maxHeight: '70%', borderRadius: 10, padding: 20 },
+  modalTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 15, color: ACCENT },
+  modalItem: { paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#eee' },
+  btnCerrar: { backgroundColor: DARK, padding: 10, borderRadius: 5, marginTop: 15, alignItems: 'center' },
+
+  // --- Estilos tarjetas de productos (mobile-friendly) ---
+  listaProductos: {
+    marginBottom: 15,
+    borderWidth: 1,
+    borderColor: '#e0c0d8',
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  cardProducto: {
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0e0eb',
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  cardProductoBtn: {
+    flex: 1,
+    marginRight: 8,
+  },
+  cardBtnEliminar: {
+    paddingTop: 2,
+  },
+  cardFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  cardCelda: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  cardCeldaBorde: {
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
+    borderColor: '#f0e0eb',
+  },
+  cardLabel: {
+    fontSize: 10,
+    color: '#999',
+    marginBottom: 3,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  cardValorProducto: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: ACCENT,
+  },
+  cardValor: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: DARK,
+  },
+  cardInput: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: DARK,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e91e8c',
+    textAlign: 'center',
+    minWidth: 50,
+    paddingVertical: 2,
+  },
+});

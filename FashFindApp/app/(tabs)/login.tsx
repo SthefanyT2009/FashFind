@@ -13,6 +13,7 @@ import {
 
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { login } from '../authService';
 
 const { width, height } = Dimensions.get('window');
@@ -50,6 +51,8 @@ export default function LoginScreen() {
       if (respuesta.success && respuesta.usuario) {
         const cargo = respuesta.usuario.cargo;
         setErrorVisible('Cargo: ' + cargo);
+
+        await AsyncStorage.setItem('usuarioSesion', JSON.stringify(respuesta.usuario));
 
         setTimeout(() => {
           switch (cargo) {
