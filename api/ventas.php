@@ -16,6 +16,7 @@ $db     = Database::conectar();
 $method = $_SERVER['REQUEST_METHOD'];
 $action = $_GET['action'] ?? null;
 $id     = isset($_GET['id']) ? (int)$_GET['id'] : null;
+$idUsuarioFiltro = isset($_GET['id_usuario']) ? (int)$_GET['id_usuario'] : null;
 
 switch ($method) {
 
@@ -50,12 +51,24 @@ switch ($method) {
             echo json_encode(["success" => true, "data" => $venta]);
 
         } else {
-            $ventas = $db->query("
-                SELECT v.*, u.nombres, u.apellidos
-                FROM Venta v
-                INNER JOIN Usuario u ON v.id_usuario = u.id_usuario
-                ORDER BY v.id_venta DESC
-            ")->fetchAll(PDO::FETCH_ASSOC);
+            if ($idUsuarioFiltro) {
+                $stmt = $db->prepare("
+                    SELECT v.*, u.nombres, u.apellidos
+                    FROM Venta v
+                    INNER JOIN Usuario u ON v.id_usuario = u.id_usuario
+                    WHERE v.id_usuario = ?
+                    ORDER BY v.id_venta DESC
+                ");
+                $stmt->execute([$idUsuarioFiltro]);
+                $ventas = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            } else {
+                $ventas = $db->query("
+                    SELECT v.*, u.nombres, u.apellidos
+                    FROM Venta v
+                    INNER JOIN Usuario u ON v.id_usuario = u.id_usuario
+                    ORDER BY v.id_venta DESC
+                ")->fetchAll(PDO::FETCH_ASSOC);
+            }
 
             echo json_encode(["success" => true, "data" => $ventas]);
         }
